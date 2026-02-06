@@ -1,20 +1,20 @@
-
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import override
-
-from firecomponent import SteelDims
+from ...base import SteelDims
 
 
 class SteelPortsNum(Enum):
     ST_PORTS_2 = 2
     ST_PORTS_3 = 3
 
+
 class FireConnection(ABC):
-    @override
+    @abstractmethod
     def ports_number(self) -> SteelPortsNum:
         pass
 
-    @override
-    def ports_diameter(self) -> tuple[SteelDims, SteelDims] | tuple[SteelDims, SteelDims, SteelDims]:
+    @abstractmethod
+    def ports_diameter(
+        self,
+    ) -> tuple[SteelDims, SteelDims] | tuple[SteelDims, SteelDims, SteelDims]:
         pass

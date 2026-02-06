@@ -1,6 +1,6 @@
 from enum import StrEnum, Enum, auto
-from typing_extensions import final, override, Self
-from abc import ABC
+from typing_extensions import final, Self
+from abc import ABC, abstractmethod
 
 
 class SteelMaterial(StrEnum):
@@ -73,7 +73,7 @@ class FireComponent(ABC):
     def connection_type(self) -> SteelConnection:
         return self._connection_type
 
-    @override
+    @abstractmethod
     def serialize(self) -> dict[str, str]:
         return {
             "material": self.material.value,
@@ -83,7 +83,7 @@ class FireComponent(ABC):
         }
 
     # todo: handle exception of incorrect property assignment or incorrect json keys
-    @override
+    @abstractmethod
     def deserialize(self, data: dict[str, str]) -> Self:
         material = SteelMaterial(data["material"])
         schedule = SteelSchedule(data["schedule"])
