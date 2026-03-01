@@ -15,6 +15,20 @@ class Point(Primitive2D):
             (self.x - other.x) ** 2 + (self.y - other.y) ** 2 + (self.z - other.z) ** 2
         )
 
+    def __add__(self, other: Point) -> Point:
+        return Point(
+            x=self.x + other.x,
+            y=self.y + other.y,
+            z=self.z + other.z,
+        )
+
+    def __sub__(self, other: Point) -> Point:
+        return Point(
+            x=self.x - other.x,
+            y=self.y - other.y,
+            z=self.z - other.z,
+        )
+
     def to_json(self) -> dict[str, str]:
         return {"Point": f"{self.x}, {self.y}, {self.z}"}
 
