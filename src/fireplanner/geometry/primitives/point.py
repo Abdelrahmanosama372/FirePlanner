@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from .base import Primitive2D
 from math import sqrt
+import numpy as np
 
 
 @dataclass(kw_only=True)
@@ -28,6 +29,9 @@ class Point(Primitive2D):
             y=self.y - other.y,
             z=self.z - other.z,
         )
+
+    def array(self) -> np.ndarray:
+        return np.array([self.x, self.y, self.z])
 
     def to_json(self) -> dict[str, str]:
         return {"Point": f"{self.x}, {self.y}, {self.z}"}
