@@ -1,31 +1,42 @@
+"""Line primitive types and 2D segment intersection helpers."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Optional, Tuple
+
+import numpy as np
+
 from .base import Primitive2D
 from .point import Point
-import numpy as np
 
 
 EPS = 1e-9
 
 
 def cross_2d(ax: float, ay: float, bx: float, by: float) -> float:
+    """Return the result of the 2D cross product."""
     return ax * by - ay * bx
 
 
 class LineType(StrEnum):
+    """Supported semantic types for a line segment."""
+
     Normal = "Normal"
     CenterLine = "CenterLine"
 
 
 @dataclass(kw_only=True)
 class Line(Primitive2D):
+    """Finite 2D line segment with optional semantic type metadata."""
+
     start: Point
     end: Point
     line_type: LineType = LineType.Normal
 
     def pass_through_point(self, point: Point, tol: float = EPS) -> bool:
+        """Return whether a point lies on this segment within tolerance."""
         P = point.array()
         A = self.start.array()
         B = self.end.array()
@@ -46,6 +57,7 @@ class Line(Primitive2D):
         return True
 
     def intersects_line_2D(self, line: Line) -> Tuple[bool, Optional[Point]]:
+        """Compute segment-segment intersection and return hit flag and point."""
         A = self.start
         B = self.end
         C = line.start
@@ -88,9 +100,10 @@ class Line(Primitive2D):
             return False, None  # Parallel but not collinear
 
         # -------------------------------------------------
-        # Case 3: Collinear — check overlap
+        # Case 3: Collinear - check overlap
         # -------------------------------------------------
         def within(a: float, b: float, c: float) -> bool:
+            """Return whether c lies within inclusive range [a, b] with epsilon."""
             return min(a, b) - EPS <= c <= max(a, b) + EPS
 
         if within(A.x, B.x, C.x) and within(A.y, B.y, C.y):
@@ -108,6 +121,7 @@ class Line(Primitive2D):
         return False, None
 
     def to_json(self) -> dict[str, Any]:
+        """Serialize this line to the project JSON format."""
         return {
             "Line": {
                 "start": self.start.to_json(),
@@ -118,6 +132,7 @@ class Line(Primitive2D):
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Line:
+        """Build a line instance from the project JSON format."""
         line_props = data["Line"]
         start = Point.from_json(line_props["start"])
         end = Point.from_json(line_props["end"])
