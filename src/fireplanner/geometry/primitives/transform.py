@@ -1,8 +1,13 @@
+"""2D rigid transform utilities for translation and rotation composition."""
+
 from __future__ import annotations
+
 from math import atan2
-from .point import Point
+
 import numpy as np
 from numpy.typing import NDArray
+
+from .point import Point
 
 
 class Transform2D:
