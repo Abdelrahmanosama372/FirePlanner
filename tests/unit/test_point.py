@@ -1,0 +1,67 @@
+import numpy as np
+from math import isclose
+
+from fireplanner.geometry.primitives import Point
+
+
+TOL = 1e-9
+
+
+def test_point_construction():
+    point = Point(x=1.5, y=2.5, z=3.5)
+
+    assert point.x == 1.5
+    assert point.y == 2.5
+    assert point.z == 3.5
+
+
+def test_point_distance():
+    p1 = Point(x=1.0, y=2.0, z=3.0)
+    p2 = Point(x=4.0, y=6.0, z=3.0)
+
+    result = p1.distance(p2)
+
+    assert isclose(result, 5.0, abs_tol=TOL)
+
+
+def test_point_add():
+    p1 = Point(x=1.0, y=2.0, z=3.0)
+    p2 = Point(x=4.0, y=5.0, z=6.0)
+
+    result = p1 + p2
+
+    assert result == Point(x=5.0, y=7.0, z=9.0)
+
+
+def test_point_subtract():
+    p1 = Point(x=10.0, y=8.0, z=6.0)
+    p2 = Point(x=1.0, y=2.0, z=3.0)
+
+    result = p1 - p2
+
+    assert result == Point(x=9.0, y=6.0, z=3.0)
+
+
+def test_point_array():
+    point = Point(x=1.0, y=2.0, z=3.0)
+
+    result = point.array()
+
+    assert isinstance(result, np.ndarray)
+    assert np.array_equal(result, np.array([1.0, 2.0, 3.0]))
+
+
+def test_point_to_json():
+    point = Point(x=1.0, y=2.0, z=3.0)
+
+    data = point.to_json()
+
+    assert data == {"Point": "1.0, 2.0, 3.0"}
+
+
+def test_point_from_json():
+    data = {"Point": "1.0, 2.0, 3.0"}
+
+    point = Point.from_json(data)
+
+    assert point == Point(x=1.0, y=2.0, z=3.0)
