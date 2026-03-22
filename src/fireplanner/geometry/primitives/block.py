@@ -10,11 +10,11 @@ from . import Point, Primitive2D
 class Block(Primitive2D):
     """Named block entity positioned at a single point in 2D space."""
 
-    def __init__(self, name: str, center: Point) -> None:
+    def __init__(self, name: str, center: Point, id: int = -1) -> None:
         """Initialize a block with a display name and insertion position."""
         self._name: str = name
         self._center: Point = center
-        super().__init__()
+        super().__init__(id=id)
 
     @property
     def name(self) -> str:

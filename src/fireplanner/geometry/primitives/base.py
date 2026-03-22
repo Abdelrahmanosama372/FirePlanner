@@ -9,6 +9,18 @@ T = TypeVar("T", bound="Primitive")
 class Primitive(ABC):
     """Abstract base contract for serializable geometry primitives."""
 
+    def __init__(self, id: int = -1):
+        self._id = id
+
+    @property
+    def id(self):
+        """The id property."""
+        return self._id
+
+    @id.setter
+    def id(self, value):
+        self._id = value
+
     @abstractmethod
     def to_json(self) -> dict[Any, Any]:
         """Serialize this primitive into a JSON-compatible dictionary."""

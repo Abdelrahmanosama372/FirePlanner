@@ -9,13 +9,19 @@ from .base import Primitive2D
 from .point import Point
 
 
-@dataclass(kw_only=True)
+@dataclass(init=False)
 class Arc(Primitive2D):
     """Circular arc represented by a start point, center point, and sweep angle."""
 
     start: Point
     center: Point
     angle: float
+
+    def __init__(self, start: Point, center: Point, angle: float, id: int = -1) -> None:
+        self.start = start
+        self.center = center
+        self.angle = angle
+        super().__init__(id=id)
 
     @override
     def to_json(self) -> dict[Any, Any]:

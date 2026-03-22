@@ -11,7 +11,6 @@ import numpy as np
 from .base import Primitive2D
 from .point import Point
 
-
 EPS = 1e-9
 
 
@@ -27,13 +26,34 @@ class LineType(StrEnum):
     CenterLine = "CenterLine"
 
 
-@dataclass(kw_only=True)
+@dataclass(init=False)
 class Line(Primitive2D):
     """Finite 2D line segment with optional semantic type metadata."""
 
     start: Point
     end: Point
     line_type: LineType = LineType.Normal
+
+    def __init__(
+        self,
+        start: Point,
+        end: Point,
+        line_type: LineType = LineType.Normal,
+        id: int = -1,
+    ) -> None:
+        self.start = start
+        self.end = end
+        self.line_type = line_type
+        super().__init__(id=id)
+
+    def __eq__(self, other):
+        if not isinstance(other, Line):
+            return NotImplemented
+        return (
+            self.start == other.start
+            and self.end == other.end
+            and self.line_type == other.line_type
+        )
 
     def pass_through_point(self, point: Point, tol: float = EPS) -> bool:
         """Return whether a point lies on this segment within tolerance."""

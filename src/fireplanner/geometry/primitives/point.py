@@ -11,13 +11,19 @@ import numpy as np
 from .base import Primitive2D
 
 
-@dataclass(kw_only=True)
+@dataclass(init=False)
 class Point(Primitive2D):
     """Cartesian point used by 2D/3D geometry primitives."""
 
     x: float
     y: float
     z: float = 0.0
+
+    def __init__(self, x: float, y: float, z: float = 0.0, id: int = -1) -> None:
+        self.x = x
+        self.y = y
+        self.z = z
+        super().__init__(id=id)
 
     def distance(self, other: Point):
         """Return Euclidean distance to another point."""
