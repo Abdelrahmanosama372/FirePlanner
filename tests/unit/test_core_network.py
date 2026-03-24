@@ -16,25 +16,25 @@ def simple_network():
                  (0,9)------(6,9)
                   |
                   |
-                  |
-    (-6,3)------(0,3)------(4,3)
-                  |
+                (0,5)
+    (-6,4)--------|
+                  |-------(4,3)
                   |
                   |
                 (0,0)
     """
     lines = [
-        Line(id=0, start=Point(x=0, y=0), end=Point(x=0, y=3)),
+        Line(id=0, start=Point(x=0, y=0), end=Point(x=0, y=4)),
         Line(id=1, start=Point(x=0, y=3), end=Point(x=4, y=3)),
-        Line(id=2, start=Point(x=0, y=3), end=Point(x=-6, y=3)),
-        Line(id=3, start=Point(x=0, y=3), end=Point(x=0, y=9)),
+        Line(id=2, start=Point(x=0, y=4), end=Point(x=-6, y=4)),
+        Line(id=3, start=Point(x=0, y=5), end=Point(x=0, y=9)),
         Line(id=4, start=Point(x=0, y=9), end=Point(x=6, y=9)),
     ]
 
     blocks = [
         Block(id=0, name="SPR", center=Point(x=0, y=2)),
         Block(id=1, name="SPR", center=Point(x=2, y=3)),
-        Block(id=2, name="SPR", center=Point(x=-4, y=3)),
+        Block(id=2, name="SPR", center=Point(x=-4, y=4)),
         Block(id=3, name="SPR", center=Point(x=0, y=8)),
         Block(id=4, name="SPR", center=Point(x=1, y=9)),
     ]
@@ -45,38 +45,38 @@ def simple_network():
 @pytest.fixture
 def complex_network():
     """
-                                 (9,18)
-                                   /
-                                  /
-                (0,15)------(5,15)
-                  |
-                  |
-    (-12,10)-(-8,10)----(0,10)----(8,10)----(12,10)
-                  |         |                    |
-                  |         |                    |
-    (-10,5)---(-6,5)-----(0,5)-----(6,5)-----(10,5)
-                  |
-                  |
-                (0,0)
+                                        (9,18)
+                                          /
+                                         /
+                         (0,15)------(5,15)
+                            |
+                            |
+                         (0,12)            (12,14)---------(16,14)
+                            |                 |
+                            |----(8,10)----(12,10)
+    (-12,9)---(-8,9)--------|
+                            |
+                         (0,6)
+                            |
+     (-10,5)---(-6,5)-------|
+                            |-----(6,4)-----(10,4)
+                            |
+                          (0,0)
 
-                                              (16,14)
-                                                 |
-                                                 |
-                                              (12,14)
     """
     lines = [
-        Line(id=0, start=Point(x=0, y=0), end=Point(x=0, y=5)),
-        Line(id=1, start=Point(x=0, y=5), end=Point(x=0, y=10)),
-        Line(id=2, start=Point(x=0, y=10), end=Point(x=0, y=15)),
-        Line(id=3, start=Point(x=0, y=5), end=Point(x=6, y=5)),
+        Line(id=0, start=Point(x=0, y=0), end=Point(x=0, y=6)),
+        Line(id=1, start=Point(x=0, y=6), end=Point(x=0, y=12)),
+        Line(id=2, start=Point(x=0, y=12), end=Point(x=0, y=15)),
+        Line(id=3, start=Point(x=0, y=4), end=Point(x=6, y=4)),
         Line(id=4, start=Point(x=0, y=5), end=Point(x=-6, y=5)),
         Line(id=5, start=Point(x=0, y=10), end=Point(x=8, y=10)),
-        Line(id=6, start=Point(x=0, y=10), end=Point(x=-8, y=10)),
+        Line(id=6, start=Point(x=0, y=9), end=Point(x=-8, y=9)),
         Line(id=7, start=Point(x=0, y=15), end=Point(x=5, y=15)),
-        Line(id=8, start=Point(x=6, y=5), end=Point(x=10, y=5)),
+        Line(id=8, start=Point(x=6, y=4), end=Point(x=10, y=4)),
         Line(id=9, start=Point(x=-6, y=5), end=Point(x=-10, y=5)),
         Line(id=10, start=Point(x=8, y=10), end=Point(x=12, y=10)),
-        Line(id=11, start=Point(x=-8, y=10), end=Point(x=-12, y=10)),
+        Line(id=11, start=Point(x=-8, y=9), end=Point(x=-12, y=9)),
         Line(id=12, start=Point(x=5, y=15), end=Point(x=9, y=18)),
         Line(id=13, start=Point(x=12, y=10), end=Point(x=12, y=14)),
         Line(id=14, start=Point(x=12, y=14), end=Point(x=16, y=14)),
@@ -106,11 +106,11 @@ def loop_network():
     """
     (0,12)
       |
-      |
-    (0,8)------(4,8)
+    (0,9)
+      |--------(4,8)
       |          |
-      |          |
-    (0,4)------(4,4)
+    (0|5)        |
+      |--------(4,4)
       |
       |
     (0,2)
@@ -120,12 +120,12 @@ def loop_network():
     """
     lines = [
         Line(id=0, start=Point(x=0, y=0), end=Point(x=0, y=2)),
-        Line(id=1, start=Point(x=0, y=2), end=Point(x=0, y=4)),
+        Line(id=1, start=Point(x=0, y=2), end=Point(x=0, y=5)),
         Line(id=2, start=Point(x=0, y=4), end=Point(x=4, y=4)),
         Line(id=3, start=Point(x=4, y=4), end=Point(x=4, y=8)),
         Line(id=4, start=Point(x=4, y=8), end=Point(x=0, y=8)),
-        Line(id=5, start=Point(x=0, y=8), end=Point(x=0, y=4)),
-        Line(id=6, start=Point(x=0, y=8), end=Point(x=0, y=12)),
+        Line(id=5, start=Point(x=0, y=9), end=Point(x=0, y=5)),
+        Line(id=6, start=Point(x=0, y=9), end=Point(x=0, y=12)),
     ]
 
     blocks = [
