@@ -8,7 +8,7 @@ from typing import Any, Optional, Tuple
 
 import numpy as np
 
-from .base import Primitive2D
+from .base import Primitive2D, PrimitiveStyle
 from .point import Point
 
 EPS = 1e-9
@@ -40,11 +40,12 @@ class Line(Primitive2D):
         end: Point,
         line_type: LineType = LineType.Normal,
         id: int = -1,
+        style: PrimitiveStyle | None = None,
     ) -> None:
         self.start = start
         self.end = end
         self.line_type = line_type
-        super().__init__(id=id)
+        super().__init__(id=id, style=style)
 
     def __eq__(self, other):
         if not isinstance(other, Line):
@@ -142,13 +143,20 @@ class Line(Primitive2D):
 
     def to_json(self) -> dict[str, Any]:
         """Serialize this line to the project JSON format."""
-        return {
+        data = {
             "Line": {
                 "start": self.start.to_json(),
                 "end": self.end.to_json(),
                 "line type": self.line_type.value,
             }
         }
+        if self.style is not None:
+            data["Line"]["style"] = {
+                "layer": self.style.layer,
+                "color": self.style.color,
+                "category": self.style.category,
+            }
+        return data
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Line:
@@ -157,4 +165,14 @@ class Line(Primitive2D):
         start = Point.from_json(line_props["start"])
         end = Point.from_json(line_props["end"])
         line_type = LineType(line_props["line type"])
-        return Line(start=start, end=end, line_type=line_type)
+        style_data = line_props.get("style")
+        style = (
+            PrimitiveStyle(
+                layer=style_data.get("layer"),
+                color=style_data.get("color"),
+                category=style_data.get("category"),
+            )
+            if isinstance(style_data, dict)
+            else None
+        )
+        return Line(start=start, end=end, line_type=line_type, style=style)

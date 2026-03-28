@@ -5,16 +5,23 @@ from __future__ import annotations
 from typing import Any, override
 
 from . import Point, Primitive2D
+from .base import PrimitiveStyle
 
 
 class Block(Primitive2D):
     """Named block entity positioned at a single point in 2D space."""
 
-    def __init__(self, name: str, center: Point, id: int = -1) -> None:
+    def __init__(
+        self,
+        name: str,
+        center: Point,
+        id: int = -1,
+        style: PrimitiveStyle | None = None,
+    ) -> None:
         """Initialize a block with a display name and insertion position."""
         self._name: str = name
         self._center: Point = center
-        super().__init__(id=id)
+        super().__init__(id=id, style=style)
 
     @property
     def name(self) -> str:
@@ -29,7 +36,14 @@ class Block(Primitive2D):
     @override
     def to_json(self) -> dict[Any, Any]:
         """Serialize this block to the project JSON shape."""
-        return {"Block": {"name": self.name, "center": self.center.to_json()}}
+        data = {"Block": {"name": self.name, "center": self.center.to_json()}}
+        if self.style is not None:
+            data["Block"]["style"] = {
+                "layer": self.style.layer,
+                "color": self.style.color,
+                "category": self.style.category,
+            }
+        return data
 
     @override
     @classmethod
@@ -38,4 +52,14 @@ class Block(Primitive2D):
         block_props = data["Block"]
         name = str(block_props["name"])
         center = Point.from_json(block_props["center"])
-        return Block(name=name, center=center)
+        style_data = block_props.get("style")
+        style = (
+            PrimitiveStyle(
+                layer=style_data.get("layer"),
+                color=style_data.get("color"),
+                category=style_data.get("category"),
+            )
+            if isinstance(style_data, dict)
+            else None
+        )
+        return Block(name=name, center=center, style=style)

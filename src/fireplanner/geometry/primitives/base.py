@@ -1,16 +1,25 @@
 """Abstract base types for geometry primitives and JSON contracts."""
 
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import Any, Type, TypeVar
 
 T = TypeVar("T", bound="Primitive")
 
 
+@dataclass
+class PrimitiveStyle:
+    layer: str | None = None
+    color: str | None = None
+    category: str | None = None
+
+
 class Primitive(ABC):
     """Abstract base contract for serializable geometry primitives."""
 
-    def __init__(self, id: int = -1):
+    def __init__(self, id: int = -1, style: PrimitiveStyle | None = None):
         self._id = id
+        self._style = style
 
     @property
     def id(self):
@@ -20,6 +29,16 @@ class Primitive(ABC):
     @id.setter
     def id(self, value):
         self._id = value
+
+    @property
+    def style(self) -> PrimitiveStyle | None:
+        return self._style
+
+    @style.setter
+    def style(self, value: PrimitiveStyle | None):
+        if value is not None and not isinstance(value, PrimitiveStyle):
+            raise TypeError("style must be an instance of PrimitiveStyle or None")
+        self._style = value
 
     @abstractmethod
     def to_json(self) -> dict[Any, Any]:

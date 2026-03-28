@@ -8,7 +8,7 @@ from typing import override
 
 import numpy as np
 
-from .base import Primitive2D
+from .base import Primitive2D, PrimitiveStyle
 
 
 @dataclass(init=False)
@@ -19,11 +19,18 @@ class Point(Primitive2D):
     y: float
     z: float = 0.0
 
-    def __init__(self, x: float, y: float, z: float = 0.0, id: int = -1) -> None:
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        z: float = 0.0,
+        id: int = -1,
+        style: PrimitiveStyle | None = None,
+    ) -> None:
         self.x = x
         self.y = y
         self.z = z
-        super().__init__(id=id)
+        super().__init__(id=id, style=style)
 
     def distance(self, other: Point):
         """Return Euclidean distance to another point."""
@@ -47,6 +54,10 @@ class Point(Primitive2D):
             z=self.z - other.z,
         )
 
+    def __hash__(self) -> int:
+        """Allow points to be used as dictionary keys by coordinate identity."""
+        return hash((self.x, self.y, self.z))
+
     def array(self) -> np.ndarray:
         """Return point coordinates as a NumPy array `[x, y, z]`."""
         return np.array([self.x, self.y, self.z])
@@ -54,11 +65,35 @@ class Point(Primitive2D):
     @override
     def to_json(self) -> dict[str, str]:
         """Serialize this point to the project JSON format."""
-        return {"Point": f"{self.x}, {self.y}, {self.z}"}
+        data: dict[str, str | dict[str, str | None]] = {
+            "Point": f"{self.x}, {self.y}, {self.z}"
+        }
+        if self.style is not None:
+            data["style"] = {
+                "layer": self.style.layer,
+                "color": self.style.color,
+                "category": self.style.category,
+            }
+        return data
 
     @override
     @classmethod
     def from_json(cls, data: dict[str, str]) -> Point:
         """Build a point instance from the project JSON format."""
         point_data = [float(i) for i in data["Point"].split(",")]
-        return Point(x=point_data[0], y=point_data[1], z=point_data[2])
+        style_data = data.get("style")
+        style = (
+            PrimitiveStyle(
+                layer=style_data.get("layer"),
+                color=style_data.get("color"),
+                category=style_data.get("category"),
+            )
+            if isinstance(style_data, dict)
+            else None
+        )
+        return Point(
+            x=point_data[0],
+            y=point_data[1],
+            z=point_data[2],
+            style=style,
+        )
