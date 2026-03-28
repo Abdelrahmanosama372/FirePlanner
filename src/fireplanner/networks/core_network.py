@@ -33,6 +33,16 @@ class CoreNode:
     def find_intersection_points_with_nodes(self) -> dict[Point, CoreNode]:
         return self._intersection_points
 
+    def find_intersected_edges(self, intersection_point: Point) -> list[Line] | None:
+        if intersection_point not in self._intersection_points:
+            return None
+
+        return [
+            edge
+            for edge in self.edges
+            if edge.pass_through_point(intersection_point)
+        ]
+
     @property
     def edges(self) -> list[Line]:
         if self._edges is None:
