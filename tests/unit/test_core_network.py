@@ -172,22 +172,19 @@ def test_simple_network_keeps_deep_branch_structure(simple_core_network):
 
     assert root_node is not None
     assert root_node.line.id == 0
-    assert len(root_node.connected_nodes) == 3
+    assert len(root_node.connected_nodes) == 2
 
     l1_node = get_child(root_node, 1)
     l2_node = get_child(root_node, 2)
     l3_node = get_child(root_node, 3)
+    l4_node = get_child(root_node, 4)
 
     assert l1_node is not None
     assert l2_node is not None
-    assert l3_node is not None
+    assert l3_node is None
+    assert l4_node is None
     assert len(l1_node.connected_nodes) == 0
     assert len(l2_node.connected_nodes) == 0
-    assert len(l3_node.connected_nodes) == 1
-
-    l4_node = l3_node.connected_nodes[0]
-    assert l4_node.line.id == 4
-    assert len(l4_node.connected_nodes) == 0
 
 
 def test_simple_network_block_placement(simple_core_network):
@@ -198,18 +195,19 @@ def test_simple_network_block_placement(simple_core_network):
     l1_node = get_child(root_node, 1)
     l2_node = get_child(root_node, 2)
     l3_node = get_child(root_node, 3)
+    l4_node = get_child(root_node, 4)
 
     assert l1_node is not None
     assert l2_node is not None
-    assert l3_node is not None
-
-    l4_node = l3_node.connected_nodes[0]
+    assert l3_node is None
+    assert l4_node is None
 
     assert [block.id for block in root_node.blocks] == [0]
     assert [block.id for block in l1_node.blocks] == [1]
     assert [block.id for block in l2_node.blocks] == [2]
-    assert [block.id for block in l3_node.blocks] == [3]
-    assert [block.id for block in l4_node.blocks] == [4]
+    assert sorted(
+        [block.id for node in [root_node, l1_node, l2_node] for block in node.blocks]
+    ) == [0, 1, 2]
 
 
 def test_complex_network_keeps_deep_branch_structure(complex_core_network):
@@ -254,6 +252,33 @@ def test_complex_network_keeps_deep_branch_structure(complex_core_network):
 
     l14_node = get_child(l13_node, 14)
     assert l14_node is not None
+
+    assert len(root_node.connected_nodes) == 3
+    assert len(l1_node.connected_nodes) == 3
+    assert len(l2_node.connected_nodes) == 1
+    assert len(l3_node.connected_nodes) == 1
+    assert len(l4_node.connected_nodes) == 1
+    assert len(l5_node.connected_nodes) == 1
+    assert len(l6_node.connected_nodes) == 1
+    assert len(l7_node.connected_nodes) == 1
+    assert len(l8_node.connected_nodes) == 0
+    assert len(l9_node.connected_nodes) == 0
+    assert len(l10_node.connected_nodes) == 1
+    assert len(l11_node.connected_nodes) == 0
+    assert len(l12_node.connected_nodes) == 0
+    assert len(l13_node.connected_nodes) == 1
+    assert len(l14_node.connected_nodes) == 0
+
+    assert get_child(root_node, 7) is None
+    assert get_child(root_node, 8) is None
+    assert get_child(l1_node, 8) is None
+    assert get_child(l1_node, 9) is None
+    assert get_child(l2_node, 12) is None
+    assert get_child(l3_node, 10) is None
+    assert get_child(l4_node, 11) is None
+    assert get_child(l5_node, 13) is None
+    assert get_child(l6_node, 12) is None
+    assert get_child(l7_node, 14) is None
 
 
 def test_complex_network_block_placement(complex_core_network):
@@ -302,15 +327,15 @@ def test_complex_network_block_placement(complex_core_network):
     assert [block.id for block in root_node.blocks] == [0, 1]
     assert [block.id for block in l1_node.blocks] == [4]
     assert [block.id for block in l2_node.blocks] == [7]
-    assert [block.id for block in l3_node.blocks] == [2]
+    assert l3_node.blocks == []
     assert [block.id for block in l4_node.blocks] == [3]
     assert [block.id for block in l5_node.blocks] == [5]
-    assert [block.id for block in l6_node.blocks] == [6]
+    assert l6_node.blocks == []
     assert l7_node.blocks == []
     assert l8_node.blocks == []
     assert l9_node.blocks == []
     assert [block.id for block in l10_node.blocks] == [8]
-    assert [block.id for block in l11_node.blocks] == [9]
+    assert l11_node.blocks == []
     assert l12_node.blocks == []
     assert [block.id for block in l13_node.blocks] == [11]
     assert [block.id for block in l14_node.blocks] == [12]
@@ -339,12 +364,12 @@ def test_loop_network_keeps_mid_loop_structure(loop_core_network):
     l4_from_right = get_child(l3_from_bottom, 4)
     assert l4_from_right is not None
 
-    l6_from_right = get_child(l4_from_right, 6)
+    l6_from_right = get_child(l5_node, 6)
     assert l6_from_right is not None
 
     # Shared loop segments should be consumed only once and not reconstructed
     # from sibling branches.
-    assert l5_node.connected_nodes == []
+    assert l4_from_right.connected_nodes == []
 
 
 def test_loop_network_block_placement(loop_core_network):
@@ -367,7 +392,7 @@ def test_loop_network_block_placement(loop_core_network):
     l4_node = get_child(l3_node, 4)
     assert l4_node is not None
 
-    l6_node = get_child(l4_node, 6)
+    l6_node = get_child(l5_node, 6)
     assert l6_node is not None
 
     assert [block.id for block in root_node.blocks] == [0]
@@ -377,3 +402,18 @@ def test_loop_network_block_placement(loop_core_network):
     assert [block.id for block in l4_node.blocks] == [4]
     assert [block.id for block in l5_node.blocks] == [5]
     assert [block.id for block in l6_node.blocks] == [6]
+    assert sorted(
+        [
+            block.id
+            for node in [
+                root_node,
+                l1_node,
+                l2_node,
+                l3_node,
+                l4_node,
+                l5_node,
+                l6_node,
+            ]
+            for block in node.blocks
+        ]
+    ) == list(range(7))
