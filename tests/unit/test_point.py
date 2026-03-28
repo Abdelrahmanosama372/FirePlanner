@@ -1,7 +1,7 @@
 import numpy as np
 from math import isclose
 
-from fireplanner.geometry.primitives import Point
+from fireplanner.geometry.primitives import Point, PrimitiveStyle
 
 
 TOL = 1e-9
@@ -13,6 +13,16 @@ def test_point_construction():
     assert point.x == 1.5
     assert point.y == 2.5
     assert point.z == 3.5
+    assert point.style is None
+
+
+def test_point_style_setter_and_getter():
+    point = Point(x=1.0, y=2.0)
+    style = PrimitiveStyle(layer="A-WALL", color="red", category="annotation")
+
+    point.style = style
+
+    assert point.style == style
 
 
 def test_point_distance():
@@ -65,3 +75,20 @@ def test_point_from_json():
     point = Point.from_json(data)
 
     assert point == Point(x=1.0, y=2.0, z=3.0)
+
+
+def test_point_to_json_and_from_json_with_style():
+    style = PrimitiveStyle(layer="A-POINT", color="blue", category="marker")
+    point = Point(x=1.0, y=2.0, z=3.0, style=style)
+
+    data = point.to_json()
+
+    assert data == {
+        "Point": "1.0, 2.0, 3.0",
+        "style": {
+            "layer": "A-POINT",
+            "color": "blue",
+            "category": "marker",
+        },
+    }
+    assert Point.from_json(data).style == style

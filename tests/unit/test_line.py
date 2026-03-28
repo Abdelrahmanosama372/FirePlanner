@@ -1,5 +1,5 @@
 import pytest
-from fireplanner.geometry.primitives import Line, Point, LineType
+from fireplanner.geometry.primitives import Line, Point, LineType, PrimitiveStyle
 
 
 def test_line_construction():
@@ -11,6 +11,16 @@ def test_line_construction():
     assert line.start == start
     assert line.end == end
     assert line.line_type == LineType.Normal
+    assert line.style is None
+
+
+def test_line_style_setter_and_getter():
+    line = Line(start=Point(x=0, y=0), end=Point(x=10, y=0))
+    style = PrimitiveStyle(layer="A-LINE", color="green", category="pipe")
+
+    line.style = style
+
+    assert line.style == style
 
 
 def test_pass_through_point_on_line():
@@ -182,3 +192,29 @@ def test_line_from_json():
     assert line.end.z == 6.0
 
     assert line.line_type == LineType.CenterLine
+
+
+def test_line_to_json_and_from_json_with_style():
+    style = PrimitiveStyle(layer="A-LINE", color="yellow", category="route")
+    line = Line(
+        start=Point(x=1.0, y=2.0, z=3.0),
+        end=Point(x=4.0, y=5.0, z=6.0),
+        line_type=LineType.CenterLine,
+        style=style,
+    )
+
+    data = line.to_json()
+
+    assert data == {
+        "Line": {
+            "start": {"Point": "1.0, 2.0, 3.0"},
+            "end": {"Point": "4.0, 5.0, 6.0"},
+            "line type": str(LineType.CenterLine),
+            "style": {
+                "layer": "A-LINE",
+                "color": "yellow",
+                "category": "route",
+            },
+        }
+    }
+    assert Line.from_json(data).style == style
