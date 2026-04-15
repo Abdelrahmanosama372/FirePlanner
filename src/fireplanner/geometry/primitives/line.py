@@ -60,6 +60,34 @@ class Line(Primitive2D):
         """Swap the segment start and end points in place."""
         self.start, self.end = self.end, self.start
 
+    def split_at_unchecked(self, points: list[Point]) -> list[Line]:
+        """Split this line at ordered points that are assumed to lie on the segment."""
+        split_points = [self.start]
+
+        for point in points:
+            if point == split_points[-1]:
+                continue
+            split_points.append(point)
+
+        if split_points[-1] != self.end:
+            split_points.append(self.end)
+
+        split_lines: list[Line] = []
+        for index, (start, end) in enumerate(zip(split_points, split_points[1:]), start=1):
+            if start == end:
+                continue
+            split_lines.append(
+                Line(
+                    id=index,
+                    start=start,
+                    end=end,
+                    line_type=self.line_type,
+                    style=self.style,
+                )
+            )
+
+        return split_lines
+
     def pass_through_point(self, point: Point, tol: float = EPS) -> bool:
         """Return whether a point lies on this segment within tolerance."""
         P = point.array()
