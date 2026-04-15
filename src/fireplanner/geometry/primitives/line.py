@@ -56,6 +56,10 @@ class Line(Primitive2D):
             and self.line_type == other.line_type
         )
 
+    def swap_end_points(self) -> None:
+        """Swap the segment start and end points in place."""
+        self.start, self.end = self.end, self.start
+
     def pass_through_point(self, point: Point, tol: float = EPS) -> bool:
         """Return whether a point lies on this segment within tolerance."""
         P = point.array()
