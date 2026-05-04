@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import sqrt
+from math import sqrt, isclose
 from typing import override
 
 import numpy as np
@@ -54,13 +54,33 @@ class Point(Primitive2D):
             z=self.z - other.z,
         )
 
-    def __hash__(self) -> int:
+    def __eq__(self, other: Point):
+        return (
+            isclose(self.x, other.x, abs_tol=1e-6)
+            and isclose(self.y, other.y, abs_tol=1e-6)
+            and isclose(self.z, other.z, abs_tol=1e-6)
+        )
+
+    def __hash__(self):
         """Allow points to be used as dictionary keys by coordinate identity."""
-        return hash((self.x, self.y, self.z))
+        return hash(
+            (
+                round(self.x, 6),
+                round(self.y, 6),
+                round(self.z, 6),
+            )
+        )
 
     def array(self) -> np.ndarray:
         """Return point coordinates as a NumPy array `[x, y, z]`."""
         return np.array([self.x, self.y, self.z])
+
+    @override
+    def transform_2d(self, transform: "Transform2D") -> Primitive2D:
+        point_vec = self.array()
+        point_vec[-1] = 1
+        trans = np.dot(transform.transform, point_vec.reshape((3, 1)))
+        return Point(x=trans[0, 0], y=trans[1, 0])
 
     @override
     def to_json(self) -> dict[str, str]:

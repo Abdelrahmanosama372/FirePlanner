@@ -34,6 +34,10 @@ class Block(Primitive2D):
         return self._center
 
     @override
+    def transform_2d(self, transform: "Transform2D") -> Primitive2D:
+        return self._center.transform_2d()
+
+    @override
     def to_json(self) -> dict[Any, Any]:
         """Serialize this block to the project JSON shape."""
         data = {"Block": {"name": self.name, "center": self.center.to_json()}}

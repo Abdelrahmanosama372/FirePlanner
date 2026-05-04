@@ -24,6 +24,15 @@ class Arc(Primitive2D):
         super().__init__(id=id)
 
     @override
+    def transform_2d(self, transform: "Transform2D") -> Primitive2D:
+        start_trans = self.start.transform_2d(transform)
+        center_trans = self.center.transform_2d(transform)
+        return Arc(start=start_trans, center=center_trans, angle=self.angle)
+
+    def __hash__(self) -> int:
+        return hash(self.start) + hash(self.center)
+
+    @override
     def to_json(self) -> dict[Any, Any]:
         """Serialize this arc to the project JSON format."""
         return {
