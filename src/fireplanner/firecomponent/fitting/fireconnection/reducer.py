@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import override
 from ...base import (
     FireComponent,
@@ -8,7 +9,7 @@ from ...base import (
     SteelSpecs,
 )
 from . import FireConnection, SteelPortsNum
-from typing_extensions import final
+from typing import final, Any
 
 
 # todo: handle case if input diameters are of same size
@@ -38,6 +39,26 @@ class Reducer(FireComponent, FireConnection):
     @final
     def small_diameter(self) -> SteelDims:
         return self._small_diameter
+
+    @override
+    def to_json(self) -> dict[Any, Any]:
+        component_json = super().to_json()
+        component_json["diameter1"] = str(self._large_diameter.value)
+        component_json["diameter2"] = str(self._small_diameter.value)
+        return {"Reducer": component_json}
+
+    @classmethod
+    @override
+    def from_json(cls, data: dict[Any, Any]) -> Reducer:
+        reducer_data: dict[str, str] = data["Reducer"]
+        return Reducer(
+            diameter1=SteelDims(float(reducer_data["diameter1"])),
+            diameter2=SteelDims(float(reducer_data["diameter2"])),
+            material=SteelMaterial(reducer_data["material"]),
+            schedule=SteelSchedule(reducer_data["schedule"]),
+            specs=SteelSpecs(reducer_data["specs"]),
+            connection_type=SteelConnection(reducer_data["connection_type"]),
+        )
 
     @override
     def ports_number(self) -> SteelPortsNum:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import override, final, Any
 from .base import (
     FireComponent,
     SteelConnection,
@@ -6,7 +8,6 @@ from .base import (
     SteelSchedule,
     SteelSpecs,
 )
-from typing_extensions import final
 
 
 class Pipe(FireComponent):
@@ -26,3 +27,21 @@ class Pipe(FireComponent):
     @final
     def diameter(self) -> SteelDims:
         return self._diameter
+
+    @override
+    def to_json(self) -> dict[Any, Any]:
+        component_json = super().to_json()
+        component_json["diameter"] = str(self._diameter.value)
+        return {"Pipe": component_json}
+
+    @classmethod
+    @override
+    def from_json(cls, data: dict[Any, Any]) -> Pipe:
+        pipe_data: dict[str, str] = data["Pipe"]
+        return Pipe(
+            diameter=SteelDims(float(pipe_data["diameter"])),
+            material=SteelMaterial(pipe_data["material"]),
+            schedule=SteelSchedule(pipe_data["schedule"]),
+            specs=SteelSpecs(pipe_data["specs"]),
+            connection_type=SteelConnection(pipe_data["connection_type"]),
+        )

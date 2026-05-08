@@ -1,5 +1,5 @@
 from enum import StrEnum, Enum, auto
-from typing_extensions import final, Self
+from typing import final, Any, TypeVar
 from abc import ABC, abstractmethod
 
 
@@ -21,6 +21,7 @@ class SteelSpecs(StrEnum):
 class SteelConnection(StrEnum):
     Grooved = auto()
     Welded = auto()
+    Threaded = auto()
 
 
 class SteelDims(Enum):
@@ -37,6 +38,9 @@ class SteelDims(Enum):
     DIM_8_INCHES = 8.0
     DIM_10_INCHES = 10.0
     DIM_12_INCHES = 12.0
+
+
+T = TypeVar("T", bound="FireComponent")
 
 
 class FireComponent(ABC):
@@ -74,7 +78,7 @@ class FireComponent(ABC):
         return self._connection_type
 
     @abstractmethod
-    def serialize(self) -> dict[str, str]:
+    def to_json(self) -> dict[Any, Any]:
         return {
             "material": self.material.value,
             "schedule": self.schedule.value,
@@ -82,11 +86,7 @@ class FireComponent(ABC):
             "connection_type": self.connection_type.value,
         }
 
-    # todo: handle exception of incorrect property assignment or incorrect json keys
     @abstractmethod
-    def deserialize(self, data: dict[str, str]) -> Self:
-        material = SteelMaterial(data["material"])
-        schedule = SteelSchedule(data["schedule"])
-        specs = SteelSpecs(data["specs"])
-        connection_type = SteelConnection(data["connection_type"])
-        return FireComponent(material, schedule, specs, connection_type)
+    @classmethod
+    def from_json(cls: type[T], data: dict[Any, Any]) -> T:
+        pass
