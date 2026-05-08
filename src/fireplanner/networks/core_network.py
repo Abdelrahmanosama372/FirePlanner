@@ -1,179 +1,350 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+from typing import Any
+
 from ..geometry.primitives import Block, Line, Point
+from .junction import Junction, JunctionType
+
+
+@dataclass
+class CoreNetworkConfig:
+    sprinkler_block_data: dict[str, dict[str, Any]] = field(default_factory=dict)
+    sprinkler_blocks: list[Block] = field(default_factory=list)
+    lines: list[Line] = field(default_factory=list)
+    root_line: Line | None = None
+
+    def ordered_lines(self) -> list[Line]:
+        if self.root_line is None:
+            return list(self.lines)
+
+        return [self.root_line] + [
+            line for line in self.lines if line.id != self.root_line.id
+        ]
 
 
 class CoreNode:
     def __init__(self, line: Line):
-        self._line: Line = line
-        self._blocks: list[Block] = []
-        self._nodes: list[CoreNode] = []
-        self._intersection_points: dict[Point, CoreNode] = {}
-        self._edges: list[Line] | None = None
+        self._edge = line
+        self._intersection_point: Point | None = None
+        self._connected_nodes: list[CoreNode] = []
+
+    @property
+    def edge(self) -> Line:
+        return self._edge
 
     @property
     def line(self) -> Line:
-        return self._line
-
-    @property
-    def blocks(self) -> list[Block]:
-        return self._blocks
-
-    @property
-    def connected_nodes(self) -> list[CoreNode]:
-        return self._nodes
-
-    @property
-    def intersection_points(self) -> dict[Point, CoreNode]:
-        return self._intersection_points
-
-    def find_intersection_points(self) -> list[Point]:
-        return list(self._intersection_points.keys())
-
-    def find_intersection_points_with_nodes(self) -> dict[Point, CoreNode]:
-        return self._intersection_points
-
-    def find_intersected_edges(self, intersection_point: Point) -> list[Line] | None:
-        if intersection_point not in self._intersection_points:
-            return None
-
-        return [
-            edge
-            for edge in self.edges
-            if edge.pass_through_point(intersection_point)
-        ]
+        return self._edge
 
     @property
     def edges(self) -> list[Line]:
-        if self._edges is None:
-            self._edges = self._construct_edges()
-        return self._edges
+        return [self._edge]
 
-    def add_block(self, block: Block) -> None:
-        if isinstance(block, Block):
-            self._blocks.append(block)
-            return
-        raise TypeError("block must be an instance of Block")
+    @property
+    def intersection_point(self) -> Point | None:
+        return self._intersection_point
 
-    def add_node(self, node: CoreNode, intersection_point: Point) -> None:
-        if not isinstance(node, CoreNode):
-            raise TypeError("node must be an instance of CoreNode")
-        if not isinstance(intersection_point, Point):
-            raise TypeError("intersection_point must be an instance of Point")
+    def set_intersection_point(self, point: Point) -> None:
+        self._intersection_point = point
 
-        self._nodes.append(node)
-        self._intersection_points[intersection_point] = node
-        self._edges = None
+    @property
+    def connected_nodes(self) -> list[CoreNode]:
+        return self._connected_nodes
 
-    def _construct_edges(self) -> list[Line]:
-        sorted_points = sorted(
-            self.find_intersection_points(),
-            key=lambda point: self.line.start.distance(point),
-        )
+    def add_node(self, node: CoreNode) -> None:
+        self._connected_nodes.append(node)
 
-        edge_points = [self.line.start]
-        for point in sorted_points:
-            if point == edge_points[-1]:
-                continue
-            edge_points.append(point)
-        if edge_points[-1] != self.line.end:
-            edge_points.append(self.line.end)
+    def get_connected_nodes_number(self) -> int:
+        return len(self._connected_nodes)
 
-        edges: list[Line] = []
-        for edge_id, (start, end) in enumerate(
-            zip(edge_points, edge_points[1:]),
-            start=1,
-        ):
-            if start == end:
-                continue
-            edges.append(
-                Line(
-                    id=edge_id,
-                    start=start,
-                    end=end,
-                    line_type=self.line.line_type,
-                )
-            )
+    def get_connected_nodes(self) -> list[CoreNode]:
+        return self._connected_nodes
 
-        if not edges:
-            return [
-                Line(
-                    id=1,
-                    start=self.line.start,
-                    end=self.line.end,
-                    line_type=self.line.line_type,
-                )
-            ]
-
-        return edges
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "CoreNode": {
+                "id": self.edge.id,
+                "edge": self.edge.to_json(),
+                "intersection_point": (
+                    self.intersection_point.to_json()
+                    if self.intersection_point is not None
+                    else None
+                ),
+                "connected_nodes": [
+                    connected_node.to_json() for connected_node in self.connected_nodes
+                ],
+            }
+        }
 
 
 class CoreNetwork:
-    def __init__(self, lines: list[Line], blocks: list[Block]):
-        self._root: CoreNode | None = self._create_network(lines, blocks)
+    def __init__(
+        self,
+        sprinkles: list[object] | None = None,
+        lines: list[Line] | None = None,
+        blocks: list[object] | None = None,
+    ):
+        if sprinkles is None:
+            sprinkles = []
+
+        if lines is None:
+            lines = []
+
+        self._sprinkles = list(sprinkles)
+        self._lines = list(lines)
+        self._root: CoreNode | None = None
+        self._edge_sprinkler_map: dict[int, int] = {}
+        self._junctions: dict[int, Junction] = {}
+        self._next_created_line_id = 1
+        self._next_junction_id = 1
+
+        if not self._lines:
+            return
+
+        root_line = self._lines[0]
+        remaining_lines = self._lines[1:]
+        self._preprocessing(root_line, remaining_lines)
+        self._root = self._create_network(root_line, remaining_lines)
+        self.create_sprinkler_map()
+
+    @property
+    def sprinkles(self) -> list[object]:
+        return self._sprinkles
 
     @property
     def root(self) -> CoreNode | None:
         return self._root
 
-    def _create_network(
-        self, lines: list[Line], blocks: list[Block]
-    ) -> CoreNode | None:
-        if not lines:
-            return None
+    def find_edge_sprinkler_count(self, edge_id: int) -> int | None:
+        return self._edge_sprinkler_map.get(edge_id)
 
-        root_line = lines[0]
-        remaining_lines = lines[1:]
-        return self._create_network_recursive(root_line, remaining_lines, blocks)
+    def get_edge_junction_ids(self) -> dict[int, tuple[int | None, int | None]]:
+        junction_origin_id_map = {
+            junction.origin: junction.id for junction in self.get_junctions().values()
+        }
+        return {
+            edge_id: (
+                junction_origin_id_map.get(line.start),
+                junction_origin_id_map.get(line.end),
+            )
+            for edge_id, line in self.get_lines_with_edge_ids().items()
+        }
+
+    def _preprocessing(
+        self,
+        root_line: Line,
+        lines: list[Line],
+        visited_line_ids: set[int] | None = None,
+    ) -> list[Line]:
+        if visited_line_ids is None:
+            visited_line_ids = {root_line.id}
+
+        intersected_lines: list[Line] = []
+        for line in lines:
+            if line.id in visited_line_ids:
+                continue
+
+            intersects, _ = root_line.intersects_line_2D(line)
+            if not intersects:
+                continue
+
+            if root_line.pass_through_point(line.end):
+                line.swap_end_points()
+
+            intersected_lines.append(line)
+
+        processed_lines: list[Line] = []
+        for line in intersected_lines:
+            visited_line_ids.add(line.id)
+            processed_lines.append(line)
+            processed_lines.extend(self._preprocessing(line, lines, visited_line_ids))
+
+        return processed_lines
+
+    def _create_network(self, root_line: Line, lines: list[Line]) -> CoreNode:
+        self._next_created_line_id = 1
+        return self._create_network_recursive(root_line, list(lines), {root_line.id})
 
     def _create_network_recursive(
-        self, root_line: Line, lines: list[Line], blocks: list[Block]
+        self,
+        root_line: Line,
+        lines: list[Line],
+        visited_line_ids: set[int],
     ) -> CoreNode:
-        """
-        Build a network node for `root_line`.
+        intersected_lines: list[tuple[Line, Point]] = []
+        split_points: list[Point] = []
 
-        - Create a `CoreNode` for the current line.
-        - Attach every block that lies on the current line.
-        - Find child lines by checking intersections with the current line.
-        - Recursively build child nodes using a shared mutable pool of
-          remaining unvisited lines so descendants are not reconstructed by
-          sibling branches.
-        """
+        for sprinkle in self._sprinkles:
+            if root_line.pass_through_point(sprinkle.center):
+                split_points.append(sprinkle.center)
 
-        node = CoreNode(root_line)
-
-        remaining_blocks: list[Block] = []
-        for block in blocks:
-            if root_line.pass_through_point(block.center):
-                node.add_block(block)
-            else:
-                remaining_blocks.append(block)
-
-        child_lines: list[tuple[Line, Point]] = []
-        next_remaining_lines: list[Line] = []
         for line in lines:
+            if line.id in visited_line_ids:
+                continue
+
             intersects, intersection_point = root_line.intersects_line_2D(line)
-            if intersects:
-                if intersection_point is None:
-                    continue
-                child_lines.append((line, intersection_point))
-            else:
-                next_remaining_lines.append(line)
+            if not intersects or intersection_point is None:
+                continue
 
-        # Remove direct children from the shared remaining-lines pool before
-        # recursing so each branch consumes from the same unvisited set.
-        lines[:] = next_remaining_lines
+            intersected_lines.append((line, intersection_point))
+            split_points.append(intersection_point)
 
-        for child_line, intersection_point in child_lines:
-            child_node = self._create_network_recursive(
-                child_line,
-                lines,
-                remaining_blocks,
+        sorted_split_points = sorted(
+            split_points,
+            key=lambda point: root_line.start.distance(point),
+        )
+
+        sorted_intersected_lines = sorted(
+            intersected_lines,
+            key=lambda item: root_line.start.distance(item[1]),
+        )
+
+        split_lines = root_line.split_at_unchecked(sorted_split_points)
+        if not split_lines:
+            split_lines = [root_line]
+
+        for split_line in split_lines:
+            split_line.id = self._next_created_line_id
+            self._next_created_line_id += 1
+
+        root_node = CoreNode(split_lines[0])
+        segment_nodes = [root_node]
+        previous_node = root_node
+
+        for split_line in split_lines[1:]:
+            node = CoreNode(split_line)
+            node.set_intersection_point(split_line.start)
+            previous_node.add_node(node)
+            segment_nodes.append(node)
+            previous_node = node
+
+        for line, intersection_point in sorted_intersected_lines:
+            visited_line_ids.add(line.id)
+            child_node = self._create_network_recursive(line, lines, visited_line_ids)
+            child_node.set_intersection_point(intersection_point)
+
+            parent_node = next(
+                (node for node in segment_nodes if node.edge.end == intersection_point),
+                segment_nodes[-1],
             )
-            used_block_ids = {block.id for block in child_node.blocks}
-            remaining_blocks = [
-                block for block in remaining_blocks if block.id not in used_block_ids
-            ]
-            node.add_node(child_node, intersection_point)
+            parent_node.add_node(child_node)
 
-        return node
+        return root_node
+
+    def create_sprinkler_map(self) -> dict[int, int]:
+        self._edge_sprinkler_map = {}
+        if self.root is None:
+            return self._edge_sprinkler_map
+
+        self._create_sprinkler_map_recursive(self.root)
+        return self._edge_sprinkler_map
+
+    def _create_sprinkler_map_recursive(self, core_node: CoreNode) -> int:
+        connected_nodes_sprinklers = sum(
+            self._create_sprinkler_map_recursive(connected_node)
+            for connected_node in core_node.connected_nodes
+        )
+
+        current_edge_sprinklers = int(
+            any(sprinkle.center == core_node.edge.end for sprinkle in self.sprinkles)
+        )
+
+        total_sprinklers = current_edge_sprinklers + connected_nodes_sprinklers
+        self._edge_sprinkler_map[core_node.edge.id] = total_sprinklers
+        return total_sprinklers
+
+    def get_junctions(self) -> dict[int, Junction]:
+        if self._junctions:
+            return self._junctions
+        if self.root is None:
+            return self._junctions
+
+        self._junctions = {}
+        self._next_junction_id = 1
+        self._get_junctions_recursive(self.root)
+        return self._junctions
+
+    def _get_junctions_recursive(self, core_node: CoreNode) -> None:
+        if core_node.connected_nodes:
+            # nodes are connected from start point
+            # root node has no intersection_point since nothing connects to it from top
+            intersection_point = (
+                core_node.connected_nodes[0].intersection_point or core_node.edge.end
+            )
+            connected_edges_ids = [core_node.edge.id] + [
+                connected_node.edge.id for connected_node in core_node.connected_nodes
+            ]
+
+            if len(connected_edges_ids) == 2:
+                junction_type: JunctionType | None = JunctionType.TWO_WAY
+            elif len(connected_edges_ids) == 3:
+                junction_type = JunctionType.THREE_WAY
+            else:
+                junction_type = None
+
+            junction = Junction(
+                id=self._next_junction_id,
+                origin=intersection_point,
+                junction_type=junction_type,
+                connected_edges_ids=connected_edges_ids,
+                angle=(
+                    core_node.edge.angle_to(core_node.connected_nodes[0].edge)
+                    if junction_type == JunctionType.TWO_WAY
+                    else None
+                ),
+                has_sprinkler=any(
+                    sprinkle.center == intersection_point for sprinkle in self.sprinkles
+                ),
+            )
+            self._junctions[junction.id] = junction
+            self._next_junction_id += 1
+
+        for connected_node in core_node.connected_nodes:
+            self._get_junctions_recursive(connected_node)
+
+    def get_edges_ids(self) -> list[int]:
+        if self.root is None:
+            return []
+
+        edges_ids: list[int] = []
+        self._get_edges_ids_recursive(self.root, edges_ids)
+        return edges_ids
+
+    def _get_edges_ids_recursive(
+        self,
+        core_node: CoreNode,
+        edges_ids: list[int],
+    ) -> None:
+        edges_ids.append(core_node.edge.id)
+        for connected_node in core_node.connected_nodes:
+            self._get_edges_ids_recursive(connected_node, edges_ids)
+
+    def get_lines_with_edge_ids(self) -> dict[int, Line]:
+        if self.root is None:
+            return {}
+
+        edge_id_line_map: dict[int, Line] = {}
+        self._get_lines_with_edge_ids_recursive(self.root, edge_id_line_map)
+        return edge_id_line_map
+
+    def _get_lines_with_edge_ids_recursive(
+        self,
+        core_node: CoreNode,
+        edge_id_line_map: dict[int, Line],
+    ) -> None:
+        edge_id_line_map[core_node.edge.id] = core_node.edge
+        for connected_node in core_node.connected_nodes:
+            self._get_lines_with_edge_ids_recursive(
+                connected_node,
+                edge_id_line_map,
+            )
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "CoreNetwork": {
+                "sprinkles": [sprinkle.to_json() for sprinkle in self.sprinkles],
+                "lines": [line.to_json() for line in self._lines],
+                "root": self.root.to_json() if self.root is not None else None,
+            }
+        }
