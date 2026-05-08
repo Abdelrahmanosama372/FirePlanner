@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Optional, Tuple
+from math import acos, atan2, degrees, sqrt, cos, sin
+from tracemalloc import start
+from typing import Any, Optional, Tuple, override
 
 import numpy as np
 
@@ -17,6 +19,11 @@ EPS = 1e-9
 def cross_2d(ax: float, ay: float, bx: float, by: float) -> float:
     """Return the result of the 2D cross product."""
     return ax * by - ay * bx
+
+
+def dot_2d(ax: float, ay: float, bx: float, by: float) -> float:
+    """Return the result of the 2D dot product."""
+    return ax * bx + ay * by
 
 
 class LineType(StrEnum):
@@ -73,7 +80,9 @@ class Line(Primitive2D):
             split_points.append(self.end)
 
         split_lines: list[Line] = []
-        for index, (start, end) in enumerate(zip(split_points, split_points[1:]), start=1):
+        for index, (start, end) in enumerate(
+            zip(split_points, split_points[1:]), start=1
+        ):
             if start == end:
                 continue
             split_lines.append(
@@ -87,6 +96,28 @@ class Line(Primitive2D):
             )
 
         return split_lines
+
+    def angle_to(self, line: Line) -> float:
+        """Return the angle in degrees between this line and another."""
+        first_vector = (
+            self.end.x - self.start.x,
+            self.end.y - self.start.y,
+        )
+        second_vector = (
+            line.end.x - line.start.x,
+            line.end.y - line.start.y,
+        )
+
+        dot_product = dot_2d(
+            first_vector[0],
+            first_vector[1],
+            second_vector[0],
+            second_vector[1],
+        )
+        first_norm = sqrt(first_vector[0] ** 2 + first_vector[1] ** 2)
+        second_norm = sqrt(second_vector[0] ** 2 + second_vector[1] ** 2)
+        cosine = max(-1.0, min(1.0, dot_product / (first_norm * second_norm)))
+        return degrees(acos(cosine))
 
     def pass_through_point(self, point: Point, tol: float = EPS) -> bool:
         """Return whether a point lies on this segment within tolerance."""
@@ -173,6 +204,29 @@ class Line(Primitive2D):
 
         return False, None
 
+    def direction(self) -> float:
+        dx = self.end.x - self.start.x
+        dy = self.end.y - self.start.y
+        return atan2(dy, dx)
+
+    def point_from(self, point: Point, offset: float):
+        theta = self.direction()
+        return Point(point.x + offset * cos(theta), point.y + offset * sin(theta))
+
+    def point_from_start(self, offset: float):
+        return self.point_from(self.start, offset)
+
+    def point_from_end(self, offset: float):
+        # move backwards from end
+        return self.point_from(self.end, -offset)
+
+    @override
+    def transform_2d(self, transform: "Transform2D") -> Primitive2D:
+        start_trans = self.start.transform_2d(transform)
+        end_trans = self.end.transform_2d(transform)
+        return Line(start=start_trans, end=end_trans, line_type=self.line_type)
+
+    @override
     def to_json(self) -> dict[str, Any]:
         """Serialize this line to the project JSON format."""
         data = {
@@ -189,6 +243,10 @@ class Line(Primitive2D):
                 "category": self.style.category,
             }
         return data
+
+    def __hash__(self) -> int:
+        """Allow points to be used as dictionary keys by coordinate identity."""
+        return hash(self.start) + hash(self.end)
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Line:
