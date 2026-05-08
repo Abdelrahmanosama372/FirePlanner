@@ -1,7 +1,11 @@
 from __future__ import annotations
+from abc import abstractmethod
 from typing import override
+
+from fireplanner.standards.steel_dim import steel_dim_table
 from .geometric_component import GeometricComponent
-from ..primitives import Point, Primitive2D, Primitive3D
+from fireplanner.geometry.primitives.transform import Transform2D
+from ..primitives import Point, Primitive2D, Arc, Line
 from fireplanner.firecomponent import Elbow
 from fireplanner.standards import elbow_90_lr_center_to_end
 
@@ -12,17 +16,43 @@ class GeometricElbow(GeometricComponent):
     ) -> None:
         self._diameter = elbow.diameter
         self._center_to_end: float = elbow_90_lr_center_to_end(self._diameter)
+        self._angle = elbow.angle
         super().__init__(start, end)
 
-    @override
-    def get_primitives_2d(self) -> list[Primitive2D]: ...
+    @property
+    def center_to_end(self):
+        return self._center_to_end
 
     @override
-    def get_primitives_3d(self) -> list[Primitive3D]: ...
+    def _local_primitives_2d(self) -> list[Primitive2D]:
+        r = steel_dim_table[self._diameter] / 2.0
 
-    @override
-    def to_json(self) -> str: ...
+        center = Point(x=0.0, y=0.0)
 
-    @classmethod
-    @override
-    def from_json(cls, data: str) -> GeometricElbow: ...
+        # Start points of the two arc segments
+        # (assuming a 90° elbow from horizontal to vertical)
+        start_out = Point(x=self._center_to_end + r, y=0.0)
+        start_in = Point(x=self._center_to_end - r, y=0.0)
+
+        inner_arc = Arc(
+            start=start_in,
+            center=center,
+            angle=self._angle,
+        )
+
+        outer_arc = Arc(
+            start=start_out,
+            center=center,
+            angle=self._angle,
+        )
+
+        vertical_line = Line(
+            start=Point(x=0, y=self._center_to_end - r),
+            end=Point(x=0, y=self._center_to_end + r),
+        )
+        horizontal_line = Line(
+            start=Point(x=self._center_to_end - r, y=0),
+            end=Point(x=self._center_to_end + r, y=0),
+        )
+
+        return [inner_arc, outer_arc, vertical_line, horizontal_line]

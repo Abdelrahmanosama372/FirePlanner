@@ -1,3 +1,0 @@
-
-class UndefinedGeometry(Exception):
-    pass

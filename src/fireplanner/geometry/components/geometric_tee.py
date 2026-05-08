@@ -1,29 +1,62 @@
 from __future__ import annotations
 from typing import Any, List, override
+
+from fireplanner.geometry.primitives.transform import Transform2D
 from .geometric_component import GeometricComponent
-from ..primitives import Point
+from ..primitives import Point, Line
 from fireplanner.firecomponent import Tee
-from fireplanner.standards import tee_center_dims
+from fireplanner.standards import tee_center_dims, steel_dim_table
 
 
 class GeometricTee(GeometricComponent):
-    def __init__(self, tee: Tee, start: Point | None = None, end:Point | None = None) -> None:
-        self._run_diameter = tee.run_diameter 
-        self._branch_diameter = tee.branch_diameter 
-        self._run_center_to_end, self._branch_center_to_end = tee_center_dims[(self._run_diameter, self._branch_diameter)]
+    def __init__(
+        self, tee: Tee, start: Point | None = None, end: Point | None = None
+    ) -> None:
+        self._run_diameter = tee.run_diameter
+        self._branch_diameter = tee.branch_diameter
+        self._run_center_to_end, self._branch_center_to_end = tee_center_dims[
+            (self._run_diameter, self._branch_diameter)
+        ]
         super().__init__(start, end)
 
-    def get_primitives_2d(self) -> List[Any]:
-        ...
+    @property
+    def run_diameter(self):
+        return self._run_diameter
 
-    def get_primitives_3d(self) -> List[Any]:
-        ...
-    
+    @property
+    def branch_diameter(self):
+        return self._branch_diameter
+
+    @property
+    def run_center_to_end(self):
+        return self._run_center_to_end
+
+    @property
+    def branch_center_to_end(self):
+        return self._branch_center_to_end
+
     @override
-    def to_json(self) -> str:
-        ... 
- 
-    @classmethod  
-    def from_json(cls, data: str) -> GeometricTee:
-        ...
-    
+    def _local_primitives_2d(self) -> list[Primitive2D]:
+        R = self.run_center_to_end
+        B = self.branch_center_to_end
+
+        rw = steel_dim_table[self.run_diameter] / 2.0
+        bw = steel_dim_table[self.branch_diameter] / 2.0
+
+        run_lines = [
+            Line(start=Point(x=-R, y=-rw), end=Point(x=R, y=-rw)),  # bottom
+            Line(start=Point(x=R, y=-rw), end=Point(x=R, y=rw)),  # right
+            Line(start=Point(x=-R, y=rw), end=Point(x=-bw, y=rw)),  # top left
+            Line(start=Point(x=bw, y=rw), end=Point(x=R, y=rw)),  # top right
+            Line(start=Point(x=-R, y=rw), end=Point(x=-R, y=-rw)),  # left
+        ]
+
+        branch_lines = [
+            Line(start=Point(x=-bw, y=B), end=Point(x=bw, y=B)),  # bottom
+            Line(start=Point(x=bw, y=B), end=Point(x=bw, y=rw)),  # right
+            Line(start=Point(x=-bw, y=B), end=Point(x=-bw, y=rw)),  # left
+            Line(start=Point(x=0, y=0), end=Point(x=bw, y=rw)),  # center right
+            Line(start=Point(x=0, y=0), end=Point(x=-bw, y=rw)),  # center left
+        ]
+
+        return run_lines + branch_lines
