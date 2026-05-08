@@ -1,5 +1,6 @@
 from fireplanner.firecomponent.base import SteelDims
 
+# fmt: off
 
 def elbow_90_lr_center_to_end(dim: SteelDims) -> float:
     return round(dim.value * 1.5 * 25.4)
