@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from math import atan2
+from fnmatch import translate
+from math import atan2, isclose
 
 import numpy as np
 from numpy.typing import NDArray
@@ -27,6 +28,10 @@ class Transform2D:
     def angle(self) -> float:
         """Return the rotation angle in radians."""
         return self._rotation
+
+    @angle.setter
+    def angle(self, value: float):
+        self._rotation = value
 
     @property
     def transform(self) -> NDArray[np.float64]:
@@ -64,6 +69,9 @@ class Transform2D:
         """Compose this transform with another transform using matrix product."""
         composed = self.transform @ other.transform
         return Transform2D.from_array(composed)
+
+    def __eq__(self, other: Transform2D) -> bool:
+        return self._origin.__eq__(other.origin) and isclose(self.angle, other.angle)
 
     @staticmethod
     def from_array(transform: NDArray[np.float64]) -> Transform2D:

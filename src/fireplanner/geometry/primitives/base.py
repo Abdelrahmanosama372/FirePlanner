@@ -1,5 +1,6 @@
 """Abstract base types for geometry primitives and JSON contracts."""
 
+from __future__ import annotations
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import Any, Type, TypeVar
@@ -39,6 +40,10 @@ class Primitive(ABC):
         if value is not None and not isinstance(value, PrimitiveStyle):
             raise TypeError("style must be an instance of PrimitiveStyle or None")
         self._style = value
+
+    @abstractmethod
+    def transform_2d(self, transform: "Transform2D") -> Primitive2D:
+        pass
 
     @abstractmethod
     def to_json(self) -> dict[Any, Any]:
