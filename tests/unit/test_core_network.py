@@ -1,7 +1,7 @@
 import pytest
 
 from fireplanner.geometry.primitives import Line
-from fireplanner.networks.core_network import CoreNetwork, FlowRoute
+from fireplanner.networks.core_network import CoreNetwork, CoreNetworkConfig, FlowRoute
 from fireplanner.networks.junction import JunctionType
 from tests.unit.core_network import (
     build_complex_network_core_network,
@@ -110,7 +110,7 @@ def test_preprocessing_orients_fixture_lines(
 ):
     lines = build_lines()
     blocks = build_blocks()
-    network = CoreNetwork(sprinkles=blocks, lines=[])
+    network = CoreNetwork(config=CoreNetworkConfig(sprinkler_blocks=blocks, lines=[]))
 
     processed_lines = network._preprocessing(lines[0], lines[1:])
 

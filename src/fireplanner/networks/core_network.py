@@ -86,28 +86,17 @@ class CoreNode:
 
 
 class CoreNetwork:
-    def __init__(
-        self,
-        sprinkles: list[object] | None = None,
-        lines: list[Line] | None = None,
-        blocks: list[object] | None = None,
-        root_flow_route: FlowRoute = FlowRoute.CONTINUATION,
-    ):
-        if sprinkles is None:
-            sprinkles = []
-
-        if lines is None:
-            lines = []
-
-        self._sprinkles = list(sprinkles)
-        self._lines = list(lines)
+    def __init__(self, config: CoreNetworkConfig | None = None):
+        self._config = config or CoreNetworkConfig()
+        self._sprinkles = list(self._config.sprinkler_blocks)
+        self._lines = list(self._config.ordered_lines())
         self._root: CoreNode | None = None
         self._edge_sprinkler_map: dict[int, int] = {}
         self._junctions: dict[int, Junction] = {}
         self._edge_flow_route_map: dict[int, FlowRoute] = {}
         self._next_created_line_id = 1
         self._next_junction_id = 1
-        self._root_flow_route = root_flow_route
+        self._root_flow_route = self._config.root_flow_route
 
         if not self._lines:
             return

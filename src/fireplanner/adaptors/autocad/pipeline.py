@@ -42,11 +42,7 @@ class Pipeline:
 
         results: list[NetworkPipelineResult] = []
         for core_network_config in core_network_configs:
-            core_network = CoreNetwork(
-                sprinkles=core_network_config.sprinkler_blocks,
-                lines=core_network_config.ordered_lines(),
-                root_flow_route=core_network_config.root_flow_route,
-            )
+            core_network = CoreNetwork(config=core_network_config)
             model_network = ModelNetwork(
                 core_network=core_network,
                 config=model_network_config,

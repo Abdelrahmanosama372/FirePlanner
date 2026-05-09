@@ -8,7 +8,7 @@ from fireplanner.firecomponent import (
 )
 from math import pi
 from fireplanner.geometry.primitives import Line, Point, Block
-from fireplanner.networks import CoreNetwork, GeometryNetwork, ModelNetwork
+from fireplanner.networks import CoreNetwork, CoreNetworkConfig, GeometryNetwork, ModelNetwork
 from fireplanner.networks.junction import JunctionType
 
 
@@ -42,7 +42,7 @@ def build_test_network() -> tuple[list[Line], list[Block]]:
 
 def test_core_network_construction():
     lines, blocks = build_test_network()
-    core_network = CoreNetwork(lines=lines, sprinkles=blocks)
+    core_network = CoreNetwork(config=CoreNetworkConfig(lines=lines, sprinkler_blocks=blocks))
 
     assert core_network.get_edges_ids() == [
         1,
@@ -146,7 +146,7 @@ def test_core_network_construction():
 
 def test_model_network_construction():
     lines, blocks = build_test_network()
-    core_network = CoreNetwork(lines=lines, sprinkles=blocks)
+    core_network = CoreNetwork(config=CoreNetworkConfig(lines=lines, sprinkler_blocks=blocks))
     # using model network default config (light hazard + auto compute pipe dimensions)
     model_network = ModelNetwork(core_network)
 
@@ -427,7 +427,7 @@ def test_model_network_construction():
 
 def test_geometry_network_construction():
     lines, blocks = build_test_network()
-    core_network = CoreNetwork(lines=lines, sprinkles=blocks)
+    core_network = CoreNetwork(config=CoreNetworkConfig(lines=lines, sprinkler_blocks=blocks))
     model_network = ModelNetwork(core_network)
     geometry_network = GeometryNetwork(core_network, model_network)
 

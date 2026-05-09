@@ -1,7 +1,7 @@
 import pytest
 
 from fireplanner.geometry.primitives import Block, Line, Point
-from fireplanner.networks.core_network import CoreNetwork
+from fireplanner.networks.core_network import CoreNetwork, CoreNetworkConfig
 
 
 def build_complex_network_lines() -> list[Line]:
@@ -44,8 +44,10 @@ def build_complex_network_blocks() -> list[Block]:
 
 def build_complex_network_core_network() -> CoreNetwork:
     return CoreNetwork(
-        sprinkles=build_complex_network_blocks(),
-        lines=build_complex_network_lines(),
+        config=CoreNetworkConfig(
+            sprinkler_blocks=build_complex_network_blocks(),
+            lines=build_complex_network_lines(),
+        )
     )
 
 
