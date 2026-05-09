@@ -17,6 +17,10 @@ class GeometricPipe(GeometricComponent):
         super().__init__(start, end)
 
     @property
+    def diameter(self):
+        return self._diameter
+
+    @property
     def length(self):
         if not (self._start and self._end):
             raise ValueError(
