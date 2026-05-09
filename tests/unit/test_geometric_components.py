@@ -19,7 +19,6 @@ from fireplanner.geometry.components import (
     GeometricElbow,
     GeometricTee,
     GeometricReducer,
-    GeometricComponent,
 )
 
 
@@ -80,33 +79,33 @@ def geometric_reducer():
         (
             Transform2D(Point(x=3, y=3), radians(90)),
             {
-                Line(start=Point(x=-13.7, y=-35), end=Point(x=-13.7, y=41)),  # top
+                Line(
+                    start=Point(x=-13.7, y=-35), end=Point(x=-13.7, y=-13.7)
+                ),  # top left
+                Line(
+                    start=Point(x=-13.7, y=19.7), end=Point(x=-13.7, y=41)
+                ),  # top right
                 Line(
                     start=Point(x=19.7, y=41.0), end=Point(x=-13.7, y=41.0)
                 ),  # right run
                 Line(
                     start=Point(x=-13.7, y=-35), end=Point(x=19.7, y=-35.0)
                 ),  # left run
+                Line(start=Point(x=19.7, y=-35), end=Point(x=19.7, y=41)),  # bottom
                 Line(
-                    start=Point(x=19.7, y=-35), end=Point(x=19.7, y=-13.7)
-                ),  # bottom left
-                Line(
-                    start=Point(x=19.7, y=19.7), end=Point(x=19.7, y=41)
-                ),  # bottom right
-                Line(
-                    start=Point(x=41, y=-13.7), end=Point(x=41, y=19.7)
+                    start=Point(x=-35, y=-13.7), end=Point(x=-35, y=19.7)
                 ),  # bottom branch
                 Line(
-                    start=Point(x=41.0, y=19.7), end=Point(x=19.7, y=19.7)
+                    start=Point(x=-35, y=19.7), end=Point(x=-13.7, y=19.7)
                 ),  # right branch
                 Line(
-                    start=Point(x=41.0, y=-13.7), end=Point(x=19.7, y=-13.7)
+                    start=Point(x=-35, y=-13.7), end=Point(x=-13.7, y=-13.7)
                 ),  # left branch
                 Line(
-                    start=Point(x=3.0, y=3.0), end=Point(x=19.7, y=19.7)
+                    start=Point(x=3.0, y=3.0), end=Point(x=-13.7, y=-13.7)
                 ),  # center left
                 Line(
-                    start=Point(x=3.0, y=3.0), end=Point(x=19.7, y=-13.7)
+                    start=Point(x=3.0, y=3.0), end=Point(x=-13.7, y=19.7)
                 ),  # center right
             },
         ),

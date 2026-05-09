@@ -1,7 +1,7 @@
 import numpy as np
-from math import isclose
+from math import degrees, isclose, radians
 
-from fireplanner.geometry.primitives import Point, PrimitiveStyle
+from fireplanner.geometry.primitives import Point, PrimitiveStyle, Transform2D
 
 
 TOL = 1e-9
@@ -59,6 +59,15 @@ def test_point_array():
 
     assert isinstance(result, np.ndarray)
     assert np.array_equal(result, np.array([1.0, 2.0, 3.0]))
+
+
+def test_point_transform_2d():
+    point = Point(x=1.0, y=2.0, z=3.0)
+    trans = Transform2D(Point(x=3, y=3), radians(90))
+
+    result = point.transform_2d(trans)
+
+    assert np.array_equal(result.array(), np.array([1.0, 4.0, 0.0]))
 
 
 def test_point_to_json():

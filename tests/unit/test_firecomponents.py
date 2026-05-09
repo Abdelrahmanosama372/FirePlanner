@@ -1,17 +1,38 @@
-from fireplanner.firecomponent import Pipe, SteelSpecs,SteelSchedule,SteelConnection, SteelDims, SteelMaterial, Elbow, Hanger, Reducer, SteelPortsNum, Tee
+from math import radians
+from fireplanner.firecomponent import (
+    Pipe,
+    SteelSpecs,
+    SteelSchedule,
+    SteelConnection,
+    SteelDims,
+    SteelMaterial,
+    Elbow,
+    Hanger,
+    Reducer,
+    SteelPortsNum,
+    Tee,
+)
 
 
 def test_pipe():
-    pipe = Pipe(SteelDims.DIM_2_INCHES, SteelMaterial.ERW, SteelSchedule.SCD40, SteelSpecs.ASTM, SteelConnection.Grooved)
+    pipe = Pipe(
+        SteelDims.DIM_2_INCHES,
+        SteelMaterial.ERW,
+        SteelSchedule.SCD40,
+        SteelSpecs.ASTM,
+        SteelConnection.Grooved,
+    )
     assert pipe.diameter == SteelDims.DIM_2_INCHES
     assert pipe.material == SteelMaterial.ERW
-    assert pipe.schedule == SteelSchedule.SCD40 
+    assert pipe.schedule == SteelSchedule.SCD40
     assert pipe.specs == SteelSpecs.ASTM
     assert pipe.connection_type == SteelConnection.Grooved
+
 
 def test_elbow():
     elbow = Elbow(
         SteelDims.DIM_12_INCHES,
+        radians(90),
         SteelMaterial.Seamless,
         SteelSchedule.SCD80,
         SteelSpecs.ASTM,
@@ -29,6 +50,7 @@ def test_elbow():
         SteelDims.DIM_12_INCHES,
         SteelDims.DIM_12_INCHES,
     )
+
 
 def test_reducer_orders_diameters_correctly():
     reducer = Reducer(
@@ -67,6 +89,7 @@ def test_reducer():
         SteelDims.DIM_6_INCHES,
         SteelDims.DIM_2_INCHES,
     )
+
 
 def test_hanger():
     hanger = Hanger(

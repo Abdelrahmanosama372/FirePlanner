@@ -1,419 +1,437 @@
 import pytest
 
-from fireplanner.geometry.primitives import Block, Line, Point
-from fireplanner.networks import CoreNetwork, CoreNode
-
-
-def get_child(node: CoreNode, line_id: int) -> CoreNode | None:
-    return next(
-        (child for child in node.connected_nodes if child.line.id == line_id), None
-    )
-
-
-@pytest.fixture
-def simple_network():
-    """
-                 (0,9)------(6,9)
-                  |
-                  |
-                (0,5)
-    (-6,4)--------|
-                  |-------(4,3)
-                  |
-                  |
-                (0,0)
-    """
-    lines = [
-        Line(id=0, start=Point(x=0, y=0), end=Point(x=0, y=4)),
-        Line(id=1, start=Point(x=0, y=3), end=Point(x=4, y=3)),
-        Line(id=2, start=Point(x=0, y=4), end=Point(x=-6, y=4)),
-        Line(id=3, start=Point(x=0, y=5), end=Point(x=0, y=9)),
-        Line(id=4, start=Point(x=0, y=9), end=Point(x=6, y=9)),
-    ]
-
-    blocks = [
-        Block(id=0, name="SPR", center=Point(x=0, y=2)),
-        Block(id=1, name="SPR", center=Point(x=2, y=3)),
-        Block(id=2, name="SPR", center=Point(x=-4, y=4)),
-        Block(id=3, name="SPR", center=Point(x=0, y=8)),
-        Block(id=4, name="SPR", center=Point(x=1, y=9)),
-    ]
-
-    return lines, blocks
-
-
-@pytest.fixture
-def complex_network():
-    """
-                                        (9,18)
-                                          /
-                                         /
-                         (0,15)------(5,15)
-                            |
-                            |
-                         (0,12)            (12,14)---------(16,14)
-                            |                 |
-                            |----(8,10)----(12,10)
-    (-12,9)---(-8,9)--------|
-                            |
-                         (0,6)
-                            |
-     (-10,5)---(-6,5)-------|
-                            |-----(6,4)-----(10,4)
-                            |
-                          (0,0)
-
-    """
-    lines = [
-        Line(id=0, start=Point(x=0, y=0), end=Point(x=0, y=6)),
-        Line(id=1, start=Point(x=0, y=6), end=Point(x=0, y=12)),
-        Line(id=2, start=Point(x=0, y=12), end=Point(x=0, y=15)),
-        Line(id=3, start=Point(x=0, y=4), end=Point(x=6, y=4)),
-        Line(id=4, start=Point(x=0, y=5), end=Point(x=-6, y=5)),
-        Line(id=5, start=Point(x=0, y=10), end=Point(x=8, y=10)),
-        Line(id=6, start=Point(x=0, y=9), end=Point(x=-8, y=9)),
-        Line(id=7, start=Point(x=0, y=15), end=Point(x=5, y=15)),
-        Line(id=8, start=Point(x=6, y=4), end=Point(x=10, y=4)),
-        Line(id=9, start=Point(x=-6, y=5), end=Point(x=-10, y=5)),
-        Line(id=10, start=Point(x=8, y=10), end=Point(x=12, y=10)),
-        Line(id=11, start=Point(x=-8, y=9), end=Point(x=-12, y=9)),
-        Line(id=12, start=Point(x=5, y=15), end=Point(x=9, y=18)),
-        Line(id=13, start=Point(x=12, y=10), end=Point(x=12, y=14)),
-        Line(id=14, start=Point(x=12, y=14), end=Point(x=16, y=14)),
-    ]
-
-    blocks = [
-        Block(id=0, name="SRC", center=Point(x=0, y=0)),
-        Block(id=1, name="SPR", center=Point(x=0, y=3)),
-        Block(id=2, name="SPR", center=Point(x=4, y=5)),
-        Block(id=3, name="SPR", center=Point(x=-3, y=5)),
-        Block(id=4, name="SPR", center=Point(x=0, y=8)),
-        Block(id=5, name="SPR", center=Point(x=6, y=10)),
-        Block(id=6, name="SPR", center=Point(x=-5, y=10)),
-        Block(id=7, name="SPR", center=Point(x=0, y=13)),
-        Block(id=8, name="SPR", center=Point(x=9, y=10)),
-        Block(id=9, name="SPR", center=Point(x=-10, y=10)),
-        Block(id=10, name="SPR", center=Point(x=6, y=16)),
-        Block(id=11, name="SPR", center=Point(x=12, y=12)),
-        Block(id=12, name="SPR", center=Point(x=15, y=14)),
-    ]
-
-    return lines, blocks
-
-
-@pytest.fixture
-def loop_network():
-    """
-    (0,12)
-      |
-    (0,9)
-      |--------(4,8)
-      |          |
-    (0|5)        |
-      |--------(4,4)
-      |
-      |
-    (0,2)
-      |
-      |
-    (0,0)
-    """
-    lines = [
-        Line(id=0, start=Point(x=0, y=0), end=Point(x=0, y=2)),
-        Line(id=1, start=Point(x=0, y=2), end=Point(x=0, y=5)),
-        Line(id=2, start=Point(x=0, y=4), end=Point(x=4, y=4)),
-        Line(id=3, start=Point(x=4, y=4), end=Point(x=4, y=8)),
-        Line(id=4, start=Point(x=4, y=8), end=Point(x=0, y=8)),
-        Line(id=5, start=Point(x=0, y=9), end=Point(x=0, y=5)),
-        Line(id=6, start=Point(x=0, y=9), end=Point(x=0, y=12)),
-    ]
-
-    blocks = [
-        Block(id=0, name="SPR", center=Point(x=0, y=1)),
-        Block(id=1, name="SPR", center=Point(x=0, y=3)),
-        Block(id=2, name="SPR", center=Point(x=2, y=4)),
-        Block(id=3, name="SPR", center=Point(x=4, y=6)),
-        Block(id=4, name="SPR", center=Point(x=2, y=8)),
-        Block(id=5, name="SPR", center=Point(x=0, y=6)),
-        Block(id=6, name="SPR", center=Point(x=0, y=10)),
-    ]
-
-    return lines, blocks
-
-
-@pytest.fixture
-def simple_core_network(simple_network):
-    lines, blocks = simple_network
-    return CoreNetwork(lines=lines, blocks=blocks)
-
-
-@pytest.fixture
-def complex_core_network(complex_network):
-    lines, blocks = complex_network
-    return CoreNetwork(lines=lines, blocks=blocks)
-
-
-@pytest.fixture
-def loop_core_network(loop_network):
-    lines, blocks = loop_network
-    return CoreNetwork(lines=lines, blocks=blocks)
-
-
-def test_construct_simple_network(simple_core_network):
-    assert simple_core_network.root is not None
-
-
-def test_construct_complex_network(complex_core_network):
-    assert complex_core_network.root is not None
-
-
-def test_simple_network_keeps_deep_branch_structure(simple_core_network):
-    root_node = simple_core_network.root
-
-    assert root_node is not None
-    assert root_node.line.id == 0
-    assert len(root_node.connected_nodes) == 2
-
-    l1_node = get_child(root_node, 1)
-    l2_node = get_child(root_node, 2)
-    l3_node = get_child(root_node, 3)
-    l4_node = get_child(root_node, 4)
-
-    assert l1_node is not None
-    assert l2_node is not None
-    assert l3_node is None
-    assert l4_node is None
-    assert len(l1_node.connected_nodes) == 0
-    assert len(l2_node.connected_nodes) == 0
-
-
-def test_simple_network_block_placement(simple_core_network):
-    root_node = simple_core_network.root
-
-    assert root_node is not None
-
-    l1_node = get_child(root_node, 1)
-    l2_node = get_child(root_node, 2)
-    l3_node = get_child(root_node, 3)
-    l4_node = get_child(root_node, 4)
-
-    assert l1_node is not None
-    assert l2_node is not None
-    assert l3_node is None
-    assert l4_node is None
-
-    assert [block.id for block in root_node.blocks] == [0]
-    assert [block.id for block in l1_node.blocks] == [1]
-    assert [block.id for block in l2_node.blocks] == [2]
-    assert sorted(
-        [block.id for node in [root_node, l1_node, l2_node] for block in node.blocks]
-    ) == [0, 1, 2]
-
-
-def test_complex_network_keeps_deep_branch_structure(complex_core_network):
-    root_node = complex_core_network.root
-
-    assert root_node is not None
-
-    l1_node = get_child(root_node, 1)
-    l3_node = get_child(root_node, 3)
-    l4_node = get_child(root_node, 4)
-
-    assert l1_node is not None
-    assert l3_node is not None
-    assert l4_node is not None
-
-    l2_node = get_child(l1_node, 2)
-    l5_node = get_child(l1_node, 5)
-    l6_node = get_child(l1_node, 6)
-
-    assert l2_node is not None
-    assert l5_node is not None
-    assert l6_node is not None
-
-    l7_node = get_child(l2_node, 7)
-    assert l7_node is not None
-
-    l8_node = get_child(l3_node, 8)
-    l9_node = get_child(l4_node, 9)
-    l10_node = get_child(l5_node, 10)
-    l11_node = get_child(l6_node, 11)
-
-    assert l8_node is not None
-    assert l9_node is not None
-    assert l10_node is not None
-    assert l11_node is not None
-
-    l12_node = get_child(l7_node, 12)
-    assert l12_node is not None
-
-    l13_node = get_child(l10_node, 13)
-    assert l13_node is not None
-
-    l14_node = get_child(l13_node, 14)
-    assert l14_node is not None
-
-    assert len(root_node.connected_nodes) == 3
-    assert len(l1_node.connected_nodes) == 3
-    assert len(l2_node.connected_nodes) == 1
-    assert len(l3_node.connected_nodes) == 1
-    assert len(l4_node.connected_nodes) == 1
-    assert len(l5_node.connected_nodes) == 1
-    assert len(l6_node.connected_nodes) == 1
-    assert len(l7_node.connected_nodes) == 1
-    assert len(l8_node.connected_nodes) == 0
-    assert len(l9_node.connected_nodes) == 0
-    assert len(l10_node.connected_nodes) == 1
-    assert len(l11_node.connected_nodes) == 0
-    assert len(l12_node.connected_nodes) == 0
-    assert len(l13_node.connected_nodes) == 1
-    assert len(l14_node.connected_nodes) == 0
-
-    assert get_child(root_node, 7) is None
-    assert get_child(root_node, 8) is None
-    assert get_child(l1_node, 8) is None
-    assert get_child(l1_node, 9) is None
-    assert get_child(l2_node, 12) is None
-    assert get_child(l3_node, 10) is None
-    assert get_child(l4_node, 11) is None
-    assert get_child(l5_node, 13) is None
-    assert get_child(l6_node, 12) is None
-    assert get_child(l7_node, 14) is None
-
-
-def test_complex_network_block_placement(complex_core_network):
-    root_node = complex_core_network.root
-
-    assert root_node is not None
-
-    l1_node = get_child(root_node, 1)
-    l3_node = get_child(root_node, 3)
-    l4_node = get_child(root_node, 4)
-
-    assert l1_node is not None
-    assert l3_node is not None
-    assert l4_node is not None
-
-    l2_node = get_child(l1_node, 2)
-    l5_node = get_child(l1_node, 5)
-    l6_node = get_child(l1_node, 6)
-
-    assert l2_node is not None
-    assert l5_node is not None
-    assert l6_node is not None
-
-    l7_node = get_child(l2_node, 7)
-    assert l7_node is not None
-
-    l8_node = get_child(l3_node, 8)
-    l9_node = get_child(l4_node, 9)
-    l10_node = get_child(l5_node, 10)
-    l11_node = get_child(l6_node, 11)
-
-    assert l8_node is not None
-    assert l9_node is not None
-    assert l10_node is not None
-    assert l11_node is not None
-
-    l12_node = get_child(l7_node, 12)
-    assert l12_node is not None
-
-    l13_node = get_child(l10_node, 13)
-    assert l13_node is not None
-
-    l14_node = get_child(l13_node, 14)
-    assert l14_node is not None
-
-    assert [block.id for block in root_node.blocks] == [0, 1]
-    assert [block.id for block in l1_node.blocks] == [4]
-    assert [block.id for block in l2_node.blocks] == [7]
-    assert l3_node.blocks == []
-    assert [block.id for block in l4_node.blocks] == [3]
-    assert [block.id for block in l5_node.blocks] == [5]
-    assert l6_node.blocks == []
-    assert l7_node.blocks == []
-    assert l8_node.blocks == []
-    assert l9_node.blocks == []
-    assert [block.id for block in l10_node.blocks] == [8]
-    assert l11_node.blocks == []
-    assert l12_node.blocks == []
-    assert [block.id for block in l13_node.blocks] == [11]
-    assert [block.id for block in l14_node.blocks] == [12]
-
-
-def test_loop_network_keeps_mid_loop_structure(loop_core_network):
-    root_node = loop_core_network.root
-
-    assert root_node is not None
-    assert root_node.line.id == 0
-    assert len(root_node.connected_nodes) == 1
-
-    l1_node = get_child(root_node, 1)
-    assert l1_node is not None
-    assert len(l1_node.connected_nodes) == 2
-
-    l2_node = get_child(l1_node, 2)
-    l5_node = get_child(l1_node, 5)
-
-    assert l2_node is not None
-    assert l5_node is not None
-
-    l3_from_bottom = get_child(l2_node, 3)
-    assert l3_from_bottom is not None
-
-    l4_from_right = get_child(l3_from_bottom, 4)
-    assert l4_from_right is not None
-
-    l6_from_right = get_child(l5_node, 6)
-    assert l6_from_right is not None
-
-    # Shared loop segments should be consumed only once and not reconstructed
-    # from sibling branches.
-    assert l4_from_right.connected_nodes == []
-
-
-def test_loop_network_block_placement(loop_core_network):
-    root_node = loop_core_network.root
-
-    assert root_node is not None
-
-    l1_node = get_child(root_node, 1)
-    assert l1_node is not None
-
-    l2_node = get_child(l1_node, 2)
-    l5_node = get_child(l1_node, 5)
-
-    assert l2_node is not None
-    assert l5_node is not None
-
-    l3_node = get_child(l2_node, 3)
-    assert l3_node is not None
-
-    l4_node = get_child(l3_node, 4)
-    assert l4_node is not None
-
-    l6_node = get_child(l5_node, 6)
-    assert l6_node is not None
-
-    assert [block.id for block in root_node.blocks] == [0]
-    assert [block.id for block in l1_node.blocks] == [1]
-    assert [block.id for block in l2_node.blocks] == [2]
-    assert [block.id for block in l3_node.blocks] == [3]
-    assert [block.id for block in l4_node.blocks] == [4]
-    assert [block.id for block in l5_node.blocks] == [5]
-    assert [block.id for block in l6_node.blocks] == [6]
-    assert sorted(
-        [
-            block.id
-            for node in [
-                root_node,
-                l1_node,
-                l2_node,
-                l3_node,
-                l4_node,
-                l5_node,
-                l6_node,
-            ]
-            for block in node.blocks
-        ]
-    ) == list(range(7))
+from fireplanner.geometry.primitives import Line
+from fireplanner.networks.core_network import CoreNetwork
+from fireplanner.networks.junction import JunctionType
+from tests.unit.core_network import (
+    build_complex_network_core_network,
+    build_simple_network_core_network,
+    build_complex_network_blocks,
+    build_complex_network_lines,
+    build_loop_network_blocks,
+    build_loop_network_lines,
+    build_simple_network_blocks,
+    build_simple_network_inverted_lines,
+    build_simple_network_lines,
+)
+
+
+def line_signature(line: Line) -> tuple[float, float, float, float]:
+    return (line.start.x, line.start.y, line.end.x, line.end.y)
+
+
+def flatten_serialized_core_node(node_data: dict) -> list[dict]:
+    nodes = [node_data["CoreNode"]]
+    for child_node in node_data["CoreNode"]["connected_nodes"]:
+        nodes.extend(flatten_serialized_core_node(child_node))
+    return nodes
+
+
+def get_serialized_simple_network_nodes() -> list[dict]:
+    network = build_simple_network_core_network()
+    root_data = network.to_json()["CoreNetwork"]["root"]
+    assert root_data is not None
+    return flatten_serialized_core_node(root_data)
+
+
+def get_serialized_complex_network_nodes() -> list[dict]:
+    network = build_complex_network_core_network()
+    root_data = network.to_json()["CoreNetwork"]["root"]
+    assert root_data is not None
+    return flatten_serialized_core_node(root_data)
+
+
+@pytest.mark.parametrize(
+    ("build_lines", "build_blocks", "expected_lines", "expected_ids"),
+    [
+        (
+            build_simple_network_lines,
+            build_simple_network_blocks,
+            {
+                1: (0, 3, 4, 3),
+                2: (0, 4, -6, 4),
+                3: (0, 5, 0, 9),
+                4: (0, 9, 6, 9),
+            },
+            {1, 2, 3, 4},
+        ),
+        (
+            build_simple_network_inverted_lines,
+            build_simple_network_blocks,
+            {
+                1: (0, 3, 4, 3),
+                2: (0, 4, -6, 4),
+                3: (0, 5, 0, 9),
+                4: (0, 9, 6, 9),
+            },
+            {1, 2, 3, 4},
+        ),
+        (
+            build_complex_network_lines,
+            build_complex_network_blocks,
+            {
+                1: (0, 6, 0, 12),
+                2: (0, 12, 0, 15),
+                3: (0, 4, 6, 4),
+                4: (0, 5, -6, 5),
+                5: (0, 10, 8, 10),
+                6: (0, 9, -8, 9),
+                7: (0, 15, 5, 15),
+                8: (6, 4, 10, 4),
+                9: (-6, 5, -10, 5),
+                10: (8, 10, 12, 10),
+                11: (-8, 9, -12, 9),
+                12: (5, 15, 9, 18),
+                13: (12, 10, 12, 14),
+                14: (12, 14, 16, 14),
+            },
+            {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+        ),
+        (
+            build_loop_network_lines,
+            build_loop_network_blocks,
+            {
+                1: (0, 2, 0, 5),
+                2: (0, 4, 4, 4),
+                3: (4, 4, 4, 8),
+                4: (4, 8, 0, 8),
+                5: (0, 5, 0, 9),
+                6: (0, 9, 0, 12),
+            },
+            {1, 2, 3, 4, 5, 6},
+        ),
+    ],
+)
+def test_preprocessing_orients_fixture_lines(
+    build_lines,
+    build_blocks,
+    expected_lines,
+    expected_ids,
+):
+    lines = build_lines()
+    blocks = build_blocks()
+    network = CoreNetwork(sprinkles=blocks, lines=[])
+
+    processed_lines = network._preprocessing(lines[0], lines[1:])
+
+    assert {line.id for line in processed_lines} == expected_ids
+    assert {line.id: line_signature(line) for line in processed_lines} == expected_lines
+
+
+@pytest.mark.parametrize(
+    ("get_nodes", "expected"),
+    [
+        (
+            get_serialized_simple_network_nodes,
+            {
+                1: None,
+                2: {"Point": "0, 2, 0.0"},
+                3: {"Point": "0.0, 3.0, 0.0"},
+                4: {"Point": "0.0, 4.0, 0.0"},
+                5: {"Point": "0.0, 3.0, 0.0"},
+                6: {"Point": "2, 3, 0.0"},
+                7: {"Point": "0.0, 4.0, 0.0"},
+                8: {"Point": "-4, 4, 0.0"},
+                9: {"Point": "0, 5, 0.0"},
+                10: {"Point": "0, 8, 0.0"},
+                11: {"Point": "0.0, 9.0, 0.0"},
+                12: {"Point": "1, 9, 0.0"},
+            },
+        ),
+        (
+            get_serialized_complex_network_nodes,
+            {
+                1: None,
+                2: {"Point": "0, 3, 0.0"},
+                3: {"Point": "0.0, 4.0, 0.0"},
+                4: {"Point": "0.0, 5.0, 0.0"},
+                5: {"Point": "0.0, 4.0, 0.0"},
+                6: {"Point": "6, 4, 0.0"},
+                7: {"Point": "0.0, 5.0, 0.0"},
+                8: {"Point": "-3, 5, 0.0"},
+                9: {"Point": "-6, 5, 0.0"},
+                10: {"Point": "0, 6, 0.0"},
+                11: {"Point": "0, 8, 0.0"},
+                12: {"Point": "0.0, 9.0, 0.0"},
+                13: {"Point": "0.0, 10.0, 0.0"},
+                14: {"Point": "0.0, 9.0, 0.0"},
+                15: {"Point": "-8, 9, 0.0"},
+                16: {"Point": "0.0, 10.0, 0.0"},
+                17: {"Point": "6, 10, 0.0"},
+                18: {"Point": "8, 10, 0.0"},
+                19: {"Point": "9, 10, 0.0"},
+                20: {"Point": "12.0, 10.0, 0.0"},
+                21: {"Point": "12, 12, 0.0"},
+                22: {"Point": "12.0, 14.0, 0.0"},
+                23: {"Point": "15, 14, 0.0"},
+                24: {"Point": "0, 12, 0.0"},
+                25: {"Point": "0, 13, 0.0"},
+                26: {"Point": "0.0, 15.0, 0.0"},
+                27: {"Point": "5.0, 15.0, 0.0"},
+            },
+        ),
+    ],
+)
+def test_core_network_has_correct_intersection_points(get_nodes, expected):
+    nodes = get_nodes()
+
+    assert {node["id"]: node["intersection_point"] for node in nodes} == expected
+
+
+@pytest.mark.parametrize(
+    ("get_nodes", "expected"),
+    [
+        (
+            get_serialized_simple_network_nodes,
+            {
+                1: ("0, 0, 0.0", "0, 2, 0.0"),
+                2: ("0, 2, 0.0", "0.0, 3.0, 0.0"),
+                3: ("0.0, 3.0, 0.0", "0.0, 4.0, 0.0"),
+                4: ("0.0, 4.0, 0.0", "0, 5, 0.0"),
+                5: ("0, 3, 0.0", "2, 3, 0.0"),
+                6: ("2, 3, 0.0", "4, 3, 0.0"),
+                7: ("0, 4, 0.0", "-4, 4, 0.0"),
+                8: ("-4, 4, 0.0", "-6, 4, 0.0"),
+                9: ("0, 5, 0.0", "0, 8, 0.0"),
+                10: ("0, 8, 0.0", "0.0, 9.0, 0.0"),
+                11: ("0, 9, 0.0", "1, 9, 0.0"),
+                12: ("1, 9, 0.0", "6, 9, 0.0"),
+            },
+        ),
+        (
+            get_serialized_complex_network_nodes,
+            {
+                1: ("0, 0, 0.0", "0, 3, 0.0"),
+                2: ("0, 3, 0.0", "0.0, 4.0, 0.0"),
+                3: ("0.0, 4.0, 0.0", "0.0, 5.0, 0.0"),
+                4: ("0.0, 5.0, 0.0", "0, 6, 0.0"),
+                5: ("0, 4, 0.0", "6, 4, 0.0"),
+                6: ("6, 4, 0.0", "10, 4, 0.0"),
+                7: ("0, 5, 0.0", "-3, 5, 0.0"),
+                8: ("-3, 5, 0.0", "-6, 5, 0.0"),
+                9: ("-6, 5, 0.0", "-10, 5, 0.0"),
+                10: ("0, 6, 0.0", "0, 8, 0.0"),
+                11: ("0, 8, 0.0", "0.0, 9.0, 0.0"),
+                12: ("0.0, 9.0, 0.0", "0.0, 10.0, 0.0"),
+                13: ("0.0, 10.0, 0.0", "0, 12, 0.0"),
+                14: ("0, 9, 0.0", "-8, 9, 0.0"),
+                15: ("-8, 9, 0.0", "-12, 9, 0.0"),
+                16: ("0, 10, 0.0", "6, 10, 0.0"),
+                17: ("6, 10, 0.0", "8, 10, 0.0"),
+                18: ("8, 10, 0.0", "9, 10, 0.0"),
+                19: ("9, 10, 0.0", "12.0, 10.0, 0.0"),
+                20: ("12, 10, 0.0", "12, 12, 0.0"),
+                21: ("12, 12, 0.0", "12.0, 14.0, 0.0"),
+                22: ("12, 14, 0.0", "15, 14, 0.0"),
+                23: ("15, 14, 0.0", "16, 14, 0.0"),
+                24: ("0, 12, 0.0", "0, 13, 0.0"),
+                25: ("0, 13, 0.0", "0.0, 15.0, 0.0"),
+                26: ("0, 15, 0.0", "5.0, 15.0, 0.0"),
+                27: ("5, 15, 0.0", "9, 18, 0.0"),
+            },
+        ),
+    ],
+)
+def test_core_network_has_correct_connected_edges(get_nodes, expected):
+    nodes = get_nodes()
+
+    assert {
+        node["id"]: (
+            node["edge"]["Line"]["start"]["Point"],
+            node["edge"]["Line"]["end"]["Point"],
+        )
+        for node in nodes
+    } == expected
+
+
+@pytest.mark.parametrize(
+    ("get_nodes", "expected"),
+    [
+        (
+            get_serialized_simple_network_nodes,
+            {
+                1: 1,
+                2: 2,
+                3: 2,
+                4: 1,
+                5: 1,
+                6: 0,
+                7: 1,
+                8: 0,
+                9: 1,
+                10: 1,
+                11: 1,
+                12: 0,
+            },
+        ),
+        (
+            get_serialized_complex_network_nodes,
+            {
+                1: 1,
+                2: 2,
+                3: 2,
+                4: 1,
+                5: 1,
+                6: 0,
+                7: 1,
+                8: 1,
+                9: 0,
+                10: 1,
+                11: 2,
+                12: 2,
+                13: 1,
+                14: 1,
+                15: 0,
+                16: 1,
+                17: 1,
+                18: 1,
+                19: 1,
+                20: 1,
+                21: 1,
+                22: 1,
+                23: 0,
+                24: 1,
+                25: 1,
+                26: 1,
+                27: 0,
+            },
+        ),
+    ],
+)
+def test_core_network_has_correct_number_of_connected_nodes(get_nodes, expected):
+    nodes = get_nodes()
+
+    assert {node["id"]: len(node["connected_nodes"]) for node in nodes} == expected
+
+
+@pytest.mark.parametrize(
+    ("build_network", "expected"),
+    [
+        (
+            build_simple_network_core_network,
+            {
+                1: 5,
+                2: 4,
+                3: 3,
+                4: 2,
+                5: 1,
+                6: 0,
+                7: 1,
+                8: 0,
+                9: 2,
+                10: 1,
+                11: 1,
+                12: 0,
+            },
+        ),
+        (
+            build_complex_network_core_network,
+            {
+                1: 8,
+                2: 7,
+                3: 7,
+                4: 6,
+                5: 0,
+                6: 0,
+                7: 1,
+                8: 0,
+                9: 0,
+                10: 6,
+                11: 5,
+                12: 5,
+                13: 1,
+                14: 0,
+                15: 0,
+                16: 4,
+                17: 3,
+                18: 3,
+                19: 2,
+                20: 2,
+                21: 1,
+                22: 1,
+                23: 0,
+                24: 1,
+                25: 0,
+                26: 0,
+                27: 0,
+            },
+        ),
+    ],
+)
+def test_create_sprinkler_map_has_correct_edge_counts(build_network, expected):
+    network = build_network()
+
+    assert {
+        edge_id: network.find_edge_sprinkler_count(edge_id)
+        for edge_id in expected
+    } == expected
+
+
+def test_get_junctions_has_correct_junction_type_on_simple_network():
+    junctions = build_simple_network_core_network().get_junctions()
+
+    assert {junction_id: junction.junction_type for junction_id, junction in junctions.items()} == {
+        1: JunctionType.TWO_WAY,
+        2: JunctionType.THREE_WAY,
+        3: JunctionType.THREE_WAY,
+        4: JunctionType.TWO_WAY,
+        5: JunctionType.TWO_WAY,
+        6: JunctionType.TWO_WAY,
+        7: JunctionType.TWO_WAY,
+        8: JunctionType.TWO_WAY,
+        9: JunctionType.TWO_WAY,
+    }
+
+
+def test_get_junctions_has_correct_connected_edges_ids_on_simple_network():
+    junctions = build_simple_network_core_network().get_junctions()
+
+    assert {
+        junction_id: junction.connected_edges_ids
+        for junction_id, junction in junctions.items()
+    } == {
+        1: [1, 2],
+        2: [2, 3, 5],
+        3: [3, 4, 7],
+        4: [4, 9],
+        5: [9, 10],
+        6: [10, 11],
+        7: [11, 12],
+        8: [7, 8],
+        9: [5, 6],
+    }
+
+
+def test_get_junctions_has_correct_angle_on_simple_network():
+    junctions = build_simple_network_core_network().get_junctions()
+
+    assert {junction_id: junction.angle for junction_id, junction in junctions.items()} == {
+        1: 0.0,
+        2: None,
+        3: None,
+        4: 0.0,
+        5: 0.0,
+        6: 90.0,
+        7: 0.0,
+        8: 0.0,
+        9: 0.0,
+    }
+
+
+def test_get_junctions_has_correct_has_sprinkler_on_simple_network():
+    junctions = build_simple_network_core_network().get_junctions()
+
+    assert {
+        junction_id: junction.has_sprinkler
+        for junction_id, junction in junctions.items()
+    } == {
+        1: True,
+        2: False,
+        3: False,
+        4: False,
+        5: True,
+        6: False,
+        7: True,
+        8: True,
+        9: True,
+    }

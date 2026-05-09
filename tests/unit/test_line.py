@@ -1,5 +1,14 @@
+from logging import warning
 import pytest
-from fireplanner.geometry.primitives import Line, Point, LineType, PrimitiveStyle
+from fireplanner.geometry.primitives import (
+    Line,
+    Point,
+    LineType,
+    PrimitiveStyle,
+    Transform2D,
+)
+from math import radians
+import numpy as np
 
 
 def test_line_construction():
@@ -21,6 +30,36 @@ def test_line_style_setter_and_getter():
     line.style = style
 
     assert line.style == style
+
+
+def test_swap_end_points():
+    line = Line(start=Point(x=0, y=0), end=Point(x=4, y=0))
+
+    line.swap_end_points()
+
+    assert line.start == Point(x=4, y=0)
+    assert line.end == Point(x=0, y=0)
+
+
+def test_split_at_unchecked():
+    line = Line(id=9, start=Point(x=0, y=0), end=Point(x=0, y=10))
+
+    split_lines = line.split_at_unchecked([Point(x=0, y=3), Point(x=0, y=7)])
+
+    assert [
+        (split_line.id, split_line.start, split_line.end) for split_line in split_lines
+    ] == [
+        (1, Point(x=0, y=0), Point(x=0, y=3)),
+        (2, Point(x=0, y=3), Point(x=0, y=7)),
+        (3, Point(x=0, y=7), Point(x=0, y=10)),
+    ]
+
+
+def test_angle_to():
+    first_line = Line(start=Point(x=0, y=8), end=Point(x=0, y=9))
+    second_line = Line(start=Point(x=0, y=9), end=Point(x=1, y=9))
+
+    assert first_line.angle_to(second_line) == 90.0
 
 
 def test_pass_through_point_on_line():
@@ -152,6 +191,21 @@ def test_collinear_overlap_case_4():
 
     assert intersects is True
     assert point == A
+
+
+def test_line_transform_2d():
+    line = Line(
+        start=Point(x=1.0, y=2.0, z=0.0),
+        end=Point(x=4.0, y=5.0, z=0.0),
+        line_type=LineType.CenterLine,
+    )
+
+    trans = Transform2D(Point(x=3, y=3), radians(90))
+
+    result = line.transform_2d(trans)
+
+    assert np.array_equal(result.start.array(), np.array([1.0, 4.0, 0.0]))
+    assert np.array_equal(result.end.array(), np.array([-2.0, 7.0, 0.0]))
 
 
 def test_line_to_json():
