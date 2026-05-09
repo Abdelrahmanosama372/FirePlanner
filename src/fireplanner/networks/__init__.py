@@ -1,4 +1,4 @@
-from .core_network import CoreNetworkConfig, CoreNode, CoreNetwork
+from .core_network import CoreNetworkConfig, CoreNode, CoreNetwork, FlowRoute
 from .geometry_network import GeometryNetwork
 from .geometry_mapper import GeometryMapper
 from .junction import Junction, JunctionType

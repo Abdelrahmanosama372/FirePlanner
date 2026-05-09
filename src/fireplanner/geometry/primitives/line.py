@@ -119,6 +119,11 @@ class Line(Primitive2D):
         cosine = max(-1.0, min(1.0, dot_product / (first_norm * second_norm)))
         return degrees(acos(cosine))
 
+    def is_collinear_to(self, line: Line, tol_deg: float = 1.0) -> bool:
+        """Return whether this line is collinear to another line within tolerance."""
+        angle = abs(self.angle_to(line))
+        return angle <= tol_deg or abs(angle - 180.0) <= tol_deg
+
     def pass_through_point(self, point: Point, tol: float = EPS) -> bool:
         """Return whether a point lies on this segment within tolerance."""
         P = point.array()

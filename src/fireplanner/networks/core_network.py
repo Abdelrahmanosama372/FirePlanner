@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import Any
 
 from ..geometry.primitives import Block, Line, Point
 from .junction import Junction, JunctionType
+
+
+class FlowRoute(StrEnum):
+    CONTINUATION = "continuation"
+    BRANCH = "branch"
 
 
 @dataclass
@@ -13,6 +19,7 @@ class CoreNetworkConfig:
     sprinkler_blocks: list[Block] = field(default_factory=list)
     lines: list[Line] = field(default_factory=list)
     root_line: Line | None = None
+    root_flow_route: FlowRoute = FlowRoute.CONTINUATION
 
     def ordered_lines(self) -> list[Line]:
         if self.root_line is None:
@@ -84,6 +91,7 @@ class CoreNetwork:
         sprinkles: list[object] | None = None,
         lines: list[Line] | None = None,
         blocks: list[object] | None = None,
+        root_flow_route: FlowRoute = FlowRoute.CONTINUATION,
     ):
         if sprinkles is None:
             sprinkles = []
@@ -96,8 +104,10 @@ class CoreNetwork:
         self._root: CoreNode | None = None
         self._edge_sprinkler_map: dict[int, int] = {}
         self._junctions: dict[int, Junction] = {}
+        self._edge_flow_route_map: dict[int, FlowRoute] = {}
         self._next_created_line_id = 1
         self._next_junction_id = 1
+        self._root_flow_route = root_flow_route
 
         if not self._lines:
             return
@@ -118,6 +128,12 @@ class CoreNetwork:
 
     def find_edge_sprinkler_count(self, edge_id: int) -> int | None:
         return self._edge_sprinkler_map.get(edge_id)
+
+    def get_edge_flow_route(self, edge_id: int) -> FlowRoute | None:
+        return self._edge_flow_route_map.get(edge_id)
+
+    def get_edge_flow_routes(self) -> dict[int, FlowRoute]:
+        return dict(self._edge_flow_route_map)
 
     def get_edge_junction_ids(self) -> dict[int, tuple[int | None, int | None]]:
         junction_origin_id_map = {
@@ -164,13 +180,19 @@ class CoreNetwork:
 
     def _create_network(self, root_line: Line, lines: list[Line]) -> CoreNode:
         self._next_created_line_id = 1
-        return self._create_network_recursive(root_line, list(lines), {root_line.id})
+        return self._create_network_recursive(
+            root_line,
+            list(lines),
+            {root_line.id},
+            parent_flow_route=self._root_flow_route,
+        )
 
     def _create_network_recursive(
         self,
         root_line: Line,
         lines: list[Line],
         visited_line_ids: set[int],
+        parent_flow_route: FlowRoute,
     ) -> CoreNode:
         intersected_lines: list[tuple[Line, Point]] = []
         split_points: list[Point] = []
@@ -206,6 +228,7 @@ class CoreNetwork:
 
         for split_line in split_lines:
             split_line.id = self._next_created_line_id
+            self._edge_flow_route_map[split_line.id] = parent_flow_route
             self._next_created_line_id += 1
 
         root_node = CoreNode(split_lines[0])
@@ -219,9 +242,56 @@ class CoreNetwork:
             segment_nodes.append(node)
             previous_node = node
 
+        grouped_children: dict[Point, list[Line]] = {}
+        for line, intersection_point in sorted_intersected_lines:
+            grouped_children.setdefault(intersection_point, []).append(line)
+
+        child_flow_route_by_line_id: dict[int, FlowRoute] = {}
+        for intersection_point, grouped_lines in grouped_children.items():
+            if parent_flow_route == FlowRoute.BRANCH:
+                for child_line in grouped_lines:
+                    child_flow_route_by_line_id[child_line.id] = FlowRoute.BRANCH
+                continue
+
+            continuation_child_id: int | None = None
+            if len(grouped_lines) == 1:
+                only_child = grouped_lines[0]
+                continuation_child_id = (
+                    only_child.id
+                    if (
+                        intersection_point == root_line.end
+                        or root_line.is_collinear_to(only_child)
+                    )
+                    else None
+                )
+            else:
+                colinear_candidates = [
+                    child.id
+                    for child in grouped_lines
+                    if root_line.is_collinear_to(child)
+                ]
+                if colinear_candidates:
+                    continuation_child_id = colinear_candidates[0]
+
+            for child_line in grouped_lines:
+                child_flow_route_by_line_id[child_line.id] = (
+                    FlowRoute.CONTINUATION
+                    if child_line.id == continuation_child_id
+                    else FlowRoute.BRANCH
+                )
+
         for line, intersection_point in sorted_intersected_lines:
             visited_line_ids.add(line.id)
-            child_node = self._create_network_recursive(line, lines, visited_line_ids)
+            child_flow_route = child_flow_route_by_line_id.get(
+                line.id,
+                FlowRoute.CONTINUATION,
+            )
+            child_node = self._create_network_recursive(
+                line,
+                lines,
+                visited_line_ids,
+                parent_flow_route=child_flow_route,
+            )
             child_node.set_intersection_point(intersection_point)
 
             parent_node = next(

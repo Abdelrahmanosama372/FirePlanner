@@ -1,7 +1,7 @@
 import pytest
 
 from fireplanner.geometry.primitives import Line
-from fireplanner.networks.core_network import CoreNetwork
+from fireplanner.networks.core_network import CoreNetwork, FlowRoute
 from fireplanner.networks.junction import JunctionType
 from tests.unit.core_network import (
     build_complex_network_core_network,
@@ -244,6 +244,25 @@ def test_core_network_has_correct_connected_edges(get_nodes, expected):
     } == expected
 
 
+def test_simple_network_flow_routes_assignment() -> None:
+    network = build_simple_network_core_network()
+
+    assert network.get_edge_flow_routes() == {
+        1: FlowRoute.CONTINUATION,
+        2: FlowRoute.CONTINUATION,
+        3: FlowRoute.CONTINUATION,
+        4: FlowRoute.CONTINUATION,
+        5: FlowRoute.BRANCH,
+        6: FlowRoute.BRANCH,
+        7: FlowRoute.BRANCH,
+        8: FlowRoute.BRANCH,
+        9: FlowRoute.CONTINUATION,
+        10: FlowRoute.CONTINUATION,
+        11: FlowRoute.CONTINUATION,
+        12: FlowRoute.CONTINUATION,
+    }
+
+
 @pytest.mark.parametrize(
     ("get_nodes", "expected"),
     [
@@ -362,15 +381,17 @@ def test_create_sprinkler_map_has_correct_edge_counts(build_network, expected):
     network = build_network()
 
     assert {
-        edge_id: network.find_edge_sprinkler_count(edge_id)
-        for edge_id in expected
+        edge_id: network.find_edge_sprinkler_count(edge_id) for edge_id in expected
     } == expected
 
 
 def test_get_junctions_has_correct_junction_type_on_simple_network():
     junctions = build_simple_network_core_network().get_junctions()
 
-    assert {junction_id: junction.junction_type for junction_id, junction in junctions.items()} == {
+    assert {
+        junction_id: junction.junction_type
+        for junction_id, junction in junctions.items()
+    } == {
         1: JunctionType.TWO_WAY,
         2: JunctionType.THREE_WAY,
         3: JunctionType.THREE_WAY,
@@ -405,7 +426,9 @@ def test_get_junctions_has_correct_connected_edges_ids_on_simple_network():
 def test_get_junctions_has_correct_angle_on_simple_network():
     junctions = build_simple_network_core_network().get_junctions()
 
-    assert {junction_id: junction.angle for junction_id, junction in junctions.items()} == {
+    assert {
+        junction_id: junction.angle for junction_id, junction in junctions.items()
+    } == {
         1: 0.0,
         2: None,
         3: None,

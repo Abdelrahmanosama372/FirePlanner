@@ -17,11 +17,14 @@ firefighting:
 processing:
   compute_pipe_dimensions: true
 
+preproessing:
+  root_flow_route: "continuation"
+
 autocad:
   input:
     drawing:
       units: "m"
-    root_line_identifier:: 
+    root_line_identifier: 
       color: "red"
     line_network_layer:
       name: "line-network"

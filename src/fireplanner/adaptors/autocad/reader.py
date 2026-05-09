@@ -13,7 +13,7 @@ from fireplanner.firecomponent import (
     SteelSpecs,
 )
 from fireplanner.geometry.primitives import Block, Line, Point
-from fireplanner.networks import CoreNetworkConfig, ModelNetworkConfig
+from fireplanner.networks import CoreNetworkConfig, FlowRoute, ModelNetworkConfig
 from fireplanner.networks.placement_resolver import (
     PlacementResolverConfig,
     PlacementUnit,
@@ -82,6 +82,7 @@ class Reader:
         )
 
     def read_core_network_configs(self, acad: Autocad | Any) -> list[CoreNetworkConfig]:
+        root_flow_route = self._read_root_flow_route()
         input_data = self._mapping(
             self._mapping(self._raw_data.get("autocad")).get("input")
         )
@@ -99,7 +100,8 @@ class Reader:
             sprinkler_block_names=set(sprinkler_block_data.keys()),
         )
         sprinkler_block_metadata = {
-            str(name): self._mapping(data) for name, data in sprinkler_block_data.items()
+            str(name): self._mapping(data)
+            for name, data in sprinkler_block_data.items()
         }
 
         configs: list[CoreNetworkConfig] = []
@@ -110,10 +112,17 @@ class Reader:
                     sprinkler_blocks=list(sprinkler_blocks),
                     lines=[record.line for record in line_records],
                     root_line=root_line,
+                    root_flow_route=root_flow_route,
                 )
             )
 
         return configs
+
+    def _read_root_flow_route(self) -> FlowRoute:
+        preprocessing_data = self._mapping(self._raw_data.get("processing"))
+        value = preprocessing_data.get("root_flow_route", FlowRoute.CONTINUATION)
+        normalized = str(getattr(value, "value", value)).strip().lower()
+        return FlowRoute(normalized)
 
     def read_core_network_config(self, acad: Autocad | Any) -> CoreNetworkConfig:
         configs = self.read_core_network_configs(acad)
@@ -125,18 +134,20 @@ class Reader:
 
     def read_output_layer_config(self) -> LayerConfig:
         output_data = self._mapping(
-            self._mapping(self._mapping(self._raw_data.get("autocad")).get("output")).get(
-                "network"
-            )
+            self._mapping(
+                self._mapping(self._raw_data.get("autocad")).get("output")
+            ).get("network")
         )
         layer_data = self._mapping(output_data.get("layer"))
         properties = self._mapping(layer_data.get("properties"))
         return LayerConfig(
             name=str(layer_data.get("name", "")),
             color=str(properties.get("color")) if "color" in properties else None,
-            line_weight=float(properties["line_weight"])
-            if "line_weight" in properties
-            else None,
+            line_weight=(
+                float(properties["line_weight"])
+                if "line_weight" in properties
+                else None
+            ),
         )
 
     def _load_yaml_string(self, yaml_string: str) -> dict[str, Any]:

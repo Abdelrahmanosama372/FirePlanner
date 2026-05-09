@@ -45,6 +45,7 @@ class Pipeline:
             core_network = CoreNetwork(
                 sprinkles=core_network_config.sprinkler_blocks,
                 lines=core_network_config.ordered_lines(),
+                root_flow_route=core_network_config.root_flow_route,
             )
             model_network = ModelNetwork(
                 core_network=core_network,
