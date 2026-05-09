@@ -1,14 +1,7 @@
 from __future__ import annotations
-from abc import abstractmethod
-from tracemalloc import start
-from typing import override, Any
-from fireplanner.firecomponent import SteelDims
 from fireplanner.geometry.primitives.line import Line
 from .geometric_component import GeometricComponent
-from fireplanner.standards import steel_dim_table
-from fireplanner.geometry.primitives import Point, Primitive2D, Primitive3D
-from fireplanner.geometry.primitives.transform import Transform2D
-from .base import UndefinedGeometry
+from fireplanner.geometry.primitives import Point, Primitive2D
 from fireplanner.firecomponent import Pipe
 
 
@@ -22,6 +15,14 @@ class GeometricPipe(GeometricComponent):
         self._diameter = pipe.diameter
         self._length = None
         super().__init__(start, end)
+
+    @property
+    def length(self):
+        if not (self._start and self._end):
+            raise ValueError(
+                "Cannot compute pipe length. pipe start or end points are None"
+            )
+        return self._start.distance(self._end)
 
     @override
     def _local_primitives_2d(self) -> list[Primitive2D]:
