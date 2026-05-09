@@ -8,7 +8,13 @@ from fireplanner.firecomponent import (
 )
 from math import pi
 from fireplanner.geometry.primitives import Line, Point, Block
-from fireplanner.networks import CoreNetwork, CoreNetworkConfig, GeometryNetwork, ModelNetwork
+from fireplanner.networks import (
+    CoreNetwork,
+    CoreNetworkConfig,
+    GeometryNetwork,
+    ModelNetwork,
+)
+from fireplanner.networks.core_network import FlowRoute
 from fireplanner.networks.junction import JunctionType
 
 
@@ -42,7 +48,11 @@ def build_test_network() -> tuple[list[Line], list[Block]]:
 
 def test_core_network_construction():
     lines, blocks = build_test_network()
-    core_network = CoreNetwork(config=CoreNetworkConfig(lines=lines, sprinkler_blocks=blocks))
+    core_network = CoreNetwork(
+        config=CoreNetworkConfig(
+            lines=lines, sprinkler_blocks=blocks, root_flow_route=FlowRoute.BRANCH
+        )
+    )
 
     assert core_network.get_edges_ids() == [
         1,
@@ -143,10 +153,36 @@ def test_core_network_construction():
         15: (17.9786, 19.2562, JunctionType.TWO_WAY, [7, 8], 0.0, True),
     }
 
+    assert {
+        edge_id: core_network.get_edge_flow_route(edge_id)
+        for edge_id in core_network.get_edges_ids()
+    } == {
+        1: FlowRoute.BRANCH,
+        2: FlowRoute.BRANCH,
+        3: FlowRoute.BRANCH,
+        14: FlowRoute.BRANCH,
+        15: FlowRoute.BRANCH,
+        16: FlowRoute.BRANCH,
+        17: FlowRoute.BRANCH,
+        18: FlowRoute.BRANCH,
+        4: FlowRoute.BRANCH,
+        5: FlowRoute.BRANCH,
+        6: FlowRoute.BRANCH,
+        7: FlowRoute.BRANCH,
+        8: FlowRoute.BRANCH,
+        9: FlowRoute.BRANCH,
+        10: FlowRoute.BRANCH,
+        11: FlowRoute.BRANCH,
+        12: FlowRoute.BRANCH,
+        13: FlowRoute.BRANCH,
+    }
+
 
 def test_model_network_construction():
     lines, blocks = build_test_network()
-    core_network = CoreNetwork(config=CoreNetworkConfig(lines=lines, sprinkler_blocks=blocks))
+    core_network = CoreNetwork(
+        config=CoreNetworkConfig(lines=lines, sprinkler_blocks=blocks)
+    )
     # using model network default config (light hazard + auto compute pipe dimensions)
     model_network = ModelNetwork(core_network)
 
@@ -427,7 +463,9 @@ def test_model_network_construction():
 
 def test_geometry_network_construction():
     lines, blocks = build_test_network()
-    core_network = CoreNetwork(config=CoreNetworkConfig(lines=lines, sprinkler_blocks=blocks))
+    core_network = CoreNetwork(
+        config=CoreNetworkConfig(lines=lines, sprinkler_blocks=blocks)
+    )
     model_network = ModelNetwork(core_network)
     geometry_network = GeometryNetwork(core_network, model_network)
 
