@@ -1,10 +1,8 @@
 from __future__ import annotations
-from abc import abstractmethod
 from typing import override
 
 from fireplanner.standards.steel_dim import steel_dim_table
 from .geometric_component import GeometricComponent
-from fireplanner.geometry.primitives.transform import Transform2D
 from ..primitives import Point, Primitive2D, Arc, Line
 from fireplanner.firecomponent import Elbow
 from fireplanner.standards import elbow_90_lr_center_to_end
