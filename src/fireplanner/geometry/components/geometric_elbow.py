@@ -23,6 +23,14 @@ class GeometricElbow(GeometricComponent):
     def center_to_end(self):
         return self._center_to_end
 
+    @property
+    def diameter(self):
+        return self._diameter
+
+    @property
+    def angle(self):
+        return self._angle
+
     @override
     def _local_primitives_2d(self) -> list[Primitive2D]:
         r = steel_dim_table[self._diameter] / 2.0
