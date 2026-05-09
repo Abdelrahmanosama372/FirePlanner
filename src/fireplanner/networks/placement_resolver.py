@@ -106,7 +106,9 @@ class PlacementResolver:
         branch_dir = branch.direction()
         main_dir = edge_id_line_map[main_edge_ids[0]].direction()
 
-        if isclose(wrap_to_pi(main_dir + radians(90)), branch_dir):
+        if isclose((main_dir + radians(90)), branch_dir) or isclose(
+            wrap_to_pi(main_dir + radians(90)), branch_dir
+        ):
             rotation = main_dir
         elif isclose(wrap_to_pi(main_dir + radians(270)), branch_dir):
             # reverse main line vector angle
@@ -114,7 +116,7 @@ class PlacementResolver:
 
         else:
             raise ValueError(
-                f"Could not find tee transform rotation for geometric tee component",
+                f"Could not find tee transform rotation for geometric tee component main direction: {main_dir}, branch direction: {branch_dir}",
             )
 
         return Transform2D(
