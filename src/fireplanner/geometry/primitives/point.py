@@ -75,6 +75,9 @@ class Point(Primitive2D):
         """Return point coordinates as a NumPy array `[x, y, z]`."""
         return np.array([self.x, self.y, self.z])
 
+    def to_list3d(self) -> list[float]:
+        return [self.x, self.y, self.z]
+
     @override
     def transform_2d(self, transform: "Transform2D") -> Primitive2D:
         point_vec = self.array()
