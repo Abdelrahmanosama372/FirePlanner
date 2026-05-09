@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "Water FireFighting Planner System"
 dependencies = [
     "pyautocad",
-    "numpy"
+    "numpy",
+    "openpyxl",
 ]
 
 [project.optional-dependencies]
