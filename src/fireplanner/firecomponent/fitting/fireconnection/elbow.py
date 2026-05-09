@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import override
 
-from tests.unit.test_geometry_mapper import elbow
 from ...base import (
     FireComponent,
     SteelConnection,
