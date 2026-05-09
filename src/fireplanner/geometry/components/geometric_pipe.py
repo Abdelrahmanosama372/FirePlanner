@@ -3,6 +3,7 @@ from fireplanner.geometry.primitives.line import Line
 from .geometric_component import GeometricComponent
 from fireplanner.geometry.primitives import Point, Primitive2D
 from fireplanner.firecomponent import Pipe
+from typing import override
 
 
 class GeometricPipe(GeometricComponent):
