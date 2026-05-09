@@ -18,6 +18,9 @@ test = [
     "pytest-mock", 
 ]
 
+[project.scripts]
+autocad-fire-planner = "fireplanner.adaptors.autocad.main:main"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
