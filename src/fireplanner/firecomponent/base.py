@@ -86,7 +86,7 @@ class FireComponent(ABC):
             "connection_type": self.connection_type.value,
         }
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def from_json(cls: type[T], data: dict[Any, Any]) -> T:
         pass
