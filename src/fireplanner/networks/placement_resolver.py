@@ -106,11 +106,11 @@ class PlacementResolver:
         branch_dir = branch.direction()
         main_dir = edge_id_line_map[main_edge_ids[0]].direction()
 
-        if isclose((main_dir + radians(90)), branch_dir) or isclose(
-            wrap_to_pi(main_dir + radians(90)), branch_dir
+        if isclose((main_dir + radians(90)), branch_dir, rel_tol=1e-3) or isclose(
+            wrap_to_pi(main_dir + radians(90)), branch_dir, rel_tol=1e-3
         ):
             rotation = main_dir
-        elif isclose(wrap_to_pi(main_dir + radians(270)), branch_dir):
+        elif isclose(wrap_to_pi(main_dir + radians(270)), branch_dir, rel_tol=1e-3):
             # reverse main line vector angle
             rotation = wrap_to_pi(main_dir + pi)
 
@@ -191,7 +191,9 @@ class PlacementResolver:
 
         transform = Transform2D(origin=junction.origin, rotation=0.0)
         if isclose(
-            wrap_to_pi(first_line.direction() + radians(90)), second_line.direction()
+            wrap_to_pi(first_line.direction() + radians(90)),
+            second_line.direction(),
+            rel_tol=1e-3,
         ):
             rotation = second_line.direction() + radians(180)
             transform.angle = rotation
