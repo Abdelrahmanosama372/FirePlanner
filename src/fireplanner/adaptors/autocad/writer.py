@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import atan2, sqrt
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from .utils import lineweight_to_aci, color_name_to_aci
 
 from fireplanner.geometry.primitives import Arc, Line
 from fireplanner.networks.geometry_network import GeometryNetwork
-from pyautocad import APoint
+
+if TYPE_CHECKING:
+    from pyautocad import APoint
 
 
 @dataclass(frozen=True)
