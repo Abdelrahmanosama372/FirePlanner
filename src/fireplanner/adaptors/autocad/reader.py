@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
+from fireplanner.adaptors.autocad.utils import color_name_to_aci
 from fireplanner.firecomponent import (
     SteelConnection,
     SteelDims,
@@ -289,28 +290,13 @@ class Reader:
             return False
 
         for key, expected in identifier.items():
-            normalized_key = key.strip().lower()
-            if normalized_key == "color":
-                if self._normalize_scalar(
-                    self._entity_color(entity)
-                ) != self._normalize_scalar(expected):
-                    return False
-                continue
-
+            if key.strip().lower() == "color":
+                # convert expected color from string to autocad color index
+                expected = color_name_to_aci(expected)
             actual = self._get_entity_attr(entity, key, None)
             if self._normalize_scalar(actual) != self._normalize_scalar(expected):
                 return False
-
         return True
-
-    def _entity_color(self, entity: Any) -> Any:
-        true_color = self._get_entity_attr(entity, "TrueColor", None)
-        color_name = self._get_entity_attr(true_color, "ColorName", None)
-        if color_name is not None:
-            return color_name
-        return self._get_entity_attr(
-            entity, "Color", self._get_entity_attr(entity, "color", None)
-        )
 
     def _normalize_scalar(self, value: Any) -> Any:
         if isinstance(value, str):
