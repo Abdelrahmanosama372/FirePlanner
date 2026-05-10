@@ -400,13 +400,13 @@ class CoreNetwork:
             )
 
     def to_json(self) -> dict[str, Any]:
-        ids, lines = self.get_lines_with_edge_ids()
 
         return {
             "CoreNetwork": {
                 "sprinkles": [sprinkle.to_json() for sprinkle in self.sprinkles],
                 "lines": [
-                    (str(line_id), line.to_json()) for line_id, line in zip(ids, lines)
+                    (str(line_id), line.to_json())
+                    for (line_id, line) in self.get_lines_with_edge_ids().items()
                 ],
                 "root": self.root.to_json() if self.root is not None else None,
             }
