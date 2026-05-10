@@ -33,6 +33,8 @@ color_mapping = {
     "blue": 5,
     "magenta": 6,
     "white": 7,
+    "Dark Gray": 8,
+    "Light Gray": 9,
 }
 
 
