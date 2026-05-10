@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from math import atan2, sqrt
 from typing import Any
 
-from pyautocad import APoint
+from .utils import lineweight_to_aci, color_name_to_aci
 
-from fireplanner.geometry.primitives import Arc, Line, Point
+from fireplanner.geometry.primitives import Arc, Line
 from fireplanner.networks.geometry_network import GeometryNetwork
+from pyautocad import APoint
 
 
 @dataclass(frozen=True)
@@ -45,7 +46,7 @@ class Writer:
                 APoint(primitive.start.to_list3d()),
                 APoint(primitive.end.to_list3d()),
             )
-            self._apply_layer_properties(entity)
+            self._apply_layer(entity)
             return [entity]
 
         if isinstance(primitive, Arc):
@@ -64,38 +65,19 @@ class Writer:
                 start_angle,
                 end_angle,
             )
-            self._apply_layer_properties(entity)
+            self._apply_layer(entity)
             return [entity]
 
         return []
 
-    def _apply_layer_properties(self, entity: Any) -> None:
+    def _apply_layer(self, entity: Any) -> None:
         if self._layer_config.name:
             self._set_attr(entity, "Layer", self._layer_config.name)
-        if self._layer_config.line_weight is not None:
-            # AutoCAD COM expects hundredths of mm for lineweight.
-            self._set_attr(
-                entity, "Lineweight", int(round(self._layer_config.line_weight * 100))
-            )
-        if self._layer_config.color is not None:
-            self._apply_color(entity, self._layer_config.color)
 
     def _apply_color(self, entity: Any, color: str) -> None:
-        color_index = self._color_name_to_aci(color)
+        color_index: int | None = color_name_to_aci(color)
         if color_index is not None:
             self._set_attr(entity, "Color", color_index)
-
-    def _color_name_to_aci(self, color: str) -> int | None:
-        mapping = {
-            "red": 1,
-            "yellow": 2,
-            "green": 3,
-            "cyan": 4,
-            "blue": 5,
-            "magenta": 6,
-            "white": 7,
-        }
-        return mapping.get(color.strip().lower())
 
     def _set_attr(self, obj: Any, attr_name: str, value: Any) -> None:
         for candidate in {
