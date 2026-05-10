@@ -13,7 +13,7 @@ import numpy as np
 from .base import Primitive2D, PrimitiveStyle
 from .point import Point
 
-EPS = 1e-9
+EPS = 1e-3
 
 
 def cross_2d(ax: float, ay: float, bx: float, by: float) -> float:
