@@ -215,7 +215,7 @@ class Reader:
         self, acad: Autocad | Any, layer_name: str
     ) -> list[_LineRecord]:
         line_records: list[_LineRecord] = []
-        for index, entity in enumerate(self._iter_objects(acad, "Line"), start=1):
+        for index, entity in enumerate(self._iter_objects(acad, "AcDbLine"), start=1):
             entity_layer = str(self._get_entity_attr(entity, "Layer", "")).strip()
             if layer_name and entity_layer != layer_name:
                 continue
@@ -376,14 +376,4 @@ class Reader:
         objects = list(iter_objects(entity_name))
         if objects:
             return objects
-
-        aliases = {
-            "Line": ["AcDbLine"],
-            "AcDbBlockReference": ["BlockReference", "INSERT"],
-        }
-        for alias in aliases.get(entity_name, []):
-            objects = list(iter_objects(alias))
-            if objects:
-                return objects
-
         return []
