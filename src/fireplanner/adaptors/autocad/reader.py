@@ -86,7 +86,7 @@ class Reader:
         input_data = self._mapping(
             self._mapping(self._raw_data.get("autocad")).get("input")
         )
-        line_network_data = self._mapping(input_data.get("line_network"))
+        line_network_data = self._mapping(input_data.get("line_network_layer"))
         sprinkler_block_data = self._mapping(input_data.get("sprinkler_blocks"))
         root_identifier = self._mapping(input_data.get("root_line_identifier"))
 
