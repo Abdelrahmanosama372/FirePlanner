@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from math import atan2, sqrt
 from typing import Any
 
+from pyautocad import APoint
+
 from fireplanner.geometry.primitives import Arc, Line, Point
 from fireplanner.networks.geometry_network import GeometryNetwork
 
@@ -40,8 +42,8 @@ class Writer:
     def _write_primitive(self, primitive: object) -> list[Any]:
         if isinstance(primitive, Line):
             entity = self._acad.model.AddLine(
-                self._point3d(primitive.start),
-                self._point3d(primitive.end),
+                APoint(primitive.start.to_list3d()),
+                APoint(primitive.end.to_list3d()),
             )
             self._apply_layer_properties(entity)
             return [entity]
@@ -57,7 +59,7 @@ class Writer:
             )
             end_angle = start_angle + primitive.angle
             entity = self._acad.model.AddArc(
-                self._point3d(primitive.center),
+                APoint(primitive.center.to_list3d()),
                 radius,
                 start_angle,
                 end_angle,
@@ -100,12 +102,7 @@ class Writer:
             attr_name,
             attr_name.lower(),
             attr_name.upper(),
-            attr_name[:1].upper() + attr_name[1:],
         }:
             if hasattr(obj, candidate):
                 setattr(obj, candidate, value)
                 return
-
-    def _point3d(self, point: Point) -> Any:
-        point_factory = getattr(self._acad, "APoint")
-        return point_factory(point.to_list3d())
