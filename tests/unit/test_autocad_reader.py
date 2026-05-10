@@ -31,7 +31,7 @@ autocad:
       units: "m"
     root_line_identifier::
       color: "red"
-    line_network:
+    line_network_layer:
       name: "line-network"
     sprinkler_blocks:
       SPR:
@@ -51,13 +51,13 @@ class FakeLineEntity:
         start: tuple[float, float, float],
         end: tuple[float, float, float],
         layer: str,
-        color: str,
+        color: int,
         handle: str,
     ) -> None:
         self.StartPoint = start
         self.EndPoint = end
         self.Layer = layer
-        self.TrueColor = FakeColor(color)
+        self.Color = color
         self.Handle = handle
 
 
@@ -74,7 +74,9 @@ class FakeBlockEntity:
 
 
 class FakeAcad:
-    def __init__(self, lines: list[FakeLineEntity], blocks: list[FakeBlockEntity]) -> None:
+    def __init__(
+        self, lines: list[FakeLineEntity], blocks: list[FakeBlockEntity]
+    ) -> None:
         self._lines = lines
         self._blocks = blocks
 
@@ -123,21 +125,21 @@ def test_reader_builds_core_network_config_from_autocad_entities():
                 start=(0.0, 0.0, 0.0),
                 end=(10.0, 0.0, 0.0),
                 layer="line-network",
-                color="red",
+                color=1,
                 handle="A",
             ),
             FakeLineEntity(
                 start=(10.0, 0.0, 0.0),
                 end=(15.0, 5.0, 0.0),
                 layer="line-network",
-                color="green",
+                color=3,
                 handle="B",
             ),
             FakeLineEntity(
                 start=(0.0, 5.0, 0.0),
                 end=(10.0, 5.0, 0.0),
                 layer="other-layer",
-                color="red",
+                color=1,
                 handle="C",
             ),
         ],
@@ -161,7 +163,9 @@ def test_reader_builds_core_network_config_from_autocad_entities():
 
     assert isinstance(config, CoreNetworkConfig)
     assert config.sprinkler_block_data == {"SPR": {"temperature": 68, "k_factor": 5.6}}
-    assert [(line.start.x, line.start.y, line.end.x, line.end.y) for line in config.lines] == [
+    assert [
+        (line.start.x, line.start.y, line.end.x, line.end.y) for line in config.lines
+    ] == [
         (0.0, 0.0, 10.0, 0.0),
         (10.0, 0.0, 15.0, 5.0),
     ]
@@ -172,10 +176,16 @@ def test_reader_builds_core_network_config_from_autocad_entities():
         config.root_line.end.x,
         config.root_line.end.y,
     ) == (0.0, 0.0, 10.0, 0.0)
-    assert [(block.name, block.center.x, block.center.y) for block in config.sprinkler_blocks] == [
+    assert [
+        (block.name, block.center.x, block.center.y)
+        for block in config.sprinkler_blocks
+    ] == [
         ("SPR", 2.0, 0.0),
     ]
-    assert [(line.start.x, line.start.y, line.end.x, line.end.y) for line in config.ordered_lines()] == [
+    assert [
+        (line.start.x, line.start.y, line.end.x, line.end.y)
+        for line in config.ordered_lines()
+    ] == [
         (0.0, 0.0, 10.0, 0.0),
         (10.0, 0.0, 15.0, 5.0),
     ]
@@ -190,21 +200,21 @@ def test_reader_builds_multiple_core_network_configs_when_multiple_roots_match()
                 start=(0.0, 0.0, 0.0),
                 end=(10.0, 0.0, 0.0),
                 layer="line-network",
-                color="red",
+                color=1,
                 handle="A",
             ),
             FakeLineEntity(
                 start=(20.0, 0.0, 0.0),
                 end=(30.0, 0.0, 0.0),
                 layer="line-network",
-                color="red",
+                color=1,
                 handle="B",
             ),
             FakeLineEntity(
                 start=(10.0, 0.0, 0.0),
                 end=(15.0, 5.0, 0.0),
                 layer="line-network",
-                color="green",
+                color=3,
                 handle="C",
             ),
         ],
@@ -234,7 +244,10 @@ def test_reader_builds_multiple_core_network_configs_when_multiple_roots_match()
         (20.0, 0.0, 30.0, 0.0),
     ]
     assert [
-        [(line.start.x, line.start.y, line.end.x, line.end.y) for line in config.ordered_lines()]
+        [
+            (line.start.x, line.start.y, line.end.x, line.end.y)
+            for line in config.ordered_lines()
+        ]
         for config in configs
     ] == [
         [
