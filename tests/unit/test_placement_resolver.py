@@ -22,8 +22,6 @@ from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction import Junction, JunctionType
 from fireplanner.networks.placement_resolver import (
     PlacementResolver,
-    PlacementResolverConfig,
-    PlacementUnit,
 )
 
 
@@ -146,7 +144,7 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
                 1: Line(start=Point(x=-1, y=0), end=Point(x=0, y=0), id=1),
                 2: Line(start=Point(x=0, y=0), end=Point(x=1, y=0), id=2),
             },
-            Transform2D(Point(x=-0.25, y=0), radians(0)),
+            Transform2D(Point(x=-250.0, y=0.0), radians(0)),
         ),
         (
             # reversed main lines
@@ -154,7 +152,7 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
                 1: Line(end=Point(x=-1, y=0), start=Point(x=0, y=0), id=1),
                 2: Line(end=Point(x=0, y=0), start=Point(x=1, y=0), id=2),
             },
-            Transform2D(Point(x=-0.25, y=0), radians(0)),
+            Transform2D(Point(x=-250.0, y=0.0), radians(0)),
         ),
         (
             # reversed lines order by reversing ids
@@ -162,7 +160,7 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
                 2: Line(start=Point(x=-1, y=0), end=Point(x=0, y=0), id=1),
                 1: Line(start=Point(x=0, y=0), end=Point(x=1, y=0), id=2),
             },
-            Transform2D(Point(x=0.25, y=0), radians(180)),
+            Transform2D(Point(x=250.0, y=0.0), radians(180)),
         ),
         (
             # 2nd quadrant main line
@@ -170,7 +168,7 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
                 1: Line(start=Point(x=-1, y=1), end=Point(x=0, y=0), id=1),
                 2: Line(start=Point(x=0, y=0), end=Point(x=1, y=-1), id=2),
             },
-            Transform2D(Point(x=-0.17677669, y=0.17677669), radians(-45)),
+            Transform2D(Point(x=-176.7766952966369, y=176.77669529663686), radians(-45)),
         ),
         (
             # 2nd quadrant reversed main line by reversing ids
@@ -178,16 +176,14 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
                 2: Line(start=Point(x=-1, y=1), end=Point(x=0, y=0), id=1),
                 1: Line(start=Point(x=0, y=0), end=Point(x=1, y=-1), id=2),
             },
-            Transform2D(Point(x=0.17677669, y=-0.17677669), radians(135)),
+            Transform2D(Point(x=176.77669529663686, y=-176.7766952966369), radians(135)),
         ),
     ],
 )
 def test_resolve_transform_for_reducer(
     geometric_reducer, edge_id_line_map, expected_transform
 ):
-    resolver = PlacementResolver(
-        config=PlacementResolverConfig(unit=PlacementUnit.M),
-    )
+    resolver = PlacementResolver()
     junction = Junction(
         id=2,
         origin=Point(x=0, y=0),
@@ -256,9 +252,7 @@ def test_resolve_transform_for_reducer(
 def test_resolve_transform_for_elbow(
     geometric_elbow, edge_id_line_map, expected_transform
 ):
-    resolver = PlacementResolver(
-        config=PlacementResolverConfig(unit=PlacementUnit.M),
-    )
+    resolver = PlacementResolver()
     junction = Junction(
         id=3,
         origin=Point(x=0, y=0),

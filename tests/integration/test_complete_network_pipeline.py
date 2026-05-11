@@ -482,7 +482,7 @@ def test_geometry_network_construction():
     } == {
         1: ("GeometricTee", 27.094, 19.2562, pi / 2.0),
         2: ("GeometricTee", 27.094, 22.1564, pi / 2.0),
-        3: ("GeometricElbow", 597.094, -544.9436, pi / 2.0),
+        3: ("GeometricElbow", 84.094, -31.9436, pi / 2.0),
         5: ("GeometricReducer", -226.16140000000001, 25.0564, 0.0),
         6: ("GeometricReducer", -229.0914, 25.0564, 0.0),
         9: ("GeometricReducer", -226.16140000000001, 22.1564, 0.0),

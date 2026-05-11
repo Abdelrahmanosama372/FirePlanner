@@ -7,7 +7,6 @@ from fireplanner.firecomponent import (
     SteelSpecs,
 )
 from fireplanner.networks import CoreNetworkConfig
-from fireplanner.networks.placement_resolver import PlacementUnit
 from fireplanner.standards.hazard import FireHazard
 
 
@@ -108,13 +107,6 @@ def test_reader_builds_model_network_config_from_yaml_string():
         SteelConnection.Grooved
     )
 
-
-def test_reader_builds_placement_resolver_config_from_yaml_string():
-    reader = Reader(CONFIG_YAML)
-
-    config = reader.read_placement_resolver_config()
-
-    assert config.unit == PlacementUnit.M
 
 
 def test_reader_builds_core_network_config_from_autocad_entities():

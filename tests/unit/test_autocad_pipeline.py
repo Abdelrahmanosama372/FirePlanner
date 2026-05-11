@@ -2,7 +2,6 @@ from fireplanner.adaptors.autocad.pipeline import Pipeline
 from fireplanner.geometry.components import GeometricPipe
 from fireplanner.geometry.primitives import Point
 from fireplanner.networks import CoreNetwork, GeometryNetwork, ModelNetwork
-from fireplanner.networks.placement_resolver import PlacementUnit
 
 from tests.unit.test_autocad_reader import (
     CONFIG_YAML,
@@ -39,10 +38,12 @@ def test_pipeline_builds_single_network_result():
     assert isinstance(result.core_network, CoreNetwork)
     assert isinstance(result.model_network, ModelNetwork)
     assert isinstance(result.geometry_network, GeometryNetwork)
-    assert result.placement_resolver_config.unit == PlacementUnit.M
     assert result.core_network.get_edges_ids() == [1]
     assert result.model_network.get_pipes_with_edges_ids().keys() == {1}
-    assert result.geometry_network.get_geometric_fire_connections_with_junctions_ids() == {}
+    assert (
+        result.geometry_network.get_geometric_fire_connections_with_junctions_ids()
+        == {}
+    )
     geometric_pipe = result.geometry_network.get_geometric_pipes_with_edges_ids()[1]
     assert isinstance(geometric_pipe, GeometricPipe)
     assert geometric_pipe.start == Point(x=0.0, y=0.0)
@@ -98,7 +99,10 @@ def test_pipeline_builds_multiple_results_when_multiple_roots_exist():
         (0.0, 0.0, 10000.0, 0.0),
         (20000.0, 0.0, 30000.0, 0.0),
     ]
-    assert [result.geometry_network.get_geometric_fire_connections_with_junctions_ids() for result in results] == [
+    assert [
+        result.geometry_network.get_geometric_fire_connections_with_junctions_ids()
+        for result in results
+    ] == [
         {},
         {},
     ]
