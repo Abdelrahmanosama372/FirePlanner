@@ -14,12 +14,14 @@ from fireplanner.firecomponent import (
     SteelSpecs,
 )
 from fireplanner.geometry.primitives import Block, Line, Point
+from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks import CoreNetworkConfig, FlowRoute, ModelNetworkConfig
 from fireplanner.networks.placement_resolver import (
     PlacementResolverConfig,
     PlacementUnit,
 )
 from fireplanner.standards.hazard import FireHazard
+from fireplanner.units import LengthUnit
 from .writer import LayerConfig
 
 if TYPE_CHECKING:
@@ -73,20 +75,25 @@ class Reader:
         )
 
     def read_placement_resolver_config(self) -> PlacementResolverConfig:
+        drawing_unit = self.read_drawing_length_unit()
+        return PlacementResolverConfig(
+            unit=self._parse_placement_unit(drawing_unit.value)
+        )
+
+    def read_drawing_length_unit(self) -> LengthUnit:
         drawing_data = self._mapping(
             self._mapping(
                 self._mapping(self._raw_data.get("autocad")).get("input")
             ).get("drawing")
         )
-        return PlacementResolverConfig(
-            unit=self._parse_placement_unit(drawing_data.get("units", PlacementUnit.MM))
-        )
+        return self._parse_length_unit(drawing_data.get("units", LengthUnit.MILLIMETER))
 
     def read_core_network_configs(self, acad: Autocad | Any) -> list[CoreNetworkConfig]:
         root_flow_route = self._read_root_flow_route()
         input_data = self._mapping(
             self._mapping(self._raw_data.get("autocad")).get("input")
         )
+        drawing_unit = self.read_drawing_length_unit()
         line_network_data = self._mapping(input_data.get("line_network_layer"))
         sprinkler_block_data = self._mapping(input_data.get("sprinkler_blocks"))
         root_identifier = self._mapping(input_data.get("root_line_identifier"))
@@ -94,11 +101,13 @@ class Reader:
         line_records = self._read_line_records(
             acad=acad,
             layer_name=str(line_network_data.get("name", "")),
+            drawing_unit=drawing_unit,
         )
         root_lines = self._find_root_lines(line_records, root_identifier)
         sprinkler_blocks = self._read_sprinkler_blocks(
             acad=acad,
             sprinkler_block_names=set(sprinkler_block_data.keys()),
+            drawing_unit=drawing_unit,
         )
         sprinkler_block_metadata = {
             str(name): self._mapping(data)
@@ -213,24 +222,27 @@ class Reader:
         return PlacementUnit(normalized)
 
     def _read_line_records(
-        self, acad: Autocad | Any, layer_name: str
+        self, acad: Autocad | Any, layer_name: str, drawing_unit: LengthUnit
     ) -> list[_LineRecord]:
         line_records: list[_LineRecord] = []
         for index, entity in enumerate(self._iter_objects(acad, "AcDbLine"), start=1):
             entity_layer = str(self._get_entity_attr(entity, "Layer", "")).strip()
             if layer_name and entity_layer != layer_name:
                 continue
+            line = Line(
+                id=self._entity_id(entity, index),
+                start=self._point_from_entity_value(
+                    self._get_entity_attr(entity, "StartPoint")
+                ),
+                end=self._point_from_entity_value(
+                    self._get_entity_attr(entity, "EndPoint")
+                ),
+            )
             line_records.append(
                 _LineRecord(
                     entity=entity,
-                    line=Line(
-                        id=self._entity_id(entity, index),
-                        start=self._point_from_entity_value(
-                            self._get_entity_attr(entity, "StartPoint")
-                        ),
-                        end=self._point_from_entity_value(
-                            self._get_entity_attr(entity, "EndPoint")
-                        ),
+                    line=GeometryUnitConverter.line_to_unit(
+                        line, from_unit=drawing_unit, to_unit=LengthUnit.MILLIMETER
                     ),
                 )
             )
@@ -240,6 +252,7 @@ class Reader:
         self,
         acad: Autocad | Any,
         sprinkler_block_names: set[str],
+        drawing_unit: LengthUnit,
     ) -> list[Block]:
         blocks: list[Block] = []
         for index, entity in enumerate(
@@ -255,16 +268,23 @@ class Reader:
             )
             if sprinkler_block_names and block_name not in sprinkler_block_names:
                 continue
+            block = Block(
+                id=self._entity_id(entity, index),
+                name=block_name,
+                center=self._point_from_entity_value(
+                    self._get_entity_attr(entity, "InsertionPoint")
+                ),
+            )
             blocks.append(
-                Block(
-                    id=self._entity_id(entity, index),
-                    name=block_name,
-                    center=self._point_from_entity_value(
-                        self._get_entity_attr(entity, "InsertionPoint")
-                    ),
+                GeometryUnitConverter.block_to_unit(
+                    block, from_unit=drawing_unit, to_unit=LengthUnit.MILLIMETER
                 )
             )
         return blocks
+
+    def _parse_length_unit(self, value: Any) -> LengthUnit:
+        normalized = str(getattr(value, "value", value)).strip().lower()
+        return LengthUnit(normalized)
 
     def _find_root_lines(
         self,

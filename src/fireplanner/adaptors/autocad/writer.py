@@ -7,7 +7,9 @@ from typing import Any, TYPE_CHECKING
 from .utils import lineweight_to_aci, color_name_to_aci
 
 from fireplanner.geometry.primitives import Arc, Line
+from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks.geometry_network import GeometryNetwork
+from fireplanner.units import LengthUnit
 
 if TYPE_CHECKING:
     from pyautocad import APoint
@@ -21,9 +23,12 @@ class LayerConfig:
 
 
 class Writer:
-    def __init__(self, acad: Any, layer_config: LayerConfig) -> None:
+    def __init__(
+        self, acad: Any, layer_config: LayerConfig, drawing_unit: LengthUnit
+    ) -> None:
         self._acad = acad
         self._layer_config = layer_config
+        self._drawing_unit = drawing_unit
 
     def write_geometry_network(self, geometry_network: GeometryNetwork) -> list[Any]:
         created_entities: list[Any] = []
@@ -44,6 +49,11 @@ class Writer:
 
     def _write_primitive(self, primitive: object) -> list[Any]:
         if isinstance(primitive, Line):
+            primitive = GeometryUnitConverter.line_to_unit(
+                primitive,
+                from_unit=LengthUnit.MILLIMETER,
+                to_unit=self._drawing_unit,
+            )
             entity = self._acad.model.AddLine(
                 APoint(primitive.start.to_list3d()),
                 APoint(primitive.end.to_list3d()),
@@ -52,6 +62,11 @@ class Writer:
             return [entity]
 
         if isinstance(primitive, Arc):
+            primitive = GeometryUnitConverter.arc_to_unit(
+                primitive,
+                from_unit=LengthUnit.MILLIMETER,
+                to_unit=self._drawing_unit,
+            )
             radius = sqrt(
                 (primitive.start.x - primitive.center.x) ** 2
                 + (primitive.start.y - primitive.center.y) ** 2

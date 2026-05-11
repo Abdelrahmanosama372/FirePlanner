@@ -166,8 +166,8 @@ def test_reader_builds_core_network_config_from_autocad_entities():
     assert [
         (line.start.x, line.start.y, line.end.x, line.end.y) for line in config.lines
     ] == [
-        (0.0, 0.0, 10.0, 0.0),
-        (10.0, 0.0, 15.0, 5.0),
+        (0.0, 0.0, 10000.0, 0.0),
+        (10000.0, 0.0, 15000.0, 5000.0),
     ]
     assert config.root_line is not None
     assert (
@@ -175,19 +175,19 @@ def test_reader_builds_core_network_config_from_autocad_entities():
         config.root_line.start.y,
         config.root_line.end.x,
         config.root_line.end.y,
-    ) == (0.0, 0.0, 10.0, 0.0)
+    ) == (0.0, 0.0, 10000.0, 0.0)
     assert [
         (block.name, block.center.x, block.center.y)
         for block in config.sprinkler_blocks
     ] == [
-        ("SPR", 2.0, 0.0),
+        ("SPR", 2000.0, 0.0),
     ]
     assert [
         (line.start.x, line.start.y, line.end.x, line.end.y)
         for line in config.ordered_lines()
     ] == [
-        (0.0, 0.0, 10.0, 0.0),
-        (10.0, 0.0, 15.0, 5.0),
+        (0.0, 0.0, 10000.0, 0.0),
+        (10000.0, 0.0, 15000.0, 5000.0),
     ]
     assert reader.read_core_network_config(acad).root_line == config.root_line
 
@@ -240,8 +240,8 @@ def test_reader_builds_multiple_core_network_configs_when_multiple_roots_match()
         for config in configs
         if config.root_line is not None
     ] == [
-        (0.0, 0.0, 10.0, 0.0),
-        (20.0, 0.0, 30.0, 0.0),
+        (0.0, 0.0, 10000.0, 0.0),
+        (20000.0, 0.0, 30000.0, 0.0),
     ]
     assert [
         [
@@ -251,13 +251,13 @@ def test_reader_builds_multiple_core_network_configs_when_multiple_roots_match()
         for config in configs
     ] == [
         [
-            (0.0, 0.0, 10.0, 0.0),
-            (20.0, 0.0, 30.0, 0.0),
-            (10.0, 0.0, 15.0, 5.0),
+            (0.0, 0.0, 10000.0, 0.0),
+            (20000.0, 0.0, 30000.0, 0.0),
+            (10000.0, 0.0, 15000.0, 5000.0),
         ],
         [
-            (20.0, 0.0, 30.0, 0.0),
-            (0.0, 0.0, 10.0, 0.0),
-            (10.0, 0.0, 15.0, 5.0),
+            (20000.0, 0.0, 30000.0, 0.0),
+            (0.0, 0.0, 10000.0, 0.0),
+            (10000.0, 0.0, 15000.0, 5000.0),
         ],
     ]

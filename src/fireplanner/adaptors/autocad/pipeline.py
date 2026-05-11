@@ -75,7 +75,11 @@ class Pipeline:
 
     def draw(self) -> list[list[Any]]:
         layer_config = self._reader.read_output_layer_config()
-        writer = Writer(acad=self._acad, layer_config=layer_config)
+        writer = Writer(
+            acad=self._acad,
+            layer_config=layer_config,
+            drawing_unit=self._reader.read_drawing_length_unit(),
+        )
         written_entities_per_network: list[list[Any]] = []
         for result in self.build():
             written_entities_per_network.append(
