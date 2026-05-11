@@ -18,30 +18,38 @@ from fireplanner.networks.core_network import FlowRoute
 from fireplanner.networks.junction import JunctionType
 
 
+MM_SCALE = 1000.0
+
+
+def mm(value: float) -> float:
+    return value * MM_SCALE
+
+
+
 def build_test_network() -> tuple[list[Line], list[Block]]:
     lines = [
-        Line(id=0, start=Point(x=27.094, y=18.8190), end=Point(x=27.094, y=25.0564)),
-        Line(id=1, start=Point(x=15.0486, y=25.0564), end=Point(x=27.094, y=25.0564)),
-        Line(id=2, start=Point(x=15.0486, y=22.1564), end=Point(x=27.094, y=22.1564)),
-        Line(id=3, start=Point(x=15.0486, y=19.2562), end=Point(x=27.094, y=19.2562)),
+        Line(id=0, start=Point(x=mm(27.094), y=mm(18.8190)), end=Point(x=mm(27.094), y=mm(25.0564))),
+        Line(id=1, start=Point(x=mm(15.0486), y=mm(25.0564)), end=Point(x=mm(27.094), y=mm(25.0564))),
+        Line(id=2, start=Point(x=mm(15.0486), y=mm(22.1564)), end=Point(x=mm(27.094), y=mm(22.1564))),
+        Line(id=3, start=Point(x=mm(15.0486), y=mm(19.2562)), end=Point(x=mm(27.094), y=mm(19.2562))),
     ]
 
     blocks = [
-        Block(id=1, name="SPR", center=Point(x=15.0486, y=25.0564)),
-        Block(id=2, name="SPR", center=Point(x=17.9786, y=25.0564)),
-        Block(id=3, name="SPR", center=Point(x=20.9086, y=25.0564)),
-        Block(id=4, name="SPR", center=Point(x=23.8386, y=25.0564)),
-        Block(id=5, name="SPR", center=Point(x=26.7686, y=25.0564)),
-        Block(id=6, name="SPR", center=Point(x=15.0486, y=22.1564)),
-        Block(id=7, name="SPR", center=Point(x=17.9786, y=22.1564)),
-        Block(id=8, name="SPR", center=Point(x=20.9086, y=22.1564)),
-        Block(id=9, name="SPR", center=Point(x=23.8386, y=22.1564)),
-        Block(id=10, name="SPR", center=Point(x=26.7686, y=22.1564)),
-        Block(id=11, name="SPR", center=Point(x=15.0486, y=19.2562)),
-        Block(id=12, name="SPR", center=Point(x=17.9786, y=19.2562)),
-        Block(id=13, name="SPR", center=Point(x=20.9086, y=19.2562)),
-        Block(id=14, name="SPR", center=Point(x=23.8386, y=19.2562)),
-        Block(id=15, name="SPR", center=Point(x=26.7686, y=19.2562)),
+        Block(id=1, name="SPR", center=Point(x=mm(15.0486), y=mm(25.0564))),
+        Block(id=2, name="SPR", center=Point(x=mm(17.9786), y=mm(25.0564))),
+        Block(id=3, name="SPR", center=Point(x=mm(20.9086), y=mm(25.0564))),
+        Block(id=4, name="SPR", center=Point(x=mm(23.8386), y=mm(25.0564))),
+        Block(id=5, name="SPR", center=Point(x=mm(26.7686), y=mm(25.0564))),
+        Block(id=6, name="SPR", center=Point(x=mm(15.0486), y=mm(22.1564))),
+        Block(id=7, name="SPR", center=Point(x=mm(17.9786), y=mm(22.1564))),
+        Block(id=8, name="SPR", center=Point(x=mm(20.9086), y=mm(22.1564))),
+        Block(id=9, name="SPR", center=Point(x=mm(23.8386), y=mm(22.1564))),
+        Block(id=10, name="SPR", center=Point(x=mm(26.7686), y=mm(22.1564))),
+        Block(id=11, name="SPR", center=Point(x=mm(15.0486), y=mm(19.2562))),
+        Block(id=12, name="SPR", center=Point(x=mm(17.9786), y=mm(19.2562))),
+        Block(id=13, name="SPR", center=Point(x=mm(20.9086), y=mm(19.2562))),
+        Block(id=14, name="SPR", center=Point(x=mm(23.8386), y=mm(19.2562))),
+        Block(id=15, name="SPR", center=Point(x=mm(26.7686), y=mm(19.2562))),
     ]
     return (lines, blocks)
 
@@ -83,24 +91,24 @@ def test_core_network_construction():
         )
         for edge_id, line in core_network.get_lines_with_edge_ids().items()
     } == {
-        1: (27.094, 18.819, 27.094, 19.2562),
-        2: (27.094, 19.2562, 27.094, 22.1564),
-        3: (27.094, 22.1564, 27.094, 25.0564),
-        14: (27.094, 25.0564, 26.7686, 25.0564),
-        15: (26.7686, 25.0564, 23.8386, 25.0564),
-        16: (23.8386, 25.0564, 20.9086, 25.0564),
-        17: (20.9086, 25.0564, 17.9786, 25.0564),
-        18: (17.9786, 25.0564, 15.0486, 25.0564),
-        4: (27.094, 19.2562, 26.7686, 19.2562),
-        5: (26.7686, 19.2562, 23.8386, 19.2562),
-        6: (23.8386, 19.2562, 20.9086, 19.2562),
-        7: (20.9086, 19.2562, 17.9786, 19.2562),
-        8: (17.9786, 19.2562, 15.0486, 19.2562),
-        9: (27.094, 22.1564, 26.7686, 22.1564),
-        10: (26.7686, 22.1564, 23.8386, 22.1564),
-        11: (23.8386, 22.1564, 20.9086, 22.1564),
-        12: (20.9086, 22.1564, 17.9786, 22.1564),
-        13: (17.9786, 22.1564, 15.0486, 22.1564),
+        1: (mm(27.094), mm(18.819), mm(27.094), mm(19.2562)),
+        2: (mm(27.094), mm(19.2562), mm(27.094), mm(22.1564)),
+        3: (mm(27.094), mm(22.1564), mm(27.094), mm(25.0564)),
+        14: (mm(27.094), mm(25.0564), mm(26.7686), mm(25.0564)),
+        15: (mm(26.7686), mm(25.0564), mm(23.8386), mm(25.0564)),
+        16: (mm(23.8386), mm(25.0564), mm(20.9086), mm(25.0564)),
+        17: (mm(20.9086), mm(25.0564), mm(17.9786), mm(25.0564)),
+        18: (mm(17.9786), mm(25.0564), mm(15.0486), mm(25.0564)),
+        4: (mm(27.094), mm(19.2562), mm(26.7686), mm(19.2562)),
+        5: (mm(26.7686), mm(19.2562), mm(23.8386), mm(19.2562)),
+        6: (mm(23.8386), mm(19.2562), mm(20.9086), mm(19.2562)),
+        7: (mm(20.9086), mm(19.2562), mm(17.9786), mm(19.2562)),
+        8: (mm(17.9786), mm(19.2562), mm(15.0486), mm(19.2562)),
+        9: (mm(27.094), mm(22.1564), mm(26.7686), mm(22.1564)),
+        10: (mm(26.7686), mm(22.1564), mm(23.8386), mm(22.1564)),
+        11: (mm(23.8386), mm(22.1564), mm(20.9086), mm(22.1564)),
+        12: (mm(20.9086), mm(22.1564), mm(17.9786), mm(22.1564)),
+        13: (mm(17.9786), mm(22.1564), mm(15.0486), mm(22.1564)),
     }
     assert {
         edge_id: core_network.find_edge_sprinkler_count(edge_id)
@@ -136,21 +144,21 @@ def test_core_network_construction():
         )
         for junction_id, junction in core_network.get_junctions().items()
     } == {
-        1: (27.094, 19.2562, JunctionType.THREE_WAY, [1, 2, 4], None, False),
-        2: (27.094, 22.1564, JunctionType.THREE_WAY, [2, 3, 9], None, False),
-        3: (27.094, 25.0564, JunctionType.TWO_WAY, [3, 14], 90.0, False),
-        4: (26.7686, 25.0564, JunctionType.TWO_WAY, [14, 15], 0.0, True),
-        5: (23.8386, 25.0564, JunctionType.TWO_WAY, [15, 16], 0.0, True),
-        6: (20.9086, 25.0564, JunctionType.TWO_WAY, [16, 17], 0.0, True),
-        7: (17.9786, 25.0564, JunctionType.TWO_WAY, [17, 18], 0.0, True),
-        8: (26.7686, 22.1564, JunctionType.TWO_WAY, [9, 10], 0.0, True),
-        9: (23.8386, 22.1564, JunctionType.TWO_WAY, [10, 11], 0.0, True),
-        10: (20.9086, 22.1564, JunctionType.TWO_WAY, [11, 12], 0.0, True),
-        11: (17.9786, 22.1564, JunctionType.TWO_WAY, [12, 13], 0.0, True),
-        12: (26.7686, 19.2562, JunctionType.TWO_WAY, [4, 5], 0.0, True),
-        13: (23.8386, 19.2562, JunctionType.TWO_WAY, [5, 6], 0.0, True),
-        14: (20.9086, 19.2562, JunctionType.TWO_WAY, [6, 7], 0.0, True),
-        15: (17.9786, 19.2562, JunctionType.TWO_WAY, [7, 8], 0.0, True),
+        1: (mm(27.094), mm(19.2562), JunctionType.THREE_WAY, [1, 2, 4], None, False),
+        2: (mm(27.094), mm(22.1564), JunctionType.THREE_WAY, [2, 3, 9], None, False),
+        3: (mm(27.094), mm(25.0564), JunctionType.TWO_WAY, [3, 14], 90.0, False),
+        4: (mm(26.7686), mm(25.0564), JunctionType.TWO_WAY, [14, 15], 0.0, True),
+        5: (mm(23.8386), mm(25.0564), JunctionType.TWO_WAY, [15, 16], 0.0, True),
+        6: (mm(20.9086), mm(25.0564), JunctionType.TWO_WAY, [16, 17], 0.0, True),
+        7: (mm(17.9786), mm(25.0564), JunctionType.TWO_WAY, [17, 18], 0.0, True),
+        8: (mm(26.7686), mm(22.1564), JunctionType.TWO_WAY, [9, 10], 0.0, True),
+        9: (mm(23.8386), mm(22.1564), JunctionType.TWO_WAY, [10, 11], 0.0, True),
+        10: (mm(20.9086), mm(22.1564), JunctionType.TWO_WAY, [11, 12], 0.0, True),
+        11: (mm(17.9786), mm(22.1564), JunctionType.TWO_WAY, [12, 13], 0.0, True),
+        12: (mm(26.7686), mm(19.2562), JunctionType.TWO_WAY, [4, 5], 0.0, True),
+        13: (mm(23.8386), mm(19.2562), JunctionType.TWO_WAY, [5, 6], 0.0, True),
+        14: (mm(20.9086), mm(19.2562), JunctionType.TWO_WAY, [6, 7], 0.0, True),
+        15: (mm(17.9786), mm(19.2562), JunctionType.TWO_WAY, [7, 8], 0.0, True),
     }
 
     assert {
@@ -480,15 +488,15 @@ def test_geometry_network_construction():
             geometry_network.get_geometric_fire_connections_with_junctions_ids().items()
         )
     } == {
-        1: ("GeometricTee", 27.094, 19.2562, pi / 2.0),
-        2: ("GeometricTee", 27.094, 22.1564, pi / 2.0),
-        3: ("GeometricElbow", 84.094, -31.9436, pi / 2.0),
-        5: ("GeometricReducer", -226.16140000000001, 25.0564, 0.0),
-        6: ("GeometricReducer", -229.0914, 25.0564, 0.0),
-        9: ("GeometricReducer", -226.16140000000001, 22.1564, 0.0),
-        10: ("GeometricReducer", -229.0914, 22.1564, 0.0),
-        13: ("GeometricReducer", -226.16140000000001, 19.2562, 0.0),
-        14: ("GeometricReducer", -229.0914, 19.2562, 0.0),
+        1: ("GeometricTee", mm(27.094), mm(19.2562), pi / 2.0),
+        2: ("GeometricTee", mm(27.094), mm(22.1564), pi / 2.0),
+        3: ("GeometricElbow", 27037.0, 24999.4, 2 * pi),
+        5: ("GeometricReducer", 23588.6, mm(25.0564), 0.0),
+        6: ("GeometricReducer", 20658.6, mm(25.0564), 0.0),
+        9: ("GeometricReducer", 23588.6, mm(22.1564), 0.0),
+        10: ("GeometricReducer", 20658.6, mm(22.1564), 0.0),
+        13: ("GeometricReducer", 23588.6, mm(19.2562), 0.0),
+        14: ("GeometricReducer", 20658.6, mm(19.2562), 0.0),
     }
     assert {
         edge_id: (
@@ -500,22 +508,22 @@ def test_geometry_network_construction():
         )
         for edge_id, pipe in geometry_network.get_geometric_pipes_with_edges_ids().items()
     } == {
-        1: ("GeometricPipe", 27.094, 18.819, 27.094, 19.2562),
-        2: ("GeometricPipe", 27.094, 19.2562, 27.094, 22.1564),
-        3: ("GeometricPipe", 27.094, 22.1564, 27.094, 25.0564),
-        14: ("GeometricPipe", 27.094, 25.0564, 26.7686, 25.0564),
-        15: ("GeometricPipe", 26.7686, 25.0564, 23.8386, 25.0564),
-        16: ("GeometricPipe", 23.8386, 25.0564, 20.9086, 25.0564),
-        17: ("GeometricPipe", 20.9086, 25.0564, 17.9786, 25.0564),
-        18: ("GeometricPipe", 17.9786, 25.0564, 15.0486, 25.0564),
-        9: ("GeometricPipe", 27.094, 22.1564, 26.7686, 22.1564),
-        10: ("GeometricPipe", 26.7686, 22.1564, 23.8386, 22.1564),
-        11: ("GeometricPipe", 23.8386, 22.1564, 20.9086, 22.1564),
-        12: ("GeometricPipe", 20.9086, 22.1564, 17.9786, 22.1564),
-        13: ("GeometricPipe", 17.9786, 22.1564, 15.0486, 22.1564),
-        4: ("GeometricPipe", 27.094, 19.2562, 26.7686, 19.2562),
-        5: ("GeometricPipe", 26.7686, 19.2562, 23.8386, 19.2562),
-        6: ("GeometricPipe", 23.8386, 19.2562, 20.9086, 19.2562),
-        7: ("GeometricPipe", 20.9086, 19.2562, 17.9786, 19.2562),
-        8: ("GeometricPipe", 17.9786, 19.2562, 15.0486, 19.2562),
+        1: ("GeometricPipe", mm(27.094), mm(18.819), mm(27.094), mm(19.2562)),
+        2: ("GeometricPipe", mm(27.094), mm(19.2562), mm(27.094), mm(22.1564)),
+        3: ("GeometricPipe", mm(27.094), mm(22.1564), mm(27.094), mm(25.0564)),
+        14: ("GeometricPipe", mm(27.094), mm(25.0564), mm(26.7686), mm(25.0564)),
+        15: ("GeometricPipe", mm(26.7686), mm(25.0564), mm(23.8386), mm(25.0564)),
+        16: ("GeometricPipe", mm(23.8386), mm(25.0564), mm(20.9086), mm(25.0564)),
+        17: ("GeometricPipe", mm(20.9086), mm(25.0564), mm(17.9786), mm(25.0564)),
+        18: ("GeometricPipe", mm(17.9786), mm(25.0564), mm(15.0486), mm(25.0564)),
+        9: ("GeometricPipe", mm(27.094), mm(22.1564), mm(26.7686), mm(22.1564)),
+        10: ("GeometricPipe", mm(26.7686), mm(22.1564), mm(23.8386), mm(22.1564)),
+        11: ("GeometricPipe", mm(23.8386), mm(22.1564), mm(20.9086), mm(22.1564)),
+        12: ("GeometricPipe", mm(20.9086), mm(22.1564), mm(17.9786), mm(22.1564)),
+        13: ("GeometricPipe", mm(17.9786), mm(22.1564), mm(15.0486), mm(22.1564)),
+        4: ("GeometricPipe", mm(27.094), mm(19.2562), mm(26.7686), mm(19.2562)),
+        5: ("GeometricPipe", mm(26.7686), mm(19.2562), mm(23.8386), mm(19.2562)),
+        6: ("GeometricPipe", mm(23.8386), mm(19.2562), mm(20.9086), mm(19.2562)),
+        7: ("GeometricPipe", mm(20.9086), mm(19.2562), mm(17.9786), mm(19.2562)),
+        8: ("GeometricPipe", mm(17.9786), mm(19.2562), mm(15.0486), mm(19.2562)),
     }
