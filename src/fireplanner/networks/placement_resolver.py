@@ -22,27 +22,11 @@ from fireplanner.networks import junction
 from fireplanner.networks.junction import Junction, JunctionType
 
 
-class PlacementUnit(StrEnum):
-    MM = "mm"
-    CM = "cm"
-    M = "m"
-
-
-@dataclass
-class PlacementResolverConfig:
-    unit: PlacementUnit = PlacementUnit.MM
-
-
 def wrap_to_pi(angle: float) -> float:
     return (angle + pi) % (2 * pi) - pi
 
 
 class PlacementResolver:
-    def __init__(
-        self,
-        config: PlacementResolverConfig | None = None,
-    ) -> None:
-        self._config = config or PlacementResolverConfig()
 
     def resolve_transform(
         self,
@@ -160,7 +144,7 @@ class PlacementResolver:
             large_edge_line.swap_end_points()
 
         return Transform2D(
-            origin=small_edge_line.point_from_end(self._offset_from_centimeters(25.0)),
+            origin=small_edge_line.point_from_end(250.0),
             rotation=small_edge_line.direction(),
         )
 
@@ -201,7 +185,7 @@ class PlacementResolver:
             rotation = first_line.direction()
             transform.angle = rotation
 
-        transform_offset = -self._offset_from_centimeters(geometric_elbow.center_to_end)
+        transform_offset = -geometric_elbow.center_to_end
         transform.translate_local(dx=transform_offset, dy=transform_offset)
 
         return transform
@@ -230,12 +214,3 @@ class PlacementResolver:
             )
 
         return best_pair
-
-    def _offset_from_centimeters(self, centimeters: float) -> float:
-        if self._config.unit == PlacementUnit.CM:
-            return centimeters
-        if self._config.unit == PlacementUnit.MM:
-            return centimeters * 10.0
-        if self._config.unit == PlacementUnit.M:
-            return centimeters / 100.0
-        raise ValueError(f"Unsupported placement unit: {self._config.unit}")

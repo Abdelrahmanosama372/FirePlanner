@@ -16,10 +16,6 @@ from fireplanner.firecomponent import (
 from fireplanner.geometry.primitives import Block, Line, Point
 from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks import CoreNetworkConfig, FlowRoute, ModelNetworkConfig
-from fireplanner.networks.placement_resolver import (
-    PlacementResolverConfig,
-    PlacementUnit,
-)
 from fireplanner.standards.hazard import FireHazard
 from fireplanner.units import LengthUnit
 from .writer import LayerConfig
@@ -72,12 +68,6 @@ class Reader:
                 },
                 "default_connection_type": SteelConnection.Grooved.value,
             }
-        )
-
-    def read_placement_resolver_config(self) -> PlacementResolverConfig:
-        drawing_unit = self.read_drawing_length_unit()
-        return PlacementResolverConfig(
-            unit=self._parse_placement_unit(drawing_unit.value)
         )
 
     def read_drawing_length_unit(self) -> LengthUnit:
@@ -216,10 +206,6 @@ class Reader:
         if normalized == "threaded":
             return SteelConnection.Threaded
         raise ValueError(f"Unsupported connection type: {value}")
-
-    def _parse_placement_unit(self, value: Any) -> PlacementUnit:
-        normalized = str(getattr(value, "value", value)).strip().lower()
-        return PlacementUnit(normalized)
 
     def _read_line_records(
         self, acad: Autocad | Any, layer_name: str, drawing_unit: LengthUnit
