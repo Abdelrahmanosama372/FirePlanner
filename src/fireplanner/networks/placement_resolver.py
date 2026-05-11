@@ -3,11 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
-from enum import StrEnum
-from fnmatch import translate
 from math import pi, isclose, radians
-from signal import raise_signal
 
 from fireplanner.firecomponent import SteelDims
 from fireplanner.geometry.components import (
@@ -18,7 +14,6 @@ from fireplanner.geometry.components import (
 )
 from fireplanner.geometry.primitives import Line, Point
 from fireplanner.geometry.primitives.transform import Transform2D
-from fireplanner.networks import junction
 from fireplanner.networks.junction import Junction, JunctionType
 
 
@@ -91,7 +86,10 @@ class PlacementResolver:
         main_dir = edge_id_line_map[main_edge_ids[0]].direction()
 
         if isclose((main_dir + radians(90)), branch_dir, rel_tol=1e-3) or isclose(
-            wrap_to_pi(main_dir + radians(90)), branch_dir, rel_tol=1e-3
+            wrap_to_pi(main_dir + radians(90)),
+            branch_dir,
+            rel_tol=1e-3
+            or isclose((-main_dir - radians(90)), branch_dir, rel_tol=1e-3),
         ):
             rotation = main_dir
         elif isclose(wrap_to_pi(main_dir + radians(270)), branch_dir, rel_tol=1e-3):
@@ -174,9 +172,15 @@ class PlacementResolver:
             second_line.swap_end_points()
 
         transform = Transform2D(origin=junction.origin, rotation=0.0)
+        first_line_dir = first_line.direction()
+        second_line_dir = second_line.direction()
         if isclose(
-            wrap_to_pi(first_line.direction() + radians(90)),
-            second_line.direction(),
+            wrap_to_pi(first_line_dir + radians(90)),
+            second_line_dir,
+            rel_tol=1e-3,
+        ) or isclose(
+            (first_line_dir + radians(90)),
+            second_line_dir,
             rel_tol=1e-3,
         ):
             rotation = second_line.direction() + radians(180)
