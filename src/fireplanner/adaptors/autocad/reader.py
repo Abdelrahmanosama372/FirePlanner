@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -23,6 +24,8 @@ from .writer import LayerConfig
 if TYPE_CHECKING:
     from pyautocad import Autocad
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class _LineRecord:
@@ -33,6 +36,7 @@ class _LineRecord:
 class Reader:
     def __init__(self, yaml_string: str) -> None:
         self._raw_data = self._load_yaml_string(yaml_string)
+        logger.info("AutoCAD reader initialized from YAML input.")
 
     def read_model_network_config(self) -> ModelNetworkConfig:
         firefighting_data = self._mapping(self._raw_data.get("firefighting"))
@@ -42,7 +46,7 @@ class Reader:
             steel_data.get("connnection_type") or steel_data.get("connection_type")
         )
 
-        return ModelNetworkConfig.from_dict(
+        config = ModelNetworkConfig.from_dict(
             {
                 "compute_pipe_dimensions": processing_data.get(
                     "compute_pipe_dimensions",
@@ -69,6 +73,8 @@ class Reader:
                 "default_connection_type": SteelConnection.Grooved.value,
             }
         )
+        logger.info("Model network config parsed successfully.")
+        return config
 
     def read_drawing_length_unit(self) -> LengthUnit:
         drawing_data = self._mapping(
@@ -76,7 +82,9 @@ class Reader:
                 self._mapping(self._raw_data.get("autocad")).get("input")
             ).get("drawing")
         )
-        return self._parse_length_unit(drawing_data.get("units", LengthUnit.MILLIMETER))
+        unit = self._parse_length_unit(drawing_data.get("units", LengthUnit.MILLIMETER))
+        logger.info("Drawing length unit resolved: %s", unit.value)
+        return unit
 
     def read_core_network_configs(self, acad: Autocad | Any) -> list[CoreNetworkConfig]:
         root_flow_route = self._read_root_flow_route()
@@ -87,6 +95,7 @@ class Reader:
         line_network_data = self._mapping(input_data.get("line_network_layer"))
         sprinkler_block_data = self._mapping(input_data.get("sprinkler_blocks"))
         root_identifier = self._mapping(input_data.get("root_line_identifier"))
+        logger.info("Reading AutoCAD entities to build core network configs.")
 
         line_records = self._read_line_records(
             acad=acad,
@@ -116,6 +125,13 @@ class Reader:
                 )
             )
 
+        logger.info(
+            "Built %d core network config(s) with %d line(s), %d sprinkler block(s), and %d root line match(es).",
+            len(configs),
+            len(line_records),
+            len(sprinkler_blocks),
+            len(root_lines),
+        )
         return configs
 
     def _read_root_flow_route(self) -> FlowRoute:
@@ -140,7 +156,7 @@ class Reader:
         )
         layer_data = self._mapping(output_data.get("layer"))
         properties = self._mapping(layer_data.get("properties"))
-        return LayerConfig(
+        config = LayerConfig(
             name=str(layer_data.get("name", "")),
             color=str(properties.get("color")) if "color" in properties else None,
             line_weight=(
@@ -149,6 +165,8 @@ class Reader:
                 else None
             ),
         )
+        logger.info("Output layer config parsed (name=%s).", config.name)
+        return config
 
     def _load_yaml_string(self, yaml_string: str) -> dict[str, Any]:
         data = yaml.safe_load(yaml_string) or {}
@@ -232,6 +250,11 @@ class Reader:
                     ),
                 )
             )
+        logger.info(
+            "Collected %d line entity record(s) from layer '%s' and normalized to mm.",
+            len(line_records),
+            layer_name,
+        )
         return line_records
 
     def _read_sprinkler_blocks(
@@ -266,6 +289,10 @@ class Reader:
                     block, from_unit=drawing_unit, to_unit=LengthUnit.MILLIMETER
                 )
             )
+        logger.info(
+            "Collected %d sprinkler block reference(s) and normalized to mm.",
+            len(blocks),
+        )
         return blocks
 
     def _parse_length_unit(self, value: Any) -> LengthUnit:

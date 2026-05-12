@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +19,8 @@ from .writer import Writer
 if TYPE_CHECKING:
     from pyautocad import Autocad
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class NetworkPipelineResult:
@@ -32,8 +35,10 @@ class Pipeline:
     def __init__(self, yaml_string: str, acad: Autocad | Any) -> None:
         self._reader = Reader(yaml_string)
         self._acad = acad
+        logger.info("AutoCAD pipeline initialized.")
 
     def build(self) -> list[NetworkPipelineResult]:
+        logger.info("Pipeline build started.")
         core_network_configs = self._reader.read_core_network_configs(self._acad)
         model_network_config = self._reader.read_model_network_config()
 
@@ -59,6 +64,7 @@ class Pipeline:
                 )
             )
 
+        logger.info("Pipeline build completed with %d result set(s).", len(results))
         return results
 
     def build_one(self) -> NetworkPipelineResult:
@@ -70,6 +76,7 @@ class Pipeline:
         return results[0]
 
     def draw(self) -> list[list[Any]]:
+        logger.info("Pipeline draw started.")
         layer_config = self._reader.read_output_layer_config()
         writer = Writer(
             acad=self._acad,
@@ -81,4 +88,7 @@ class Pipeline:
             written_entities_per_network.append(
                 writer.write_geometry_network(result.geometry_network)
             )
+        logger.info(
+            "Pipeline draw completed for %d network(s).", len(written_entities_per_network)
+        )
         return written_entities_per_network

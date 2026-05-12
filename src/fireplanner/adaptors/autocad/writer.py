@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from math import atan2, sqrt
 from typing import Any, TYPE_CHECKING
@@ -10,6 +11,8 @@ from fireplanner.geometry.primitives import Arc, Line
 from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks.geometry_network import GeometryNetwork
 from fireplanner.units import LengthUnit
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -26,8 +29,14 @@ class Writer:
         self._acad = acad
         self._layer_config = layer_config
         self._drawing_unit = drawing_unit
+        logger.info(
+            "AutoCAD writer initialized (layer=%s, output_unit=%s).",
+            self._layer_config.name,
+            self._drawing_unit.value,
+        )
 
     def write_geometry_network(self, geometry_network: GeometryNetwork) -> list[Any]:
+        logger.info("Writing geometry network primitives to AutoCAD.")
         created_entities: list[Any] = []
 
         for pipe in geometry_network.get_geometric_pipes_with_edges_ids().values():
@@ -42,6 +51,7 @@ class Writer:
             for primitive in component.get_primitives_2d():
                 created_entities.extend(self._write_primitive(primitive))
 
+        logger.info("Wrote %d AutoCAD entity(ies).", len(created_entities))
         return created_entities
 
     def _write_primitive(self, primitive: object) -> list[Any]:
