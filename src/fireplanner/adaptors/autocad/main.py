@@ -6,6 +6,10 @@ from pathlib import Path
 from pyautocad import Autocad
 
 from .pipeline import Pipeline
+import logging
+
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
 def main() -> None:
