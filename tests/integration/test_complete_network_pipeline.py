@@ -25,13 +25,28 @@ def mm(value: float) -> float:
     return value * MM_SCALE
 
 
-
 def build_test_network() -> tuple[list[Line], list[Block]]:
     lines = [
-        Line(id=0, start=Point(x=mm(27.094), y=mm(18.8190)), end=Point(x=mm(27.094), y=mm(25.0564))),
-        Line(id=1, start=Point(x=mm(15.0486), y=mm(25.0564)), end=Point(x=mm(27.094), y=mm(25.0564))),
-        Line(id=2, start=Point(x=mm(15.0486), y=mm(22.1564)), end=Point(x=mm(27.094), y=mm(22.1564))),
-        Line(id=3, start=Point(x=mm(15.0486), y=mm(19.2562)), end=Point(x=mm(27.094), y=mm(19.2562))),
+        Line(
+            id=0,
+            start=Point(x=mm(27.094), y=mm(18.8190)),
+            end=Point(x=mm(27.094), y=mm(25.0564)),
+        ),
+        Line(
+            id=1,
+            start=Point(x=mm(15.0486), y=mm(25.0564)),
+            end=Point(x=mm(27.094), y=mm(25.0564)),
+        ),
+        Line(
+            id=2,
+            start=Point(x=mm(15.0486), y=mm(22.1564)),
+            end=Point(x=mm(27.094), y=mm(22.1564)),
+        ),
+        Line(
+            id=3,
+            start=Point(x=mm(15.0486), y=mm(19.2562)),
+            end=Point(x=mm(27.094), y=mm(19.2562)),
+        ),
     ]
 
     blocks = [
