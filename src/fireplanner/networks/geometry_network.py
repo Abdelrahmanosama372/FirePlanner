@@ -90,6 +90,12 @@ class GeometryNetwork:
                 if end_junction_id is not None
                 else line.end
             )
+            geometric_pipe.transform = self._placement_resolver.resolve_transform(
+                junction=None,
+                edge_id_line_map={},
+                edge_pipe_dim_map={},
+                geometric_component=geometric_pipe,
+            )
             geometric_pipes[edge_id] = geometric_pipe
 
         return geometric_pipes

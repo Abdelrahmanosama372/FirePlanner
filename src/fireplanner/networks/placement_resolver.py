@@ -9,6 +9,7 @@ from fireplanner.firecomponent import SteelDims
 from fireplanner.geometry.components import (
     GeometricComponent,
     GeometricElbow,
+    GeometricPipe,
     GeometricReducer,
     GeometricTee,
 )
@@ -53,10 +54,18 @@ class PlacementResolver:
                 edge_pipe_dim_map,
                 geometric_component,
             )
+        if isinstance(geometric_component, GeometricPipe):
+            return self._resolve_pipe_transform(geometric_component)
 
         raise ValueError(
             f"Unsupported geometric component type: {type(geometric_component).__name__}"
         )
+
+    def _resolve_pipe_transform(self, geometric_pipe: GeometricPipe) -> Transform2D:
+        if geometric_pipe.start is None or geometric_pipe.end is None:
+            raise ValueError("Cannot resolve pipe transform without start/end points.")
+        line = Line(start=geometric_pipe.start, end=geometric_pipe.end)
+        return Transform2D(origin=geometric_pipe.start, rotation=line.direction())
 
     def _resolve_tee_connection(
         self,
