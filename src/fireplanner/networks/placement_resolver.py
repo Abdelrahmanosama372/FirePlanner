@@ -174,14 +174,14 @@ class PlacementResolver:
         transform = Transform2D(origin=junction.origin, rotation=0.0)
         first_line_dir = first_line.direction()
         second_line_dir = second_line.direction()
-        if isclose(
-            wrap_to_pi(first_line_dir + radians(90)),
-            second_line_dir,
-            rel_tol=1e-3,
-        ) or isclose(
-            (first_line_dir + radians(90)),
-            second_line_dir,
-            rel_tol=1e-3,
+        if (
+            isclose((first_line_dir + radians(90)), second_line_dir, rel_tol=1e-3)
+            or isclose(
+                wrap_to_pi(first_line_dir + radians(90)),
+                second_line_dir,
+                rel_tol=1e-3,
+            )
+            or isclose((-first_line_dir - radians(90)), second_line_dir, rel_tol=1e-3)
         ):
             rotation = second_line.direction() + radians(180)
             transform.angle = rotation
