@@ -3,6 +3,7 @@ from __future__ import annotations
 from math import isclose
 
 from fireplanner.geometry.primitives.line import Line
+from fireplanner.standards.steel_dim import steel_dim_table
 from .geometric_component import GeometricComponent
 from fireplanner.geometry.primitives import Point, Primitive2D
 from fireplanner.firecomponent import Pipe
@@ -36,7 +37,7 @@ class GeometricPipe(GeometricComponent):
     def _local_primitives_2d(self) -> list[Primitive2D]:
         if not (self._start and self._end):
             raise ValueError("Cannot build local pipe geometry without start and end.")
-        r = self._diameter.value / 2.0
+        r = steel_dim_table[self._diameter] / 2.0
         length = self.length
         if isclose(length, 0.0, abs_tol=1e-9):
             raise ValueError("Cannot build local pipe geometry for zero-length pipe.")
