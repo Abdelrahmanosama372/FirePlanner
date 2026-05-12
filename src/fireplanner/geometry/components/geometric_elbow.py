@@ -1,4 +1,5 @@
 from __future__ import annotations
+from math import radians
 from typing import override
 
 from fireplanner.standards.steel_dim import steel_dim_table
@@ -43,13 +44,13 @@ class GeometricElbow(GeometricComponent):
         inner_arc = Arc(
             start=start_in,
             center=center,
-            angle=self._angle,
+            angle=radians(self._angle),
         )
 
         outer_arc = Arc(
             start=start_out,
             center=center,
-            angle=self._angle,
+            angle=radians(self._angle),
         )
 
         vertical_line = Line(

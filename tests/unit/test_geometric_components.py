@@ -1,4 +1,4 @@
-from math import radians
+from math import pi, radians
 from typing import List
 import pytest
 from fireplanner.geometry.primitives import Primitive2D, Transform2D, Point, Line, Arc
@@ -158,12 +158,12 @@ def test_reducer_build_primitives_2d(
                 Arc(
                     start=Point(x=3, y=24.3),
                     center=Point(x=3, y=3),
-                    angle=90,
+                    angle=pi / 2,
                 ),  # inner arc
                 Arc(
                     start=Point(x=3, y=57.7),
                     center=Point(x=3, y=3),
-                    angle=90,
+                    angle=pi / 2,
                 ),  # outer arc
                 Line(start=Point(x=3, y=24.3), end=Point(x=3, y=57.7)),  # vertical line
                 Line(
