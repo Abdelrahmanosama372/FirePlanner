@@ -11,9 +11,6 @@ from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks.geometry_network import GeometryNetwork
 from fireplanner.units import LengthUnit
 
-if TYPE_CHECKING:
-    from pyautocad import APoint
-
 
 @dataclass(frozen=True)
 class LayerConfig:
@@ -48,6 +45,13 @@ class Writer:
         return created_entities
 
     def _write_primitive(self, primitive: object) -> list[Any]:
+        try:
+            from pyautocad import APoint
+        except ImportError as exc:
+            raise ImportError(
+                "pyautocad must be installed to write primitive objects."
+            ) from exc
+
         if isinstance(primitive, Line):
             primitive = GeometryUnitConverter.line_to_unit(
                 primitive,
