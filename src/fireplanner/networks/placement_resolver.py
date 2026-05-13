@@ -16,6 +16,7 @@ from fireplanner.geometry.components import (
 from fireplanner.geometry.primitives import Line, Point
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction import Junction, JunctionType
+from fireplanner.networks.utils import find_collinear_edge_ids
 
 
 def wrap_to_pi(angle: float) -> float:
@@ -24,12 +25,73 @@ def wrap_to_pi(angle: float) -> float:
 
 class PlacementResolver:
 
+    def group_resolve_transform(
+        self,
+        junction: Junction,
+        edge_id_line_map: dict[int, Line],
+        edge_pipe_dim_map: dict[int, SteelDims],
+        geometric_components: list[GeometricComponent],
+    ) -> list[tuple[GeometricComponent, Transform2D]]:
+
+        components_with_transforms: list[tuple[GeometricComponent, Transform2D]] = []
+
+        # Possible geometric component groups:
+        # - tee + reducer
+        # - tee + two reducers
+
+        # Resolve tee first
+        tee = next(
+            (
+                component
+                for component in geometric_components
+                if isinstance(component, GeometricTee)
+            ),
+            None,
+        )
+
+        if tee is None:
+            raise ValueError(
+                "Expected a GeometricTee in grouped placement resolving "
+                "of geometric components"
+            )
+
+        tee_transform = self._resolve_tee_connection(
+            junction,
+            edge_id_line_map,
+            edge_pipe_dim_map,
+            tee,
+        )
+
+        components_with_transforms.append((tee, tee_transform))
+
+        reducers_offset: float = tee.run_center_to_end
+
+        # Resolve remaining components
+        for component in geometric_components:
+
+            # Skip tee since already resolved
+            if component is tee:
+                continue
+
+            transform = self.resolve_transform(
+                junction,
+                edge_id_line_map,
+                edge_pipe_dim_map,
+                component,
+                reducers_offset,
+            )
+
+            components_with_transforms.append((component, transform))
+
+        return components_with_transforms
+
     def resolve_transform(
         self,
         junction: Junction,
         edge_id_line_map: dict[int, Line],
         edge_pipe_dim_map: dict[int, SteelDims],
         geometric_component: GeometricComponent,
+        junction_origin_offset: float | None = None,
     ) -> Transform2D:
         if isinstance(geometric_component, GeometricTee):
             return self._resolve_tee_connection(
@@ -40,11 +102,14 @@ class PlacementResolver:
             )
 
         if isinstance(geometric_component, GeometricReducer):
+            reducer_offset = junction_origin_offset or 250
+
             return self._resolve_reducer_connection(
                 junction,
                 edge_id_line_map,
                 edge_pipe_dim_map,
                 geometric_component,
+                reducer_offset,
             )
 
         if isinstance(geometric_component, GeometricElbow):
@@ -77,9 +142,7 @@ class PlacementResolver:
         if junction.junction_type != JunctionType.THREE_WAY:
             raise ValueError(f"Junction {junction.id} is not a three-way junction.")
 
-        main_edge_ids = self._find_collinear_edge_ids(
-            junction.connected_edges_ids, edge_id_line_map
-        )
+        main_edge_ids = find_collinear_edge_ids(edge_id_line_map)
         branch_edge_id = next(
             edge_id
             for edge_id in junction.connected_edges_ids
@@ -121,17 +184,13 @@ class PlacementResolver:
         edge_id_line_map: dict[int, Line],
         edge_pipe_dim_map: dict[int, SteelDims],
         geometric_reducer: GeometricReducer,
+        reducers_offset: float,
     ) -> Transform2D:
         # reducer tranform is choosen so that at angle 0.
         # the tranform is at reducer center, smaller diameter end is
         # on left side and large diameter end is on right side
 
-        # current implementation places reducer at 25cm
-        # from end of the smaller pipe
-
-        collinear_edge_ids = self._find_collinear_edge_ids(
-            junction.connected_edges_ids, edge_id_line_map
-        )
+        collinear_edge_ids = find_collinear_edge_ids(edge_id_line_map)
         first_edge_id, second_edge_id = collinear_edge_ids
         first_diameter = edge_pipe_dim_map[first_edge_id]
         second_diameter = edge_pipe_dim_map[second_edge_id]
@@ -202,28 +261,3 @@ class PlacementResolver:
         transform.translate_local(dx=transform_offset, dy=transform_offset)
 
         return transform
-
-    def _find_collinear_edge_ids(
-        self, edge_ids: list[int], edge_id_line_map: dict[int, Line]
-    ) -> list[int]:
-        best_pair: list[int] | None = None
-        best_angle = float("inf")
-
-        for first_index in range(len(edge_ids)):
-            for second_index in range(first_index + 1, len(edge_ids)):
-                first_line = edge_id_line_map[edge_ids[first_index]]
-                second_line = edge_id_line_map[edge_ids[second_index]]
-                angle = min(
-                    first_line.angle_to(second_line),
-                    abs(180.0 - first_line.angle_to(second_line)),
-                )
-                if angle < best_angle:
-                    best_angle = angle
-                    best_pair = [edge_ids[first_index], edge_ids[second_index]]
-
-        if best_pair is None:
-            raise ValueError(
-                "Could not find collinear pair of edges for tee placement."
-            )
-
-        return best_pair

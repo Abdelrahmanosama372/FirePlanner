@@ -1,6 +1,8 @@
+from __future__ import annotations
 from enum import StrEnum, Enum, auto
 from typing import final, Any, TypeVar
 from abc import ABC, abstractmethod
+from functools import total_ordering
 
 
 class SteelMaterial(StrEnum):
@@ -24,6 +26,7 @@ class SteelConnection(StrEnum):
     Threaded = auto()
 
 
+@total_ordering
 class SteelDims(Enum):
     DIM_0_5_INCHES = 0.5
     DIM_0_75_INCHES = 0.75
@@ -38,6 +41,9 @@ class SteelDims(Enum):
     DIM_8_INCHES = 8.0
     DIM_10_INCHES = 10.0
     DIM_12_INCHES = 12.0
+
+    def __lt__(self, other: SteelDims):
+        return self.value < other.value
 
 
 T = TypeVar("T", bound="FireComponent")

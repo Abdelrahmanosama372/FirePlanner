@@ -43,13 +43,12 @@ class Writer:
             for primitive in pipe.get_primitives_2d():
                 created_entities.extend(self._write_primitive(primitive))
 
-        for (
-            component
-        ) in (
+        for components in (
             geometry_network.get_geometric_fire_connections_with_junctions_ids().values()
         ):
-            for primitive in component.get_primitives_2d():
-                created_entities.extend(self._write_primitive(primitive))
+            for component in components:
+                for primitive in component.get_primitives_2d():
+                    created_entities.extend(self._write_primitive(primitive))
 
         logger.info("Wrote %d AutoCAD entity(ies).", len(created_entities))
         return created_entities

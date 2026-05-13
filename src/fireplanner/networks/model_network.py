@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ from fireplanner.firecomponent.fitting.fireconnection import FireConnection
 from fireplanner.firecomponent.fitting.fireconnection.elbow import Elbow
 from fireplanner.firecomponent.fitting.fireconnection.reducer import Reducer
 from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
+from fireplanner.geometry.primitives.line import Line
 from fireplanner.networks.core_network import CoreNetwork
 from fireplanner.networks.junction import Junction, JunctionType
 from fireplanner.standards.hazard import (
@@ -86,7 +88,7 @@ class ModelNetworkConfig:
 @dataclass
 class ModelNode:
     junction_id: int
-    fire_connection: FireConnection
+    fire_connection: list[FireConnection]
 
 
 @dataclass
@@ -127,7 +129,9 @@ class ModelNetwork:
     def get_pipes_with_edges_ids(self) -> dict[int, Pipe]:
         return {model_edge.edge_id: model_edge.pipe for model_edge in self.model_edges}
 
-    def get_fire_connections_with_junctions_ids(self) -> dict[int, FireConnection]:
+    def get_fire_connections_with_junctions_ids(
+        self,
+    ) -> dict[int, list[FireConnection]]:
         return {
             model_node.junction_id: model_node.fire_connection
             for model_node in self.model_nodes
@@ -163,84 +167,204 @@ class ModelNetwork:
             material=self.config.material,
             schedule=self.config.schedule,
             specs=self.config.specs,
-            connection_type=self.config.get_connection_type_for_diameter(pipe_dimension),
+            connection_type=self.config.get_connection_type_for_diameter(
+                pipe_dimension
+            ),
         )
 
     def construct_nodes(self) -> list[ModelNode]:
-        return [
-            ModelNode(
-                junction_id=junction.id,
-                fire_connection=fire_connection,
-            )
-            for junction in self._core_network.get_junctions().values()
-            if (fire_connection := self._create_fire_connection_for_junction(junction))
-            is not None
-        ]
+        nodes: list[ModelNode] = []
 
-    def _create_fire_connection_for_junction(
-        self,
-        junction: Junction,
-    ) -> FireConnection | None:
-        connected_edge_diameters = [
-            self._edge_id_to_pipe_dimension[edge_id]
-            for edge_id in junction.connected_edges_ids
-        ]
-        main_connection_type = self.config.get_connection_type_for_diameter(
-            max(
-                connected_edge_diameters,
-                key=lambda diameter: diameter.value,
-            )
-        )
+        edges_ids_line_map = self._core_network.get_lines_with_edge_ids()
 
-        if junction.junction_type == JunctionType.TWO_WAY:
-            first_diameter, second_diameter = connected_edge_diameters
-            if junction.angle is None:
-                raise ValueError(
-                    f"junction angle is None for junction id: {junction.id}"
+        for junction in self._core_network.get_junctions().values():
+            connected_edges_diameters = [
+                self._edge_id_to_pipe_dimension[edge_id]
+                for edge_id in junction.connected_edges_ids
+            ]
+            connected_edges_lines = [
+                edges_ids_line_map[edge_id] for edge_id in junction.connected_edges_ids
+            ]
+
+            fire_connections: FireConnection = []
+
+            if junction.junction_type == JunctionType.TWO_WAY:
+                if junction.angle is None:
+                    raise ValueError(
+                        f"two way junction angle is None for junction id: {junction.id}"
+                    )
+
+                pipe1_dim, pipe2_dim = connected_edges_diameters
+
+                fire_connections = self._create_fire_connection_for_two_way_junction(
+                    pipe1_dim=pipe1_dim,
+                    pipe2_dim=pipe2_dim,
+                    angle=junction.angle,
                 )
 
-            if abs(junction.angle) <= 1.0:
-                if first_diameter != second_diameter:
-                    return Reducer(
-                        diameter1=first_diameter,
-                        diameter2=second_diameter,
+            elif junction.junction_type == JunctionType.THREE_WAY:
+                run1_dim, run2_dim, branch_dim = self._extract_three_way_dimensions(
+                    connected_edges_lines, connected_edges_diameters
+                )
+
+                fire_connections = self._create_fire_connection_for_three_way_junction(
+                    run1_dim=run1_dim,
+                    run2_dim=run2_dim,
+                    branch_dim=branch_dim,
+                )
+
+            else:
+                raise ValueError(
+                    "Unsupported junction type for model node construction: "
+                    f"{junction.junction_type}"
+                )
+
+            if len(fire_connections) == 0:
+                continue
+
+            nodes.append(
+                ModelNode(
+                    junction_id=junction.id,
+                    fire_connection=fire_connections,
+                )
+            )
+
+        return nodes
+
+    def _create_fire_connection_for_two_way_junction(
+        self,
+        pipe1_dim: SteelDims,
+        pipe2_dim: SteelDims,
+        angle: float,
+    ) -> list[FireConnection]:
+        largest_diameter = max(
+            pipe1_dim,
+            pipe2_dim,
+            key=lambda diameter: diameter.value,
+        )
+
+        connection_type = self.config.get_connection_type_for_diameter(largest_diameter)
+
+        if abs(angle) <= 1.0:
+            if pipe1_dim == pipe2_dim:
+                return []
+
+            return [
+                Reducer(
+                    diameter1=pipe1_dim,
+                    diameter2=pipe2_dim,
+                    material=self.config.material,
+                    schedule=self.config.schedule,
+                    specs=self.config.specs,
+                    connection_type=connection_type,
+                )
+            ]
+
+        return [
+            Elbow(
+                diameter=largest_diameter,
+                angle=angle,
+                material=self.config.material,
+                schedule=self.config.schedule,
+                specs=self.config.specs,
+                connection_type=connection_type,
+            )
+        ]
+
+    def _create_fire_connection_for_three_way_junction(
+        self,
+        run1_dim: SteelDims,
+        run2_dim: SteelDims,
+        branch_dim: SteelDims,
+    ) -> list[FireConnection]:
+        largest_diameter = max(
+            run1_dim,
+            run2_dim,
+            branch_dim,
+            key=lambda diameter: diameter.value,
+        )
+
+        connection_type = self.config.get_connection_type_for_diameter(largest_diameter)
+        fire_connections: list[FireConnection] = []
+
+        if branch_dim <= run1_dim or branch_dim <= run2_dim:
+            fire_connections.append(
+                Tee(
+                    run_diameter=largest_diameter,
+                    branch_diameter=branch_dim,
+                    material=self.config.material,
+                    schedule=self.config.schedule,
+                    specs=self.config.specs,
+                    connection_type=connection_type,
+                )
+            )
+
+            if run1_dim != run2_dim:
+                fire_connections.append(
+                    Reducer(
+                        diameter1=run1_dim,
+                        diameter2=run2_dim,
                         material=self.config.material,
                         schedule=self.config.schedule,
                         specs=self.config.specs,
-                        connection_type=main_connection_type,
+                        connection_type=connection_type,
                     )
-                else:
-                    return None
-
-            return Elbow(
-                diameter=max(
-                    connected_edge_diameters,
-                    key=lambda diameter: diameter.value,
-                ),
-                angle=junction.angle,
-                material=self.config.material,
-                schedule=self.config.schedule,
-                specs=self.config.specs,
-                connection_type=main_connection_type,
+                )
+        else:
+            # branch diameter is largest diameter
+            fire_connections.extend(
+                [
+                    Tee(
+                        run_diameter=largest_diameter,
+                        branch_diameter=largest_diameter,
+                        material=self.config.material,
+                        schedule=self.config.schedule,
+                        specs=self.config.specs,
+                        connection_type=connection_type,
+                    ),
+                    Reducer(
+                        diameter1=largest_diameter,
+                        diameter2=run1_dim,
+                        material=self.config.material,
+                        schedule=self.config.schedule,
+                        specs=self.config.specs,
+                        connection_type=connection_type,
+                    ),
+                    Reducer(
+                        diameter1=largest_diameter,
+                        diameter2=run2_dim,
+                        material=self.config.material,
+                        schedule=self.config.schedule,
+                        specs=self.config.specs,
+                        connection_type=connection_type,
+                    ),
+                ]
             )
 
-        if junction.junction_type == JunctionType.THREE_WAY:
-            run_diameter = max(
-                connected_edge_diameters, key=lambda diameter: diameter.value
-            )
-            branch_diameter = min(
-                connected_edge_diameters,
-                key=lambda diameter: diameter.value,
-            )
-            return Tee(
-                run_diameter=run_diameter,
-                branch_diameter=branch_diameter,
-                material=self.config.material,
-                schedule=self.config.schedule,
-                specs=self.config.specs,
-                connection_type=main_connection_type,
-            )
+        return fire_connections
 
-        raise ValueError(
-            f"Unsupported junction type for model node construction: {junction.junction_type}"
-        )
+    def _extract_three_way_dimensions(
+        self,
+        connected_edges_lines: list[Line],
+        connected_edge_diameters: list[SteelDims],
+    ) -> tuple[SteelDims, SteelDims, SteelDims]:
+        if len(connected_edges_lines) != 3 or len(connected_edge_diameters) != 3:
+            raise ValueError(
+                "Incomplete information for three way dimension extraction"
+            )
+        line1 = connected_edges_lines[0]
+        line2 = connected_edges_lines[1]
+        line3 = connected_edges_lines[2]
+        if line1.is_collinear_to(line2):
+            run1_dim = connected_edge_diameters[0]
+            run2_dim = connected_edge_diameters[1]
+            branch_dim = connected_edge_diameters[2]
+        elif line1.is_collinear_to(line3):
+            run1_dim = connected_edge_diameters[0]
+            branch_dim = connected_edge_diameters[1]
+            run2_dim = connected_edge_diameters[2]
+        else:
+            branch_dim = connected_edge_diameters[0]
+            run1_dim = connected_edge_diameters[1]
+            run2_dim = connected_edge_diameters[2]
+        return run1_dim, run2_dim, branch_dim

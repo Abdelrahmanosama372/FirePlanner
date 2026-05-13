@@ -347,50 +347,83 @@ def test_model_network_construction():
         ),
     }
     assert {
-        junction_id: (
-            type(connection).__name__,
-            getattr(connection, "run_diameter", None),
-            getattr(connection, "branch_diameter", None),
-            getattr(connection, "diameter", None),
-            getattr(connection, "angle", None),
-            getattr(connection, "large_diameter", None),
-            getattr(connection, "small_diameter", None),
-            connection.material,
-            connection.schedule,
-            connection.specs,
-            connection.connection_type,
-        )
-        for junction_id, connection in (
+        junction_id: [
+            (
+                type(connection).__name__,
+                getattr(connection, "run_diameter", None),
+                getattr(connection, "branch_diameter", None),
+                getattr(connection, "diameter", None),
+                getattr(connection, "angle", None),
+                getattr(connection, "large_diameter", None),
+                getattr(connection, "small_diameter", None),
+                connection.material,
+                connection.schedule,
+                connection.specs,
+                connection.connection_type,
+            )
+            for connection in connections
+        ]
+        for junction_id, connections in (
             model_network.get_fire_connections_with_junctions_ids().items()
         )
     } == {
-        1: (
-            "Tee",
-            SteelDims.DIM_2_5_INCHES,
-            SteelDims.DIM_1_5_INCHES,
-            None,
-            None,
-            None,
-            None,
-            SteelMaterial.ERW,
-            SteelSchedule.SCD40,
-            SteelSpecs.ASTM,
-            SteelConnection.Grooved,
-        ),
-        2: (
-            "Tee",
-            SteelDims.DIM_2_INCHES,
-            SteelDims.DIM_1_5_INCHES,
-            None,
-            None,
-            None,
-            None,
-            SteelMaterial.ERW,
-            SteelSchedule.SCD40,
-            SteelSpecs.ASTM,
-            SteelConnection.Grooved,
-        ),
-        3: (
+        1: [
+            (
+                "Tee",
+                SteelDims.DIM_2_5_INCHES,
+                SteelDims.DIM_1_5_INCHES,
+                None,
+                None,
+                None,
+                None,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            ),
+            (
+                "Reducer",
+                None,
+                None,
+                None,
+                None,
+                SteelDims.DIM_2_5_INCHES,
+                SteelDims.DIM_2_INCHES,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            ),
+        ],
+        2: [
+            (
+                "Tee",
+                SteelDims.DIM_2_INCHES,
+                SteelDims.DIM_1_5_INCHES,
+                None,
+                None,
+                None,
+                None,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            ),
+            (
+                "Reducer",
+                None,
+                None,
+                None,
+                None,
+                SteelDims.DIM_2_INCHES,
+                SteelDims.DIM_1_5_INCHES,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            ),
+        ],
+        3: [(
             "Elbow",
             None,
             None,
@@ -402,8 +435,8 @@ def test_model_network_construction():
             SteelSchedule.SCD40,
             SteelSpecs.ASTM,
             SteelConnection.Grooved,
-        ),
-        5: (
+        )],
+        5: [(
             "Reducer",
             None,
             None,
@@ -415,8 +448,8 @@ def test_model_network_construction():
             SteelSchedule.SCD40,
             SteelSpecs.ASTM,
             SteelConnection.Grooved,
-        ),
-        6: (
+        )],
+        6: [(
             "Reducer",
             None,
             None,
@@ -428,8 +461,8 @@ def test_model_network_construction():
             SteelSchedule.SCD40,
             SteelSpecs.ASTM,
             SteelConnection.Grooved,
-        ),
-        9: (
+        )],
+        9: [(
             "Reducer",
             None,
             None,
@@ -441,8 +474,8 @@ def test_model_network_construction():
             SteelSchedule.SCD40,
             SteelSpecs.ASTM,
             SteelConnection.Grooved,
-        ),
-        10: (
+        )],
+        10: [(
             "Reducer",
             None,
             None,
@@ -454,8 +487,8 @@ def test_model_network_construction():
             SteelSchedule.SCD40,
             SteelSpecs.ASTM,
             SteelConnection.Grooved,
-        ),
-        13: (
+        )],
+        13: [(
             "Reducer",
             None,
             None,
@@ -467,8 +500,8 @@ def test_model_network_construction():
             SteelSchedule.SCD40,
             SteelSpecs.ASTM,
             SteelConnection.Grooved,
-        ),
-        14: (
+        )],
+        14: [(
             "Reducer",
             None,
             None,
@@ -480,7 +513,7 @@ def test_model_network_construction():
             SteelSchedule.SCD40,
             SteelSpecs.ASTM,
             SteelConnection.Grooved,
-        ),
+        )],
     }
 
 
@@ -493,25 +526,34 @@ def test_geometry_network_construction():
     geometry_network = GeometryNetwork(core_network, model_network)
 
     assert {
-        junction_id: (
-            type(component).__name__,
-            component.transform.origin.x,
-            component.transform.origin.y,
-            component.transform.angle,
-        )
-        for junction_id, component in (
+        junction_id: [
+            (
+                type(component).__name__,
+                component.transform.origin.x,
+                component.transform.origin.y,
+                component.transform.angle,
+            )
+            for component in components
+        ]
+        for junction_id, components in (
             geometry_network.get_geometric_fire_connections_with_junctions_ids().items()
         )
     } == {
-        1: ("GeometricTee", mm(27.094), mm(19.2562), pi / 2.0),
-        2: ("GeometricTee", mm(27.094), mm(22.1564), pi / 2.0),
-        3: ("GeometricElbow", 27037.0, 24999.4, 2 * pi),
-        5: ("GeometricReducer", 23588.6, mm(25.0564), 0.0),
-        6: ("GeometricReducer", 20658.6, mm(25.0564), 0.0),
-        9: ("GeometricReducer", 23588.6, mm(22.1564), 0.0),
-        10: ("GeometricReducer", 20658.6, mm(22.1564), 0.0),
-        13: ("GeometricReducer", 23588.6, mm(19.2562), 0.0),
-        14: ("GeometricReducer", 20658.6, mm(19.2562), 0.0),
+        1: [
+            ("GeometricTee", mm(27.094), mm(19.2562), pi / 2.0),
+            ("GeometricReducer", mm(27.094), mm(19.5062), -pi / 2.0),
+        ],
+        2: [
+            ("GeometricTee", mm(27.094), mm(22.1564), pi / 2.0),
+            ("GeometricReducer", mm(27.094), mm(22.4064), -pi / 2.0),
+        ],
+        3: [("GeometricElbow", 27037.0, 24999.4, 2 * pi)],
+        5: [("GeometricReducer", 23588.6, mm(25.0564), 0.0)],
+        6: [("GeometricReducer", 20658.6, mm(25.0564), 0.0)],
+        9: [("GeometricReducer", 23588.6, mm(22.1564), 0.0)],
+        10: [("GeometricReducer", 20658.6, mm(22.1564), 0.0)],
+        13: [("GeometricReducer", 23588.6, mm(19.2562), 0.0)],
+        14: [("GeometricReducer", 20658.6, mm(19.2562), 0.0)],
     }
     assert {
         edge_id: (
