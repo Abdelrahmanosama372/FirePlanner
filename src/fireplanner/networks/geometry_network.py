@@ -140,11 +140,7 @@ class GeometryNetwork:
                     self.get_geometric_fire_connection_at_junction(end_junction_id)
                 )
 
-            connections_center_lines: list[Line] = []
-            for con in connections:
-                connections_center_lines.extend(con.center_line_model())
-
-            free_pipe_lines = pipe_line.subtract_lines(connections_center_lines)
+            free_pipe_lines = self.find_free_pipes_lines(pipe_line, connections)
 
             if len(free_pipe_lines) == 1:
                 # no reducer on network edge
@@ -204,3 +200,13 @@ class GeometryNetwork:
                 )
 
         return geometric_pipes
+
+    def find_free_pipes_lines(
+        self, pipe_line: Line, connections: GeometricComponent
+    ) -> list[Line]:
+        connections_center_lines: list[Line] = []
+        for con in connections:
+            connections_center_lines.extend(con.center_line_model())
+
+        free_pipe_lines = pipe_line.subtract_lines(connections_center_lines)
+        return free_pipe_lines
