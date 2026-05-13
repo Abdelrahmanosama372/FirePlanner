@@ -39,11 +39,13 @@ class Writer:
         logger.info("Writing geometry network primitives to AutoCAD.")
         created_entities: list[Any] = []
 
-        for pipe in geometry_network.get_geometric_pipes_with_edges_ids().values():
+        for pipe in geometry_network.get_geometric_pipes():
             for primitive in pipe.get_primitives_2d():
                 created_entities.extend(self._write_primitive(primitive))
 
-        for components in (
+        for (
+            components
+        ) in (
             geometry_network.get_geometric_fire_connections_with_junctions_ids().values()
         ):
             for component in components:
