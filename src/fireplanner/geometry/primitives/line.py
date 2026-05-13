@@ -62,6 +62,9 @@ class Line(Primitive2D):
             and self.line_type == other.line_type
         )
 
+    def length(self):
+        return self.start.distance(self.end)
+
     def swap_end_points(self) -> None:
         """Swap the segment start and end points in place."""
         self.start, self.end = self.end, self.start
@@ -267,14 +270,17 @@ class Line(Primitive2D):
             if any(line.pass_through_point(mid) for line in lines):
                 continue
 
-            result.append(
-                Line(
-                    start=p1,
-                    end=p2,
-                    line_type=self.line_type,
-                    style=self.style,
-                )
+            line = Line(
+                start=p1,
+                end=p2,
+                line_type=self.line_type,
+                style=self.style,
             )
+
+            if line.length() < EPS:
+                continue
+
+            result.append(line)
 
         return result
 
