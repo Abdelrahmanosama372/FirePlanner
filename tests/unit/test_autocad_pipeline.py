@@ -44,7 +44,7 @@ def test_pipeline_builds_single_network_result():
         result.geometry_network.get_geometric_fire_connections_with_junctions_ids()
         == {}
     )
-    geometric_pipe = result.geometry_network.get_geometric_pipes_with_edges_ids()[1]
+    geometric_pipe = result.geometry_network.get_geometric_pipes()[0]
     assert isinstance(geometric_pipe, GeometricPipe)
     assert geometric_pipe.start == Point(x=0.0, y=0.0)
     assert geometric_pipe.end == Point(x=10000.0, y=0.0)

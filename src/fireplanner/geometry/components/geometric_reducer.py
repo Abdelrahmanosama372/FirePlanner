@@ -60,3 +60,13 @@ class GeometricReducer(GeometricComponent):
         )
 
         return [top, bottom, right, left]
+
+    @override
+    def _local_center_line_model(self) -> list[Line]:
+        L = self._end_to_end
+
+        x0 = -L / 2.0
+        x1 = L / 2.0
+        return [
+            Line(start=Point(x=x0, y=0), end=Point(x=x1, y=0)),
+        ]

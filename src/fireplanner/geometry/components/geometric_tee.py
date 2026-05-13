@@ -60,3 +60,12 @@ class GeometricTee(GeometricComponent):
         ]
 
         return run_lines + branch_lines
+
+    @override
+    def _local_center_line_model(self) -> list[Line]:
+        R = self.run_center_to_end
+        B = self.branch_center_to_end
+        return [
+            Line(start=Point(x=-R, y=0), end=Point(x=R, y=0)),  # run center line
+            Line(start=Point(x=0, y=0), end=Point(x=0, y=B)),  # branch center line
+        ]

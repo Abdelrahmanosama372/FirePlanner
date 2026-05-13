@@ -423,97 +423,111 @@ def test_model_network_construction():
                 SteelConnection.Grooved,
             ),
         ],
-        3: [(
-            "Elbow",
-            None,
-            None,
-            SteelDims.DIM_1_5_INCHES,
-            90.0,
-            None,
-            None,
-            SteelMaterial.ERW,
-            SteelSchedule.SCD40,
-            SteelSpecs.ASTM,
-            SteelConnection.Grooved,
-        )],
-        5: [(
-            "Reducer",
-            None,
-            None,
-            None,
-            None,
-            SteelDims.DIM_1_5_INCHES,
-            SteelDims.DIM_1_25_INCHES,
-            SteelMaterial.ERW,
-            SteelSchedule.SCD40,
-            SteelSpecs.ASTM,
-            SteelConnection.Grooved,
-        )],
-        6: [(
-            "Reducer",
-            None,
-            None,
-            None,
-            None,
-            SteelDims.DIM_1_25_INCHES,
-            SteelDims.DIM_1_INCHES,
-            SteelMaterial.ERW,
-            SteelSchedule.SCD40,
-            SteelSpecs.ASTM,
-            SteelConnection.Grooved,
-        )],
-        9: [(
-            "Reducer",
-            None,
-            None,
-            None,
-            None,
-            SteelDims.DIM_1_5_INCHES,
-            SteelDims.DIM_1_25_INCHES,
-            SteelMaterial.ERW,
-            SteelSchedule.SCD40,
-            SteelSpecs.ASTM,
-            SteelConnection.Grooved,
-        )],
-        10: [(
-            "Reducer",
-            None,
-            None,
-            None,
-            None,
-            SteelDims.DIM_1_25_INCHES,
-            SteelDims.DIM_1_INCHES,
-            SteelMaterial.ERW,
-            SteelSchedule.SCD40,
-            SteelSpecs.ASTM,
-            SteelConnection.Grooved,
-        )],
-        13: [(
-            "Reducer",
-            None,
-            None,
-            None,
-            None,
-            SteelDims.DIM_1_5_INCHES,
-            SteelDims.DIM_1_25_INCHES,
-            SteelMaterial.ERW,
-            SteelSchedule.SCD40,
-            SteelSpecs.ASTM,
-            SteelConnection.Grooved,
-        )],
-        14: [(
-            "Reducer",
-            None,
-            None,
-            None,
-            None,
-            SteelDims.DIM_1_25_INCHES,
-            SteelDims.DIM_1_INCHES,
-            SteelMaterial.ERW,
-            SteelSchedule.SCD40,
-            SteelSpecs.ASTM,
-            SteelConnection.Grooved,
-        )],
+        3: [
+            (
+                "Elbow",
+                None,
+                None,
+                SteelDims.DIM_1_5_INCHES,
+                90.0,
+                None,
+                None,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            )
+        ],
+        5: [
+            (
+                "Reducer",
+                None,
+                None,
+                None,
+                None,
+                SteelDims.DIM_1_5_INCHES,
+                SteelDims.DIM_1_25_INCHES,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            )
+        ],
+        6: [
+            (
+                "Reducer",
+                None,
+                None,
+                None,
+                None,
+                SteelDims.DIM_1_25_INCHES,
+                SteelDims.DIM_1_INCHES,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            )
+        ],
+        9: [
+            (
+                "Reducer",
+                None,
+                None,
+                None,
+                None,
+                SteelDims.DIM_1_5_INCHES,
+                SteelDims.DIM_1_25_INCHES,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            )
+        ],
+        10: [
+            (
+                "Reducer",
+                None,
+                None,
+                None,
+                None,
+                SteelDims.DIM_1_25_INCHES,
+                SteelDims.DIM_1_INCHES,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            )
+        ],
+        13: [
+            (
+                "Reducer",
+                None,
+                None,
+                None,
+                None,
+                SteelDims.DIM_1_5_INCHES,
+                SteelDims.DIM_1_25_INCHES,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            )
+        ],
+        14: [
+            (
+                "Reducer",
+                None,
+                None,
+                None,
+                None,
+                SteelDims.DIM_1_25_INCHES,
+                SteelDims.DIM_1_INCHES,
+                SteelMaterial.ERW,
+                SteelSchedule.SCD40,
+                SteelSpecs.ASTM,
+                SteelConnection.Grooved,
+            )
+        ],
     }
 
 
@@ -556,31 +570,78 @@ def test_geometry_network_construction():
         14: [("GeometricReducer", 20658.6, mm(19.2562), 0.0)],
     }
     assert {
-        edge_id: (
-            type(pipe).__name__,
-            pipe.start.x,
-            pipe.start.y,
-            pipe.end.x,
-            pipe.end.y,
-        )
-        for edge_id, pipe in geometry_network.get_geometric_pipes_with_edges_ids().items()
+        edge_id: [
+            (
+                type(pipe).__name__,
+                pipe.start.x,
+                pipe.start.y,
+                pipe.end.x,
+                pipe.end.y,
+            )
+            for pipe in pipes
+        ]
+        for edge_id, pipes in geometry_network.get_geometric_pipes_with_edges_ids().items()
     } == {
-        1: ("GeometricPipe", mm(27.094), mm(18.819), mm(27.094), mm(19.2562)),
-        2: ("GeometricPipe", mm(27.094), mm(19.2562), mm(27.094), mm(22.1564)),
-        3: ("GeometricPipe", mm(27.094), mm(22.1564), mm(27.094), mm(25.0564)),
-        14: ("GeometricPipe", mm(27.094), mm(25.0564), mm(26.7686), mm(25.0564)),
-        15: ("GeometricPipe", mm(26.7686), mm(25.0564), mm(23.8386), mm(25.0564)),
-        16: ("GeometricPipe", mm(23.8386), mm(25.0564), mm(20.9086), mm(25.0564)),
-        17: ("GeometricPipe", mm(20.9086), mm(25.0564), mm(17.9786), mm(25.0564)),
-        18: ("GeometricPipe", mm(17.9786), mm(25.0564), mm(15.0486), mm(25.0564)),
-        9: ("GeometricPipe", mm(27.094), mm(22.1564), mm(26.7686), mm(22.1564)),
-        10: ("GeometricPipe", mm(26.7686), mm(22.1564), mm(23.8386), mm(22.1564)),
-        11: ("GeometricPipe", mm(23.8386), mm(22.1564), mm(20.9086), mm(22.1564)),
-        12: ("GeometricPipe", mm(20.9086), mm(22.1564), mm(17.9786), mm(22.1564)),
-        13: ("GeometricPipe", mm(17.9786), mm(22.1564), mm(15.0486), mm(22.1564)),
-        4: ("GeometricPipe", mm(27.094), mm(19.2562), mm(26.7686), mm(19.2562)),
-        5: ("GeometricPipe", mm(26.7686), mm(19.2562), mm(23.8386), mm(19.2562)),
-        6: ("GeometricPipe", mm(23.8386), mm(19.2562), mm(20.9086), mm(19.2562)),
-        7: ("GeometricPipe", mm(20.9086), mm(19.2562), mm(17.9786), mm(19.2562)),
-        8: ("GeometricPipe", mm(17.9786), mm(19.2562), mm(15.0486), mm(19.2562)),
+        1: [
+            ("GeometricPipe", mm(27.094), mm(18.819), mm(27.094), mm(19.1802)),
+        ],
+        2: [
+            ("GeometricPipe", mm(27.094), mm(19.3322), mm(27.094), mm(19.46175)),
+            ("GeometricPipe", mm(27.094), mm(19.55065), mm(27.094), mm(22.0924)),
+        ],
+        3: [
+            ("GeometricPipe", mm(27.094), mm(22.2204), mm(27.094), mm(22.3683)),
+            ("GeometricPipe", mm(27.094), mm(22.4445), mm(27.094), mm(24.9994)),
+        ],
+        4: [
+            ("GeometricPipe", mm(27.027), mm(19.2562), mm(26.7686), mm(19.2562)),
+        ],
+        5: [
+            ("GeometricPipe", mm(26.7686), mm(19.2562), mm(23.8386), mm(19.2562)),
+        ],
+        6: [
+            ("GeometricPipe", mm(23.8386), mm(19.2562), mm(23.62035), mm(19.2562)),
+            ("GeometricPipe", 23556.85, mm(19.2562), mm(20.9086), mm(19.2562)),
+        ],
+        7: [
+            ("GeometricPipe", mm(20.9086), mm(19.2562), mm(20.684), mm(19.2562)),
+            ("GeometricPipe", mm(20.6332), mm(19.2562), mm(17.9786), mm(19.2562)),
+        ],
+        8: [
+            ("GeometricPipe", mm(17.9786), mm(19.2562), mm(15.0486), mm(19.2562)),
+        ],
+        9: [
+            ("GeometricPipe", mm(27.034), mm(22.1564), mm(26.7686), mm(22.1564)),
+        ],
+        10: [
+            ("GeometricPipe", mm(26.7686), mm(22.1564), mm(23.8386), mm(22.1564)),
+        ],
+        11: [
+            ("GeometricPipe", mm(23.8386), mm(22.1564), mm(23.62035), mm(22.1564)),
+            ("GeometricPipe", 23556.85, mm(22.1564), mm(20.9086), mm(22.1564)),
+        ],
+        12: [
+            ("GeometricPipe", mm(20.9086), mm(22.1564), mm(20.684), mm(22.1564)),
+            ("GeometricPipe", mm(20.6332), mm(22.1564), mm(17.9786), mm(22.1564)),
+        ],
+        13: [
+            ("GeometricPipe", mm(17.9786), mm(22.1564), mm(15.0486), mm(22.1564)),
+        ],
+        14: [
+            ("GeometricPipe", mm(27.037), mm(25.0564), mm(26.7686), mm(25.0564)),
+        ],
+        15: [
+            ("GeometricPipe", mm(26.7686), mm(25.0564), mm(23.8386), mm(25.0564)),
+        ],
+        16: [
+            ("GeometricPipe", mm(23.8386), mm(25.0564), mm(23.62035), mm(25.0564)),
+            ("GeometricPipe", 23556.85, mm(25.0564), mm(20.9086), mm(25.0564)),
+        ],
+        17: [
+            ("GeometricPipe", mm(20.9086), mm(25.0564), mm(20.684), mm(25.0564)),
+            ("GeometricPipe", mm(20.6332), mm(25.0564), mm(17.9786), mm(25.0564)),
+        ],
+        18: [
+            ("GeometricPipe", mm(17.9786), mm(25.0564), mm(15.0486), mm(25.0564)),
+        ],
     }

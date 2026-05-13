@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
 from ..primitives import Primitive2D, Primitive3D, Transform2D
-from ..primitives.point import Point
+from ..primitives import Point, Line
 
 
 T = TypeVar("T", bound="GeometricComponent")
@@ -46,6 +46,19 @@ class GeometricComponent(ABC):
     @abstractmethod
     def _local_primitives_2d(self) -> list[Primitive2D]:
         """Geometry defined in local/origin space."""
+
+    @abstractmethod
+    def _local_center_line_model(self) -> list[Line]:
+        """Center Line Model defined in local/origin space."""
+
+    def center_line_model(self) -> list[Line]:
+        if self.transform is None:
+            raise ValueError("Couldn't build center line model, Tranform is None")
+
+        return [
+            line.transform_2d(self._transform)
+            for line in self._local_center_line_model()
+        ]
 
     def _build_primitives_2d(self):
         if self.transform is None:

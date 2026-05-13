@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from math import isclose
 
+from fireplanner.firecomponent.base import SteelDims
 from fireplanner.geometry.primitives.line import Line
 from fireplanner.standards.steel_dim import steel_dim_table
 from .geometric_component import GeometricComponent
@@ -25,6 +26,10 @@ class GeometricPipe(GeometricComponent):
     def diameter(self):
         return self._diameter
 
+    @diameter.setter
+    def diameter(self, value: SteelDims):
+        self._diameter = value
+
     @property
     def length(self):
         if not (self._start and self._end):
@@ -44,3 +49,9 @@ class GeometricPipe(GeometricComponent):
         top = Line(start=Point(x=0.0, y=r), end=Point(x=length, y=r))
         bottom = Line(start=Point(x=0.0, y=-r), end=Point(x=length, y=-r))
         return [top, bottom]
+
+    @override
+    def _local_center_line_model(self) -> list[Line]:
+        return [
+            Line(start=Point(x=0, y=0), end=Point(x=self.length, y=0)),
+        ]

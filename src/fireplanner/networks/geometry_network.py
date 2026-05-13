@@ -1,6 +1,14 @@
 from __future__ import annotations
+from copy import deepcopy
+from math import pi
+from itertools import chain
 
-from fireplanner.geometry.components import GeometricComponent, GeometricPipe
+from fireplanner.geometry.components import (
+    GeometricComponent,
+    GeometricPipe,
+    GeometricReducer,
+)
+from fireplanner.geometry.primitives import Line
 from fireplanner.networks.core_network import CoreNetwork
 from fireplanner.networks.geometry_mapper import GeometryMapper
 from fireplanner.networks.model_network import ModelNetwork
@@ -20,7 +28,7 @@ class GeometryNetwork:
         self._geometry_mapper = geometry_mapper or GeometryMapper()
         self._placement_resolver = placement_resolver or PlacementResolver()
         self._junction_id_to_component: dict[int, list[GeometricComponent]] = {}
-        self._edge_id_to_pipe: dict[int, GeometricPipe] = {}
+        self._edge_id_to_pipe: dict[int, list[GeometricPipe]] = {}
         self._create_network()
 
     @property
@@ -28,7 +36,7 @@ class GeometryNetwork:
         return self._junction_id_to_component
 
     @property
-    def edge_id_to_pipe(self) -> dict[int, GeometricPipe]:
+    def edge_id_to_pipe(self) -> dict[int, list[GeometricPipe]]:
         return self._edge_id_to_pipe
 
     def get_geometric_fire_connections_with_junctions_ids(
@@ -36,8 +44,16 @@ class GeometryNetwork:
     ) -> dict[int, list[GeometricComponent]]:
         return dict(self._junction_id_to_component)
 
-    def get_geometric_pipes_with_edges_ids(self) -> dict[int, GeometricPipe]:
+    def get_geometric_fire_connection_at_junction(
+        self, junction_id: int
+    ) -> list[GeometricComponent]:
+        return self._junction_id_to_component.get(junction_id, [])
+
+    def get_geometric_pipes_with_edges_ids(self) -> dict[int, list[GeometricPipe]]:
         return dict(self._edge_id_to_pipe)
+
+    def get_geometric_pipes(self) -> dict[int, list[GeometricPipe]]:
+        return list(chain.from_iterable(self.edge_id_to_pipe.values()))
 
     def _create_network(self) -> None:
         self._junction_id_to_component = self.construct_nodes()
@@ -98,11 +114,10 @@ class GeometryNetwork:
 
         return geometric_components_map
 
-    def construct_edges(self) -> dict[int, GeometricPipe]:
+    def construct_edges(self) -> dict[int, list[GeometricPipe]]:
         edge_junction_ids = self._core_network.get_edge_junction_ids()
-        junctions = self._core_network.get_junctions()
         edge_id_line_map = self._core_network.get_lines_with_edge_ids()
-        geometric_pipes: dict[int, GeometricPipe] = {}
+        geometric_pipes: dict[int, list[GeometricPipe]] = {}
 
         for edge_id, pipe in self._model_network.get_pipes_with_edges_ids().items():
             geometric_pipe = self._geometry_mapper.get_geometry(pipe)
@@ -111,24 +126,81 @@ class GeometryNetwork:
                     f"Pipe geometry mapping must return GeometricPipe, got {type(geometric_pipe).__name__}."
                 )
 
-            line = edge_id_line_map[edge_id]
+            pipe_line: Line = edge_id_line_map[edge_id]
             start_junction_id, end_junction_id = edge_junction_ids[edge_id]
-            geometric_pipe.start = (
-                junctions[start_junction_id].origin
-                if start_junction_id is not None
-                else line.start
-            )
-            geometric_pipe.end = (
-                junctions[end_junction_id].origin
-                if end_junction_id is not None
-                else line.end
-            )
-            geometric_pipe.transform = self._placement_resolver.resolve_transform(
-                junction=None,
-                edge_id_line_map={},
-                edge_pipe_dim_map={},
-                geometric_component=geometric_pipe,
-            )
-            geometric_pipes[edge_id] = geometric_pipe
+
+            connections: list[GeometricComponent] = []
+            if start_junction_id is not None:
+                connections.extend(
+                    self.get_geometric_fire_connection_at_junction(start_junction_id)
+                )
+
+            if end_junction_id is not None:
+                connections.extend(
+                    self.get_geometric_fire_connection_at_junction(end_junction_id)
+                )
+
+            connections_center_lines: list[Line] = []
+            for con in connections:
+                connections_center_lines.extend(con.center_line_model())
+
+            free_pipe_lines = pipe_line.subtract_lines(connections_center_lines)
+
+            if len(free_pipe_lines) == 1:
+                # no reducer on network edge
+                geometric_pipe.start = free_pipe_lines[0].start
+                geometric_pipe.end = free_pipe_lines[0].end
+                geometric_pipe.transform = self._placement_resolver.resolve_transform(
+                    junction=None,
+                    edge_id_line_map={},
+                    edge_pipe_dim_map={},
+                    geometric_component=geometric_pipe,
+                )
+                geometric_pipes.setdefault(edge_id, []).append(geometric_pipe)
+
+            elif len(free_pipe_lines) == 2:
+                first_line, second_line = free_pipe_lines
+                geometric_reducer_on_pipe = next(
+                    con
+                    for con in connections
+                    if isinstance(con, GeometricReducer)
+                    and pipe_line.pass_through_point(con.transform.origin)
+                )
+                reducer_center_line = geometric_reducer_on_pipe.center_line_model()[0]
+                if reducer_center_line.start in [first_line.start, first_line.end]:
+                    first_line_pipe_dim = geometric_reducer_on_pipe.small_diameter
+                    second_line_pipe_dim = geometric_reducer_on_pipe.large_diameter
+                else:
+                    first_line_pipe_dim = geometric_reducer_on_pipe.large_diameter
+                    second_line_pipe_dim = geometric_reducer_on_pipe.small_diameter
+
+                geometric_pipe1 = GeometricPipe(
+                    pipe, start=first_line.start, end=first_line.end
+                )
+                geometric_pipe1.diameter = first_line_pipe_dim
+
+                geometric_pipe2 = GeometricPipe(
+                    pipe, start=second_line.start, end=second_line.end
+                )
+                geometric_pipe2.diameter = second_line_pipe_dim
+
+                geometric_pipe1.transform = self._placement_resolver.resolve_transform(
+                    junction=None,
+                    edge_id_line_map={},
+                    edge_pipe_dim_map={},
+                    geometric_component=geometric_pipe1,
+                )
+                geometric_pipe2.transform = self._placement_resolver.resolve_transform(
+                    junction=None,
+                    edge_id_line_map={},
+                    edge_pipe_dim_map={},
+                    geometric_component=geometric_pipe2,
+                )
+                geometric_pipes.setdefault(edge_id, []).append(geometric_pipe1)
+                geometric_pipes[edge_id].append(geometric_pipe2)
+            else:
+                raise ValueError(
+                    f"Undefined segmentation of pipe line, number of free pipe lines: {len(free_pipe_lines)}"
+                )
 
         return geometric_pipes

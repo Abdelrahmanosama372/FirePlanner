@@ -230,6 +230,54 @@ class Line(Primitive2D):
         end_trans = self.end.transform_2d(transform)
         return Line(start=start_trans, end=end_trans, line_type=self.line_type)
 
+    def subtract_lines(self, lines: list["Line"]) -> list["Line"]:
+
+        points = [self.start, self.end]
+
+        for line in lines:
+
+            # must overlap and be on same infinite line
+            hit, _ = self.intersects_line_2D(line)
+
+            if not hit or not self.is_collinear_to(line):
+                continue
+
+            if self.pass_through_point(line.start):
+                points.append(line.start)
+
+            if self.pass_through_point(line.end):
+                points.append(line.end)
+
+        # sort points along self
+        points = sorted(
+            set(points),
+            key=lambda p: ((p.x - self.start.x) ** 2 + (p.y - self.start.y) ** 2),
+        )
+
+        result: list[Line] = []
+
+        for p1, p2 in zip(points, points[1:]):
+
+            mid = Point(
+                (p1.x + p2.x) / 2,
+                (p1.y + p2.y) / 2,
+            )
+
+            # if midpoint belongs to any cut line -> skip
+            if any(line.pass_through_point(mid) for line in lines):
+                continue
+
+            result.append(
+                Line(
+                    start=p1,
+                    end=p2,
+                    line_type=self.line_type,
+                    style=self.style,
+                )
+            )
+
+        return result
+
     @override
     def to_json(self) -> dict[str, Any]:
         """Serialize this line to the project JSON format."""

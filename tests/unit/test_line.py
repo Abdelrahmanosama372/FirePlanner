@@ -208,6 +208,93 @@ def test_line_transform_2d():
     assert np.array_equal(result.end.array(), np.array([-2.0, 7.0, 0.0]))
 
 
+@pytest.mark.parametrize(
+    "base_line, cuts, expected",
+    [
+        # simple middle cut
+        (
+            Line(Point(0, 0), Point(10, 0)),
+            [
+                Line(Point(2, 0), Point(4, 0)),
+            ],
+            [
+                Line(Point(0, 0), Point(2, 0)),
+                Line(Point(4, 0), Point(10, 0)),
+            ],
+        ),
+        # multiple cuts
+        (
+            Line(Point(0, 0), Point(10, 0)),
+            [
+                Line(Point(2, 0), Point(4, 0)),
+                Line(Point(6, 0), Point(8, 0)),
+            ],
+            [
+                Line(Point(0, 0), Point(2, 0)),
+                Line(Point(4, 0), Point(6, 0)),
+                Line(Point(8, 0), Point(10, 0)),
+            ],
+        ),
+        # reversed cut direction
+        (
+            Line(Point(0, 0), Point(10, 0)),
+            [
+                Line(Point(4, 0), Point(2, 0)),
+            ],
+            [
+                Line(Point(0, 0), Point(2, 0)),
+                Line(Point(4, 0), Point(10, 0)),
+            ],
+        ),
+        # fully covered
+        (
+            Line(Point(0, 0), Point(10, 0)),
+            [
+                Line(Point(0, 0), Point(10, 0)),
+            ],
+            [],
+        ),
+        # overlapping cuts
+        (
+            Line(Point(0, 0), Point(10, 0)),
+            [
+                Line(Point(2, 0), Point(6, 0)),
+                Line(Point(4, 0), Point(8, 0)),
+            ],
+            [
+                Line(Point(0, 0), Point(2, 0)),
+                Line(Point(8, 0), Point(10, 0)),
+            ],
+        ),
+        # cut extends beyond self
+        (
+            Line(Point(0, 0), Point(10, 0)),
+            [
+                Line(Point(-5, 0), Point(4, 0)),
+            ],
+            [
+                Line(Point(4, 0), Point(10, 0)),
+            ],
+        ),
+        # no overlap
+        (
+            Line(Point(0, 0), Point(10, 0)),
+            [
+                Line(Point(20, 0), Point(30, 0)),
+            ],
+            [
+                Line(Point(0, 0), Point(10, 0)),
+            ],
+        ),
+    ],
+)
+def test_subtract_lines(base_line, cuts, expected):
+
+    result = base_line.subtract_lines(cuts)
+
+    assert result == expected
+
+
 def test_line_to_json():
     line = Line(
         start=Point(x=1.0, y=2.0, z=3.0),

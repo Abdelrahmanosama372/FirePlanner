@@ -63,3 +63,16 @@ class GeometricElbow(GeometricComponent):
         )
 
         return [inner_arc, outer_arc, vertical_line, horizontal_line]
+
+    @override
+    def _local_center_line_model(self) -> list[Line]:
+        return [
+            Line(
+                start=Point(x=self.center_to_end, y=0),
+                end=Point(x=self.center_to_end, y=self.center_to_end),
+            ),
+            Line(
+                start=Point(x=self.center_to_end, y=self.center_to_end),
+                end=Point(x=0, y=self.center_to_end),
+            ),
+        ]
