@@ -83,7 +83,7 @@ class Point(Primitive2D):
         point_vec = self.array()
         point_vec[-1] = 1
         trans = np.dot(transform.transform, point_vec.reshape((3, 1)))
-        return Point(x=trans[0, 0], y=trans[1, 0])
+        return Point(x=float(trans[0, 0]), y=float(trans[1, 0]))
 
     @override
     def to_json(self) -> dict[str, str]:
