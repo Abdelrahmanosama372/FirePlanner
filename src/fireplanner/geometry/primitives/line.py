@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from math import acos, atan2, degrees, sqrt, cos, sin
+from math import acos, atan2, degrees, isclose, sqrt, cos, sin
 from typing import Any, Optional, Tuple, override
 
 import numpy as np
@@ -69,7 +69,9 @@ class Line(Primitive2D):
         """Swap the segment start and end points in place."""
         self.start, self.end = self.end, self.start
 
-    def split_at_unchecked(self, points: list[Point]) -> list[Line]:
+    def split_at_unchecked(
+        self, points: list[Point], min_length: float = EPS
+    ) -> list[Line]:
         """Split this line at ordered points that are assumed to lie on the segment."""
         split_points = [self.start]
 
@@ -85,17 +87,18 @@ class Line(Primitive2D):
         for index, (start, end) in enumerate(
             zip(split_points, split_points[1:]), start=1
         ):
-            if start == end:
-                continue
-            split_lines.append(
-                Line(
-                    id=index,
-                    start=start,
-                    end=end,
-                    line_type=self.line_type,
-                    style=self.style,
-                )
+            line = Line(
+                id=index,
+                start=start,
+                end=end,
+                line_type=self.line_type,
+                style=self.style,
             )
+
+            if line.length() <= min_length:
+                continue
+
+            split_lines.append(line)
 
         return split_lines
 
@@ -136,7 +139,8 @@ class Line(Primitive2D):
         AP = P - A
 
         cross = np.cross(AB, AP)
-        if not np.allclose(cross, 0, atol=tol):
+        distance = np.linalg.norm(cross) / np.linalg.norm(AB)
+        if not isclose(distance, 0, atol=tol):
             return False
 
         dot = np.dot(AP, AB)
@@ -176,7 +180,8 @@ class Line(Primitive2D):
             t = cross_2d(wx, wy, sx, sy) / denom
             u = cross_2d(wx, wy, rx, ry) / denom
 
-            if 0.0 <= t <= 1.0 and 0.0 <= u <= 1.0:
+            eps = 1e-5
+            if -eps <= t <= 1.0 + eps and -eps <= u <= 1.0 + eps:
                 intersection_x = A.x + t * rx
                 intersection_y = A.y + t * ry
                 return True, Point(x=intersection_x, y=intersection_y)
