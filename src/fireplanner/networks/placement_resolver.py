@@ -157,11 +157,10 @@ class PlacementResolver:
         branch_dir = branch.direction()
         main_dir = edge_id_line_map[main_edge_ids[0]].direction()
 
-        if isclose((main_dir + radians(90)), branch_dir, rel_tol=1e-3) or isclose(
-            wrap_to_pi(main_dir + radians(90)),
-            branch_dir,
-            rel_tol=1e-3
-            or isclose((-main_dir - radians(90)), branch_dir, rel_tol=1e-3),
+        if (
+            isclose((main_dir + radians(90)), branch_dir, rel_tol=1e-3)
+            or isclose(wrap_to_pi(main_dir + radians(90)), branch_dir, rel_tol=1e-3)
+            or isclose((-main_dir - radians(90)), branch_dir, rel_tol=1e-3)
         ):
             rotation = main_dir
         elif isclose(wrap_to_pi(main_dir + radians(270)), branch_dir, rel_tol=1e-3):
