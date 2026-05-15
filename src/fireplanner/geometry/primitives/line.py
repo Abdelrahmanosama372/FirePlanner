@@ -140,7 +140,7 @@ class Line(Primitive2D):
 
         cross = np.cross(AB, AP)
         distance = np.linalg.norm(cross) / np.linalg.norm(AB)
-        if not isclose(distance, 0, atol=tol):
+        if distance > tol:
             return False
 
         dot = np.dot(AP, AB)

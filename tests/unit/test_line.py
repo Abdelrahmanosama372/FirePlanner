@@ -73,7 +73,7 @@ def test_pass_through_point_on_line():
 def test_pass_through_point_not_on_line():
     line = Line(start=Point(x=0, y=0), end=Point(x=10, y=0))
 
-    point = Point(x=5, y=1)
+    point = Point(x=5, y=1.1)  # 1mm away point is considered on the line
 
     assert line.pass_through_point(point) is False
 
