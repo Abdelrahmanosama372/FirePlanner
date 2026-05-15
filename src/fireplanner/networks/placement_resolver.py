@@ -13,7 +13,7 @@ from fireplanner.geometry.components import (
     GeometricReducer,
     GeometricTee,
 )
-from fireplanner.geometry.primitives import Line, Point
+from fireplanner.geometry.primitives import Line
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction import Junction, JunctionType
 from fireplanner.networks.utils import find_collinear_edge_ids
