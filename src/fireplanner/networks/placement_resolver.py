@@ -12,6 +12,7 @@ from fireplanner.geometry.components import (
     GeometricPipe,
     GeometricReducer,
     GeometricTee,
+    GeometricWeldedBranch,
 )
 from fireplanner.geometry.primitives import Line
 from fireplanner.geometry.primitives.transform import Transform2D
@@ -93,7 +94,7 @@ class PlacementResolver:
         geometric_component: GeometricComponent,
         junction_origin_offset: float | None = None,
     ) -> Transform2D:
-        if isinstance(geometric_component, GeometricTee):
+        if isinstance(geometric_component, (GeometricTee, GeometricWeldedBranch)):
             return self._resolve_tee_connection(
                 junction,
                 edge_id_line_map,
@@ -137,7 +138,7 @@ class PlacementResolver:
         junction: Junction,
         edge_id_line_map: dict[int, Line],
         edge_pipe_dim_map: dict[int, SteelDims],
-        geometric_tee: GeometricTee,
+        geometric_tee: GeometricTee | GeometricWeldedBranch,
     ) -> Transform2D:
         if junction.junction_type != JunctionType.THREE_WAY:
             raise ValueError(f"Junction {junction.id} is not a three-way junction.")

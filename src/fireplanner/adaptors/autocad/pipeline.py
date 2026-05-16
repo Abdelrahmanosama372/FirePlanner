@@ -8,6 +8,7 @@ from fireplanner.networks import (
     CoreNetwork,
     CoreNetworkConfig,
     GeometryNetwork,
+    GeometryNetworkConfig,
     ModelNetwork,
     ModelNetworkConfig,
     PlacementResolver,
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 class NetworkPipelineResult:
     core_network_config: CoreNetworkConfig
     model_network_config: ModelNetworkConfig
+    geometry_network_config: GeometryNetworkConfig
     core_network: CoreNetwork
     model_network: ModelNetwork
     geometry_network: GeometryNetwork
@@ -41,6 +43,7 @@ class Pipeline:
         logger.info("Pipeline build started.")
         core_network_configs = self._reader.read_core_network_configs(self._acad)
         model_network_config = self._reader.read_model_network_config()
+        geometry_network_config = self._reader.read_geometry_network_config()
 
         results: list[NetworkPipelineResult] = []
         for core_network_config in core_network_configs:
@@ -52,12 +55,14 @@ class Pipeline:
             geometry_network = GeometryNetwork(
                 core_network=core_network,
                 model_network=model_network,
+                config=geometry_network_config,
                 placement_resolver=PlacementResolver(),
             )
             results.append(
                 NetworkPipelineResult(
                     core_network_config=core_network_config,
                     model_network_config=model_network_config,
+                    geometry_network_config=geometry_network_config,
                     core_network=core_network,
                     model_network=model_network,
                     geometry_network=geometry_network,

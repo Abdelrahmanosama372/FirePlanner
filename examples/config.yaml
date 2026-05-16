@@ -14,11 +14,19 @@ firefighting:
       "4": "Welded"
       "6": "Welded"
 
+preproessing:
+  root_flow_route: "continuation"
+
 processing:
   compute_pipe_dimensions: true
 
-preproessing:
-  root_flow_route: "continuation"
+geometry:
+  centerlines:
+    enabled: true
+
+  welded_connection:
+    enabled: true
+    min_main_pipe_diameter: "2"
 
 autocad:
   input:

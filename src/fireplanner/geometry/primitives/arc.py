@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isclose
 from typing import Any, override
 
 from .base import Primitive2D
@@ -28,6 +29,13 @@ class Arc(Primitive2D):
         start_trans = self.start.transform_2d(transform)
         center_trans = self.center.transform_2d(transform)
         return Arc(start=start_trans, center=center_trans, angle=self.angle)
+
+    def __eq__(self, other: Arc):
+        return (
+            self.start == other.start
+            and self.center == other.center
+            and isclose(self.angle, other.angle, abs_tol=1e-3)
+        )
 
     def __hash__(self) -> int:
         return hash(self.start) + hash(self.center)

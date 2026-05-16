@@ -19,6 +19,7 @@ from fireplanner.geometry.components import (
     GeometricElbow,
     GeometricTee,
     GeometricReducer,
+    GeometricWeldedBranch,
 )
 
 
@@ -58,6 +59,19 @@ def geometric_tee():
         connection_type=SteelConnection.Grooved,
     )
     return GeometricTee(tee)
+
+
+@pytest.fixture
+def geometric_welded_branch():
+    tee = Tee(
+        run_diameter=SteelDims.DIM_2_5_INCHES,
+        branch_diameter=SteelDims.DIM_1_INCHES,
+        material=SteelMaterial.ERW,
+        schedule=SteelSchedule.SCD40,
+        specs=SteelSpecs.ASTM,
+        connection_type=SteelConnection.Grooved,
+    )
+    return GeometricWeldedBranch(tee)
 
 
 @pytest.fixture
@@ -178,5 +192,31 @@ def test_elbow_build_primitives_2d(
 ):
     geometric_elbow.transform = transform
     primitives = geometric_elbow.get_primitives_2d()
+    assert len(primitives) == len(expected_primitives)
+    assert {prim for prim in primitives} == expected_primitives
+
+
+@pytest.mark.parametrize(
+    "transform, expected_primitives",
+    [
+        (
+            Transform2D(Point(x=3, y=3), radians(90)),
+            {
+                Arc(
+                    start=Point(x=-33.515, y=-13.699999999999996),
+                    center=Point(x=-65.98737633743491, y=3.0000000000000044),
+                    angle=0.9500176519640574,
+                )
+            },
+        ),
+    ],
+)
+def test_elbow_build_primitives_2d(
+    geometric_welded_branch,
+    transform: Transform2D,
+    expected_primitives: List[Primitive2D],
+):
+    geometric_welded_branch.transform = transform
+    primitives = geometric_welded_branch.get_primitives_2d()
     assert len(primitives) == len(expected_primitives)
     assert {prim for prim in primitives} == expected_primitives

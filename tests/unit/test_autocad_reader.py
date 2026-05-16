@@ -36,6 +36,13 @@ autocad:
       SPR:
         temperature: 68
         k_factor: 5.6
+
+geometry:
+  centerlines:
+    enabled: true
+  welded_connection:
+    enabled: true
+    min_main_pipe_diameter: "2"
 """
 
 
@@ -106,6 +113,16 @@ def test_reader_builds_model_network_config_from_yaml_string():
     assert config.get_connection_type_for_diameter(SteelDims.DIM_1_5_INCHES) == (
         SteelConnection.Grooved
     )
+
+
+def test_reader_builds_geometry_network_config_from_yaml_string():
+    reader = Reader(CONFIG_YAML)
+
+    config = reader.read_geometry_network_config()
+
+    assert config.centerlines_enabled is True
+    assert config.welded_connection_enabled is True
+    assert config.welded_connection_min_main_pipe_diameter == SteelDims.DIM_2_INCHES
 
 
 

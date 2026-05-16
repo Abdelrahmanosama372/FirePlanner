@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from copy import deepcopy
 from math import pi
 from itertools import chain
@@ -10,9 +11,17 @@ from fireplanner.geometry.components import (
 )
 from fireplanner.geometry.primitives import Line
 from fireplanner.networks.core_network import CoreNetwork
-from fireplanner.networks.geometry_mapper import GeometryMapper
+from fireplanner.networks.geometry_mapper import GeometryMapper, GeometryMapperConfig
 from fireplanner.networks.model_network import ModelNetwork
 from fireplanner.networks.placement_resolver import PlacementResolver
+from fireplanner.firecomponent import SteelDims
+
+
+@dataclass(frozen=True)
+class GeometryNetworkConfig:
+    centerlines_enabled: bool = False
+    welded_connection_enabled: bool = False
+    welded_connection_min_main_pipe_diameter: SteelDims = SteelDims.DIM_2_INCHES
 
 
 class GeometryNetwork:
@@ -20,12 +29,19 @@ class GeometryNetwork:
         self,
         core_network: CoreNetwork,
         model_network: ModelNetwork,
+        config: GeometryNetworkConfig | None = None,
         geometry_mapper: GeometryMapper | None = None,
         placement_resolver: PlacementResolver | None = None,
     ) -> None:
         self._core_network = core_network
         self._model_network = model_network
-        self._geometry_mapper = geometry_mapper or GeometryMapper()
+        self._config = config or GeometryNetworkConfig()
+        self._geometry_mapper = geometry_mapper or GeometryMapper(
+            config=GeometryMapperConfig(
+                welded_connection_enabled=self._config.welded_connection_enabled,
+                welded_connection_min_main_pipe_diameter=self._config.welded_connection_min_main_pipe_diameter,
+            )
+        )
         self._placement_resolver = placement_resolver or PlacementResolver()
         self._junction_id_to_component: dict[int, list[GeometricComponent]] = {}
         self._edge_id_to_pipe: dict[int, list[GeometricPipe]] = {}

@@ -16,7 +16,12 @@ from fireplanner.firecomponent import (
 )
 from fireplanner.geometry.primitives import Block, Line, Point
 from fireplanner.geometry.unit_converter import GeometryUnitConverter
-from fireplanner.networks import CoreNetworkConfig, FlowRoute, ModelNetworkConfig
+from fireplanner.networks import (
+    CoreNetworkConfig,
+    FlowRoute,
+    GeometryNetworkConfig,
+    ModelNetworkConfig,
+)
 from fireplanner.standards.hazard import FireHazard
 from fireplanner.units import LengthUnit
 from .writer import LayerConfig
@@ -85,6 +90,28 @@ class Reader:
         unit = self._parse_length_unit(drawing_data.get("units", LengthUnit.MILLIMETER))
         logger.info("Drawing length unit resolved: %s", unit.value)
         return unit
+
+    def read_geometry_network_config(self) -> GeometryNetworkConfig:
+        geometry_data = self._mapping(self._raw_data.get("geometry"))
+        centerlines_data = self._mapping(geometry_data.get("centerlines"))
+        welded_connection_data = self._mapping(geometry_data.get("welded_connection"))
+        min_main_pipe_diameter = SteelDims(
+            float(welded_connection_data.get("min_main_pipe_diameter", "2"))
+        )
+        config = GeometryNetworkConfig(
+            centerlines_enabled=bool(centerlines_data.get("enabled", False)),
+            welded_connection_enabled=bool(
+                welded_connection_data.get("enabled", False)
+            ),
+            welded_connection_min_main_pipe_diameter=min_main_pipe_diameter,
+        )
+        logger.info(
+            "Geometry network config parsed (centerlines=%s, welded_connection=%s, welded_min_main=%s).",
+            config.centerlines_enabled,
+            config.welded_connection_enabled,
+            config.welded_connection_min_main_pipe_diameter.value,
+        )
+        return config
 
     def read_core_network_configs(self, acad: Autocad | Any) -> list[CoreNetworkConfig]:
         root_flow_route = self._read_root_flow_route()

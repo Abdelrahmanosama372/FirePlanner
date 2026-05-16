@@ -1,0 +1,55 @@
+from __future__ import annotations
+from typing import override
+from math import asin
+
+from fireplanner.standards import (
+    steel_dim_table,
+    calculate_welded_branch_penetration_depth,
+)
+
+from .geometric_component import GeometricComponent
+from ..primitives import Point, Line, Arc, Primitive2D
+from fireplanner.firecomponent import Tee
+
+
+class GeometricWeldedBranch(GeometricComponent):
+    def __init__(
+        self, tee: Tee, start: Point | None = None, end: Point | None = None
+    ) -> None:
+        self._run_diameter = tee.run_diameter
+        self._branch_diameter = tee.branch_diameter
+        self._penetration_depth: float = calculate_welded_branch_penetration_depth(
+            run_diameter=self._run_diameter, branch_diameter=self._branch_diameter
+        )
+        super().__init__(start, end)
+
+    @property
+    def run_diameter(self):
+        return self._run_diameter
+
+    @property
+    def branch_diameter(self):
+        return self._branch_diameter
+
+    @override
+    def _local_primitives_2d(self) -> list[Primitive2D]:
+        run_raduis = steel_dim_table[self._run_diameter] / 2
+        branch_raduis = steel_dim_table[self._branch_diameter] / 2
+        arc_raduis = (
+            branch_raduis * branch_raduis / self._penetration_depth
+            + self._penetration_depth
+        ) / 2
+        arc_center = Point(x=0, y=arc_raduis - self._penetration_depth + run_raduis)
+        arc_start = Point(x=-branch_raduis, y=run_raduis)
+        arc_angle = 2 * asin(branch_raduis / arc_raduis)
+
+        weld_arc = Arc(start=arc_start, center=arc_center, angle=arc_angle)
+
+        return [weld_arc]
+
+    @override
+    def _local_center_line_model(self) -> list[Line]:
+        R = steel_dim_table[self._run_diameter] / 2
+        return [
+            Line(start=Point(x=0, y=0), end=Point(x=0, y=R)),  # branch center line
+        ]
