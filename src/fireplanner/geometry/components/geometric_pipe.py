@@ -55,7 +55,7 @@ class GeometricPipe(GeometricComponent):
             Line(
                 start=Point(x=0, y=0),
                 end=Point(x=self.length, y=0),
-                LineType=LineType.CenterLine,
+                line_type=LineType.CenterLine,
             ),
         ]
 

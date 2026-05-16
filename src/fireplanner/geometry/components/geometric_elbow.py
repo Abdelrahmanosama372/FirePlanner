@@ -69,12 +69,14 @@ class GeometricElbow(GeometricComponent):
         center = Point(x=0.0, y=0.0)
 
         start = Point(x=self._center_to_end, y=0.0)
-        return Arc(
-            start=start,
-            center=center,
-            angle=radians(self._angle),
-            line_type=LineType.CenterLine,
-        )
+        return [
+            Arc(
+                start=start,
+                center=center,
+                angle=radians(self._angle),
+                line_type=LineType.CenterLine,
+            )
+        ]
 
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
