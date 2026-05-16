@@ -4,7 +4,9 @@ from fireplanner.units import LengthUnit, LengthUnitConverter
 
 class GeometryUnitConverter:
     @staticmethod
-    def point_to_unit(point: Point, from_unit: LengthUnit, to_unit: LengthUnit) -> Point:
+    def point_to_unit(
+        point: Point, from_unit: LengthUnit, to_unit: LengthUnit
+    ) -> Point:
         return Point(
             x=LengthUnitConverter.convert(point.x, from_unit, to_unit),
             y=LengthUnitConverter.convert(point.y, from_unit, to_unit),
@@ -29,7 +31,9 @@ class GeometryUnitConverter:
     ) -> Block:
         return Block(
             name=block.name,
-            center=GeometryUnitConverter.point_to_unit(block.center, from_unit, to_unit),
+            center=GeometryUnitConverter.point_to_unit(
+                block.center, from_unit, to_unit
+            ),
             id=block.id,
             style=block.style,
         )
@@ -40,5 +44,6 @@ class GeometryUnitConverter:
             start=GeometryUnitConverter.point_to_unit(arc.start, from_unit, to_unit),
             center=GeometryUnitConverter.point_to_unit(arc.center, from_unit, to_unit),
             angle=arc.angle,
+            line_type=arc.line_type,
             id=arc.id,
         )

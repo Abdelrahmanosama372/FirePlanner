@@ -31,13 +31,19 @@ class Arc(Primitive2D):
         self.start = start
         self.center = center
         self.angle = angle
+        self.line_type = line_type
         super().__init__(id=id)
 
     @override
     def transform_2d(self, transform: "Transform2D") -> Primitive2D:
         start_trans = self.start.transform_2d(transform)
         center_trans = self.center.transform_2d(transform)
-        return Arc(start=start_trans, center=center_trans, angle=self.angle)
+        return Arc(
+            start=start_trans,
+            center=center_trans,
+            angle=self.angle,
+            line_type=self.line_type,
+        )
 
     def __eq__(self, other: Arc):
         return (
