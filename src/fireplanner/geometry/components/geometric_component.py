@@ -60,12 +60,15 @@ class GeometricComponent(ABC):
             for line in self._local_center_line_model()
         ]
 
-    def _build_primitives_2d(self):
+    def _build_primitives_2d(self, include_centerlines: bool = False):
         if self.transform is None:
             raise ValueError("Couldn't build 2d Primitive, Tranform is None")
 
+        primitives = self._local_primitives_2d()
+        if include_centerlines:
+            primitives.extend(self._local_center_line_model())
         self._primitives_2d = [
-            prim.transform_2d(self._transform) for prim in self._local_primitives_2d()
+            prim.transform_2d(self._transform) for prim in primitives
         ]
 
     def _build_primitives_3d(self):
