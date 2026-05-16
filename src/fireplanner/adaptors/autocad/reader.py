@@ -181,18 +181,39 @@ class Reader:
                 self._mapping(self._raw_data.get("autocad")).get("output")
             ).get("network")
         )
-        layer_data = self._mapping(output_data.get("layer"))
-        properties = self._mapping(layer_data.get("properties"))
+        layer_data = self._mapping(output_data.get("layers"))
+        line_layer_data = self._mapping(layer_data.get("line"))
+        line_properties = self._mapping(line_layer_data.get("properties"))
+
+        centerline_layer_data = self._mapping(layer_data.get("centerline"))
+        centerline_properties = self._mapping(centerline_layer_data.get("properties"))
         config = LayerConfig(
-            name=str(layer_data.get("name", "")),
-            color=str(properties.get("color")) if "color" in properties else None,
+            line_layer_name=str(line_layer_data.get("name", "")),
+            line_color=(
+                str(line_properties.get("color")) if "color" in line_properties else None
+            ),
             line_weight=(
-                float(properties["line_weight"])
-                if "line_weight" in properties
+                float(line_properties["line_weight"])
+                if "line_weight" in line_properties
+                else None
+            ),
+            centerline_layer_name=str(centerline_layer_data.get("name", "")),
+            centerline_color=(
+                str(centerline_properties.get("color"))
+                if "color" in centerline_properties
+                else None
+            ),
+            centerline_weight=(
+                float(centerline_properties["line_weight"])
+                if "line_weight" in centerline_properties
                 else None
             ),
         )
-        logger.info("Output layer config parsed (name=%s).", config.name)
+        logger.info(
+            "Output layer config parsed (line=%s, centerline=%s).",
+            config.line_layer_name,
+            config.centerline_layer_name,
+        )
         return config
 
     def _load_yaml_string(self, yaml_string: str) -> dict[str, Any]:

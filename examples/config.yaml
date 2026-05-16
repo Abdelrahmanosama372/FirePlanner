@@ -42,8 +42,14 @@ autocad:
         k_factor: 5.6 
   output:
     network:
-      layer:
-        name: "ff-sprinklers"
-        properties:
-          color: "green"
-          line_weight: 0.13
+      layers:
+        line:
+          name: "ff-sprinklers"
+          properties:
+            color: "green"
+            line_weight: 0.13
+        centerline:
+          name: "ff-sprinklers-thin"
+          properties:
+            color: "gray"
+            line_weight: 0.05
