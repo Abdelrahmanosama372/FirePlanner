@@ -4,7 +4,7 @@ from typing import override
 
 from fireplanner.standards.steel_dim import steel_dim_table
 from .geometric_component import GeometricComponent
-from ..primitives import Point, Primitive2D, Arc, Line
+from ..primitives import Point, Primitive2D, Arc, Line, LineType
 from fireplanner.firecomponent import Elbow
 from fireplanner.standards import elbow_90_lr_center_to_end
 
@@ -65,7 +65,19 @@ class GeometricElbow(GeometricComponent):
         return [inner_arc, outer_arc, vertical_line, horizontal_line]
 
     @override
-    def _local_center_line_model(self) -> list[Line]:
+    def _local_centerlines(self) -> list[Primitive2D]:
+        center = Point(x=0.0, y=0.0)
+
+        start = Point(x=self._center_to_end, y=0.0)
+        return Arc(
+            start=start,
+            center=center,
+            angle=radians(self._angle),
+            line_type=LineType.CenterLine,
+        )
+
+    @override
+    def _local_layout_skeleton(self) -> list[Primitive2D]:
         return [
             Line(
                 start=Point(x=self.center_to_end, y=0),

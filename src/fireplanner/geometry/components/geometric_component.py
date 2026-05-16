@@ -48,25 +48,35 @@ class GeometricComponent(ABC):
         """Geometry defined in local/origin space."""
 
     @abstractmethod
-    def _local_center_line_model(self) -> list[Line]:
+    def _local_centerlines(self) -> list[Primitive2D]:
         """Center Line Model defined in local/origin space."""
 
-    def center_line_model(self) -> list[Line]:
+    @abstractmethod
+    def _local_layout_skeleton(self) -> list[Primitive2D]:
+        """Analytical layout primitives defined in local/origin space."""
+
+    def centerlines(self) -> list[Line]:
         if self.transform is None:
-            raise ValueError("Couldn't build center line model, Tranform is None")
+            raise ValueError("Couldn't build center lines, Tranform is None")
 
         return [
-            line.transform_2d(self._transform)
-            for line in self._local_center_line_model()
+            line.transform_2d(self._transform) for line in self._local_centerlines()
         ]
 
-    def _build_primitives_2d(self, include_centerlines: bool = False):
+    def layout_skeleton(self):
+        if self.transform is None:
+            raise ValueError("Couldn't build layout skeleton, Tranform is None")
+        return [
+            line.transform_2d(self._transform) for line in self._local_layout_skeleton()
+        ]
+
+    def _build_primitives_2d(self, include_centerlines):
         if self.transform is None:
             raise ValueError("Couldn't build 2d Primitive, Tranform is None")
 
         primitives = self._local_primitives_2d()
         if include_centerlines:
-            primitives.extend(self._local_center_line_model())
+            primitives.extend(self._local_centerlines())
         self._primitives_2d = [
             prim.transform_2d(self._transform) for prim in primitives
         ]
@@ -74,9 +84,9 @@ class GeometricComponent(ABC):
     def _build_primitives_3d(self):
         raise NotImplementedError
 
-    def get_primitives_2d(self) -> list[Primitive2D]:
+    def get_primitives_2d(self, include_centerlines: bool = False) -> list[Primitive2D]:
         if len(self._primitives_2d) == 0:
-            self._build_primitives_2d()
+            self._build_primitives_2d(include_centerlines)
         return self._primitives_2d
 
     def get_primitives_3d(self) -> list[Primitive3D]:

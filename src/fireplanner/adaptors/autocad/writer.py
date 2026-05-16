@@ -3,9 +3,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from math import atan2, sqrt
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
-from .utils import lineweight_to_aci, color_name_to_aci
+from .utils import color_name_to_aci
 
 from fireplanner.geometry.primitives import Arc, Line
 from fireplanner.geometry.primitives.line import LineType
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 class LayerConfig:
     line_layer_name: str
     centerline_layer_name: str = ""
+    centerlines_enabled: bool = False
     line_color: str | None = None
     line_weight: float | None = None
     centerline_color: str | None = None
@@ -45,7 +46,9 @@ class Writer:
         created_entities: list[Any] = []
 
         for pipe in geometry_network.get_geometric_pipes():
-            for primitive in pipe.get_primitives_2d():
+            for primitive in pipe.get_primitives_2d(
+                include_centerlines=self._layer_config.centerlines_enabled
+            ):
                 created_entities.extend(self._write_primitive(primitive))
 
         for (
@@ -54,7 +57,9 @@ class Writer:
             geometry_network.get_geometric_fire_connections_with_junctions_ids().values()
         ):
             for component in components:
-                for primitive in component.get_primitives_2d():
+                for primitive in component.get_primitives_2d(
+                    include_centerlines=self._layer_config.centerlines_enabled
+                ):
                     created_entities.extend(self._write_primitive(primitive))
 
         logger.info("Wrote %d AutoCAD entity(ies).", len(created_entities))
@@ -109,7 +114,8 @@ class Writer:
 
     def _apply_layer(self, entity: Any, primitive: object) -> None:
         is_centerline = (
-            isinstance(primitive, Line) and primitive.line_type == LineType.CenterLine
+            isinstance(primitive, (Line, Arc))
+            and primitive.line_type == LineType.CenterLine
         )
 
         if is_centerline:

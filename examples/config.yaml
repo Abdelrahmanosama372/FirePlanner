@@ -21,9 +21,6 @@ processing:
   compute_pipe_dimensions: true
 
 geometry:
-  centerlines:
-    enabled: true
-
   welded_connection:
     enabled: true
     min_main_pipe_diameter: "2"
@@ -49,6 +46,7 @@ autocad:
             color: "green"
             line_weight: 0.13
         centerline:
+          enabled: true
           name: "ff-sprinklers-thin"
           properties:
             color: "gray"

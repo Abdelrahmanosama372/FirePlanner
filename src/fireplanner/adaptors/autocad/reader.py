@@ -93,21 +93,18 @@ class Reader:
 
     def read_geometry_network_config(self) -> GeometryNetworkConfig:
         geometry_data = self._mapping(self._raw_data.get("geometry"))
-        centerlines_data = self._mapping(geometry_data.get("centerlines"))
         welded_connection_data = self._mapping(geometry_data.get("welded_connection"))
         min_main_pipe_diameter = SteelDims(
             float(welded_connection_data.get("min_main_pipe_diameter", "2"))
         )
         config = GeometryNetworkConfig(
-            centerlines_enabled=bool(centerlines_data.get("enabled", False)),
             welded_connection_enabled=bool(
                 welded_connection_data.get("enabled", False)
             ),
             welded_connection_min_main_pipe_diameter=min_main_pipe_diameter,
         )
         logger.info(
-            "Geometry network config parsed (centerlines=%s, welded_connection=%s, welded_min_main=%s).",
-            config.centerlines_enabled,
+            "Geometry network config parsed (welded_connection=%s, welded_min_main=%s).",
             config.welded_connection_enabled,
             config.welded_connection_min_main_pipe_diameter.value,
         )
@@ -187,6 +184,7 @@ class Reader:
 
         centerline_layer_data = self._mapping(layer_data.get("centerline"))
         centerline_properties = self._mapping(centerline_layer_data.get("properties"))
+        centerlines_enabled = bool(centerline_layer_data.get("enabled", False))
         config = LayerConfig(
             line_layer_name=str(line_layer_data.get("name", "")),
             line_color=(
@@ -208,11 +206,13 @@ class Reader:
                 if "line_weight" in centerline_properties
                 else None
             ),
+            centerlines_enabled=centerlines_enabled,
         )
         logger.info(
-            "Output layer config parsed (line=%s, centerline=%s).",
+            "Output layer config parsed (line=%s, centerline=%s, centerlines_enabled=%s).",
             config.line_layer_name,
             config.centerline_layer_name,
+            config.centerlines_enabled,
         )
         return config
 

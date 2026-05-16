@@ -8,7 +8,7 @@ from fireplanner.standards import (
 )
 
 from .geometric_component import GeometricComponent
-from ..primitives import Point, Line, Arc, Primitive2D
+from ..primitives import Point, Line, LineType, Arc, Primitive2D
 from fireplanner.firecomponent import Tee
 
 
@@ -48,8 +48,14 @@ class GeometricWeldedBranch(GeometricComponent):
         return [weld_arc]
 
     @override
-    def _local_center_line_model(self) -> list[Line]:
+    def _local_centerlines(self) -> list[Primitive2D]:
         R = steel_dim_table[self._run_diameter] / 2
         return [
-            Line(start=Point(x=0, y=0), end=Point(x=0, y=R)),  # branch center line
+            Line(
+                start=Point(x=0, y=0), end=Point(x=0, y=R), LineType=LineType.CenterLine
+            ),  # branch center line
         ]
+
+    @override
+    def _local_layout_skeleton(self) -> list[Primitive2D]:
+        return self._local_centerlines()

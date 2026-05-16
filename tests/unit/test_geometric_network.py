@@ -168,7 +168,7 @@ def test_correct_geometric_pipes_segmenting_for_tee_and_elbow(
 
     connections = [geometric_tee, geometric_elbow]
 
-    for line in geometric_elbow.center_line_model():
+    for line in geometric_elbow.layout_skeleton():
         print(f"line: start: {line.start}, {line.end}")
 
     free_lines = geometric_network.find_free_pipes_lines(

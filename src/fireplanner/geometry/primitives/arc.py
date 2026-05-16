@@ -8,6 +8,7 @@ from typing import Any, override
 
 from .base import Primitive2D
 from .point import Point
+from .line import LineType
 
 
 @dataclass(init=False)
@@ -17,8 +18,16 @@ class Arc(Primitive2D):
     start: Point
     center: Point
     angle: float
+    line_type: LineType
 
-    def __init__(self, start: Point, center: Point, angle: float, id: int = -1) -> None:
+    def __init__(
+        self,
+        start: Point,
+        center: Point,
+        angle: float,
+        id: int = -1,
+        line_type: LineType = LineType.Normal,
+    ) -> None:
         self.start = start
         self.center = center
         self.angle = angle

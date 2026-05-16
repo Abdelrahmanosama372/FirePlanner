@@ -36,10 +36,22 @@ autocad:
       SPR:
         temperature: 68
         k_factor: 5.6
+  output:
+    network:
+      layers:
+        line:
+          name: "ff-sprinklers"
+          properties:
+            color: "green"
+            line_weight: 0.13
+        centerline:
+          enabled: true
+          name: "ff-sprinklers-thin"
+          properties:
+            color: "gray"
+            line_weight: 0.05
 
 geometry:
-  centerlines:
-    enabled: true
   welded_connection:
     enabled: true
     min_main_pipe_diameter: "2"
@@ -120,9 +132,22 @@ def test_reader_builds_geometry_network_config_from_yaml_string():
 
     config = reader.read_geometry_network_config()
 
-    assert config.centerlines_enabled is True
     assert config.welded_connection_enabled is True
     assert config.welded_connection_min_main_pipe_diameter == SteelDims.DIM_2_INCHES
+
+
+def test_reader_builds_output_layer_config_from_yaml_string():
+    reader = Reader(CONFIG_YAML)
+
+    config = reader.read_output_layer_config()
+
+    assert config.line_layer_name == "ff-sprinklers"
+    assert config.line_color == "green"
+    assert config.line_weight == 0.13
+    assert config.centerline_layer_name == "ff-sprinklers-thin"
+    assert config.centerline_color == "gray"
+    assert config.centerline_weight == 0.05
+    assert config.centerlines_enabled is True
 
 
 

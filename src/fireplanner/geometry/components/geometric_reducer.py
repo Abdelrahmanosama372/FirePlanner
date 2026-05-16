@@ -3,7 +3,7 @@ from typing import override
 
 from fireplanner.standards import steel_dim_table
 from .geometric_component import GeometricComponent
-from ..primitives import Primitive2D, Point, Line
+from ..primitives import Primitive2D, Point, Line, LineType
 from fireplanner.firecomponent import Reducer
 from fireplanner.standards import reducer_end_to_end_table
 
@@ -62,11 +62,19 @@ class GeometricReducer(GeometricComponent):
         return [top, bottom, right, left]
 
     @override
-    def _local_center_line_model(self) -> list[Line]:
+    def _local_centerlines(self) -> list[Primitive2D]:
         L = self._end_to_end
 
         x0 = -L / 2.0
         x1 = L / 2.0
         return [
-            Line(start=Point(x=x0, y=0), end=Point(x=x1, y=0)),
+            Line(
+                start=Point(x=x0, y=0),
+                end=Point(x=x1, y=0),
+                line_type=LineType.CenterLine,
+            ),
         ]
+
+    @override
+    def _local_layout_skeleton(self) -> list[Primitive2D]:
+        return self._local_centerlines()

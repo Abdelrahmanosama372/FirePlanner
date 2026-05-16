@@ -3,10 +3,9 @@ from __future__ import annotations
 from math import isclose
 
 from fireplanner.firecomponent.base import SteelDims
-from fireplanner.geometry.primitives.line import Line
 from fireplanner.standards.steel_dim import steel_dim_table
 from .geometric_component import GeometricComponent
-from fireplanner.geometry.primitives import Point, Primitive2D
+from fireplanner.geometry.primitives import Point, Line, LineType, Primitive2D
 from fireplanner.firecomponent import Pipe
 from typing import override
 
@@ -51,7 +50,15 @@ class GeometricPipe(GeometricComponent):
         return [top, bottom]
 
     @override
-    def _local_center_line_model(self) -> list[Line]:
+    def _local_centerlines(self) -> list[Primitive2D]:
         return [
-            Line(start=Point(x=0, y=0), end=Point(x=self.length, y=0)),
+            Line(
+                start=Point(x=0, y=0),
+                end=Point(x=self.length, y=0),
+                LineType=LineType.CenterLine,
+            ),
         ]
+
+    @override
+    def _local_layout_skeleton(self) -> list[Primitive2D]:
+        return self._local_centerlines()

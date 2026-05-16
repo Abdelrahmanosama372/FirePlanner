@@ -19,7 +19,6 @@ from fireplanner.firecomponent import SteelDims
 
 @dataclass(frozen=True)
 class GeometryNetworkConfig:
-    centerlines_enabled: bool = False
     welded_connection_enabled: bool = False
     welded_connection_min_main_pipe_diameter: SteelDims = SteelDims.DIM_2_INCHES
 
@@ -178,7 +177,7 @@ class GeometryNetwork:
                     if isinstance(con, GeometricReducer)
                     and pipe_line.pass_through_point(con.transform.origin)
                 )
-                reducer_center_line = geometric_reducer_on_pipe.center_line_model()[0]
+                reducer_center_line = geometric_reducer_on_pipe.layout_skeleton()[0]
                 if reducer_center_line.start in [first_line.start, first_line.end]:
                     first_line_pipe_dim = geometric_reducer_on_pipe.small_diameter
                     second_line_pipe_dim = geometric_reducer_on_pipe.large_diameter
@@ -222,7 +221,7 @@ class GeometryNetwork:
     ) -> list[Line]:
         connections_center_lines: list[Line] = []
         for con in connections:
-            connections_center_lines.extend(con.center_line_model())
+            connections_center_lines.extend(con.layout_skeleton())
 
         free_pipe_lines = pipe_line.subtract_lines(connections_center_lines)
         return free_pipe_lines

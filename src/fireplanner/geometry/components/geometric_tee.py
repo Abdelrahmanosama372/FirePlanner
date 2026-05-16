@@ -3,7 +3,7 @@ from typing import Any, List, override
 
 from fireplanner.geometry.primitives.transform import Transform2D
 from .geometric_component import GeometricComponent
-from ..primitives import Point, Line
+from ..primitives import Point, Line, LineType
 from fireplanner.firecomponent import Tee
 from fireplanner.standards import tee_center_dims, steel_dim_table
 
@@ -62,10 +62,22 @@ class GeometricTee(GeometricComponent):
         return run_lines + branch_lines
 
     @override
-    def _local_center_line_model(self) -> list[Line]:
+    def _local_centerlines(self) -> list[Primitive2D]:
         R = self.run_center_to_end
         B = self.branch_center_to_end
         return [
-            Line(start=Point(x=-R, y=0), end=Point(x=R, y=0)),  # run center line
-            Line(start=Point(x=0, y=0), end=Point(x=0, y=B)),  # branch center line
+            Line(
+                start=Point(x=-R, y=0),
+                end=Point(x=R, y=0),
+                line_type=LineType.CenterLine,
+            ),  # run center line
+            Line(
+                start=Point(x=0, y=0),
+                end=Point(x=0, y=B),
+                line_type=LineType.CenterLine,
+            ),  # branch center line
         ]
+
+    @override
+    def _local_layout_skeleton(self) -> list[Primitive2D]:
+        return self._local_centerlines()
