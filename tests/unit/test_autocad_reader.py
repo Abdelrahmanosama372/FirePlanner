@@ -9,7 +9,6 @@ from fireplanner.firecomponent import (
 from fireplanner.networks import CoreNetworkConfig
 from fireplanner.standards.hazard import FireHazard
 
-
 CONFIG_YAML = """
 firefighting:
   hazard_level: "light"
@@ -148,7 +147,6 @@ def test_reader_builds_output_layer_config_from_yaml_string():
     assert config.centerline_color == "gray"
     assert config.centerline_weight == 0.05
     assert config.centerlines_enabled is True
-
 
 
 def test_reader_builds_core_network_config_from_autocad_entities():

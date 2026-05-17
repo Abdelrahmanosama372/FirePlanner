@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 from typing import override
 
-from fireplanner.standards import steel_dim_table
-from .geometric_component import GeometricComponent
-from ..primitives import Primitive2D, Point, Line, LineType
 from fireplanner.firecomponent import Reducer
-from fireplanner.standards import reducer_end_to_end_table
+from fireplanner.standards import reducer_end_to_end_table, steel_dim_table
+
+from ..primitives import Line, LineType, Point, Primitive2D
+from .geometric_component import GeometricComponent
 
 
 class GeometricReducer(GeometricComponent):

@@ -94,6 +94,7 @@ class Pipeline:
                 writer.write_geometry_network(result.geometry_network)
             )
         logger.info(
-            "Pipeline draw completed for %d network(s).", len(written_entities_per_network)
+            "Pipeline draw completed for %d network(s).",
+            len(written_entities_per_network),
         )
         return written_entities_per_network

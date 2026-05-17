@@ -1,27 +1,28 @@
 from copy import deepcopy
 from math import pi, radians
 from typing import List
-from fireplanner.networks import CoreNetwork, ModelNetwork, GeometryNetwork
+
 import pytest
-from fireplanner.geometry.primitives import Primitive2D, Transform2D, Point, Line, Arc
+
 from fireplanner.firecomponent.base import (
+    SteelConnection,
+    SteelDims,
     SteelMaterial,
     SteelSchedule,
     SteelSpecs,
-    SteelConnection,
-    SteelDims,
 )
-
-from fireplanner.firecomponent.pipe import Pipe
 from fireplanner.firecomponent.fitting.fireconnection.elbow import Elbow
-from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
 from fireplanner.firecomponent.fitting.fireconnection.reducer import Reducer
+from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
+from fireplanner.firecomponent.pipe import Pipe
 from fireplanner.geometry.components import (
-    GeometricPipe,
     GeometricElbow,
-    GeometricTee,
+    GeometricPipe,
     GeometricReducer,
+    GeometricTee,
 )
+from fireplanner.geometry.primitives import Arc, Line, Point, Primitive2D, Transform2D
+from fireplanner.networks import CoreNetwork, GeometryNetwork, ModelNetwork
 
 
 @pytest.fixture

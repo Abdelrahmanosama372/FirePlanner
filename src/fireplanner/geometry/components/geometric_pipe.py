@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from math import isclose
-
-from fireplanner.firecomponent.base import SteelDims
-from fireplanner.standards.steel_dim import steel_dim_table
-from .geometric_component import GeometricComponent
-from fireplanner.geometry.primitives import Point, Line, LineType, Primitive2D
-from fireplanner.firecomponent import Pipe
 from typing import override
+
+from fireplanner.firecomponent import Pipe
+from fireplanner.firecomponent.base import SteelDims
+from fireplanner.geometry.primitives import Line, LineType, Point, Primitive2D
+from fireplanner.standards.steel_dim import steel_dim_table
+
+from .geometric_component import GeometricComponent
 
 
 class GeometricPipe(GeometricComponent):

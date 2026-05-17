@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, override
 
-from . import Point, Primitive2D
-from .base import PrimitiveStyle
+from .base import Primitive2D, PrimitiveStyle
+from .point import Point
 
 
 class Block(Primitive2D):

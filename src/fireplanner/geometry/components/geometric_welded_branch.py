@@ -1,15 +1,16 @@
 from __future__ import annotations
-from typing import override
-from math import asin
 
+from math import asin
+from typing import override
+
+from fireplanner.firecomponent import Tee
 from fireplanner.standards import (
-    steel_dim_table,
     calculate_welded_branch_penetration_depth,
+    steel_dim_table,
 )
 
+from ..primitives import Arc, Line, LineType, Point, Primitive2D
 from .geometric_component import GeometricComponent
-from ..primitives import Point, Line, LineType, Arc, Primitive2D
-from fireplanner.firecomponent import Tee
 
 
 class GeometricWeldedBranch(GeometricComponent):

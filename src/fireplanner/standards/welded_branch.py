@@ -1,4 +1,5 @@
 from math import sqrt
+
 from fireplanner.firecomponent.base import SteelDims
 from fireplanner.standards.steel_dim import steel_dim_table
 

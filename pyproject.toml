@@ -45,3 +45,6 @@ reportImplicitAbstractClass = "error"
 executionEnvironments = [
   { root = ".", extraPaths = ["src"] },
 ]
+
+[tool.black]
+line-length = 88

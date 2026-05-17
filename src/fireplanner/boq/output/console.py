@@ -48,7 +48,9 @@ class BOQConsolePrinter:
             for idx, value in enumerate(row):
                 widths[idx] = max(widths[idx], len(value))
 
-        header_line = " | ".join(header.ljust(widths[idx]) for idx, header in enumerate(headers))
+        header_line = " | ".join(
+            header.ljust(widths[idx]) for idx, header in enumerate(headers)
+        )
         separator = "-+-".join("-" * widths[idx] for idx in range(len(headers)))
         print(header_line)
         print(separator)

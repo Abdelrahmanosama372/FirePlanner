@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import override
+
+from typing import Any, final, override
+
 from ...base import (
     FireComponent,
     SteelConnection,
@@ -9,7 +11,6 @@ from ...base import (
     SteelSpecs,
 )
 from . import FireConnection, SteelPortsNum
-from typing import final, Any
 
 
 class Tee(FireComponent, FireConnection):

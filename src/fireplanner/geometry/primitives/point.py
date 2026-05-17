@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import sqrt, isclose
+from math import isclose, sqrt
 from typing import override
 
 import numpy as np

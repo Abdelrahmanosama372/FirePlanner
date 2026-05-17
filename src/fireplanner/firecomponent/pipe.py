@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import override, final, Any
+
+from typing import Any, final, override
+
 from .base import (
     FireComponent,
     SteelConnection,

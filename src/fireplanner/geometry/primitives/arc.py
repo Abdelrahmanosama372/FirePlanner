@@ -7,8 +7,8 @@ from math import isclose
 from typing import Any, override
 
 from .base import Primitive2D
-from .point import Point
 from .line import LineType
+from .point import Point
 
 
 @dataclass(init=False)

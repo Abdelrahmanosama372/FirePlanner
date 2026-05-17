@@ -1,27 +1,28 @@
 """Tests for the GeometryMapper class."""
 
 import pytest
+
 from fireplanner.firecomponent.base import (
     FireComponent,
+    SteelConnection,
+    SteelDims,
     SteelMaterial,
     SteelSchedule,
     SteelSpecs,
-    SteelConnection,
-    SteelDims,
 )
-from fireplanner.firecomponent.pipe import Pipe
 from fireplanner.firecomponent.fitting.fireconnection.elbow import Elbow
-from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
 from fireplanner.firecomponent.fitting.fireconnection.reducer import Reducer
-from fireplanner.networks.geometry_mapper import GeometryMapper, GeometryMapperConfig
+from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
+from fireplanner.firecomponent.pipe import Pipe
 from fireplanner.geometry.components import (
-    GeometricPipe,
-    GeometricElbow,
-    GeometricTee,
-    GeometricReducer,
-    GeometricWeldedBranch,
     GeometricComponent,
+    GeometricElbow,
+    GeometricPipe,
+    GeometricReducer,
+    GeometricTee,
+    GeometricWeldedBranch,
 )
+from fireplanner.networks.geometry_mapper import GeometryMapper, GeometryMapperConfig
 
 
 @pytest.fixture

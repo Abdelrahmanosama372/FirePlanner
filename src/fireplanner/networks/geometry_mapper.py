@@ -1,18 +1,19 @@
 """Geometric mapper that maps FireComponents to their geometry."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass
-from fireplanner.firecomponent.base import FireComponent
-from fireplanner.firecomponent.base import SteelDims
-from fireplanner.firecomponent.pipe import Pipe
+
+from fireplanner.firecomponent.base import FireComponent, SteelDims
 from fireplanner.firecomponent.fitting.fireconnection.elbow import Elbow
-from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
 from fireplanner.firecomponent.fitting.fireconnection.reducer import Reducer
-from fireplanner.geometry.components import GeometricComponent
+from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
+from fireplanner.firecomponent.pipe import Pipe
 from fireplanner.geometry.components import (
+    GeometricComponent,
     GeometricElbow,
-    GeometricReducer,
     GeometricPipe,
+    GeometricReducer,
     GeometricTee,
     GeometricWeldedBranch,
 )

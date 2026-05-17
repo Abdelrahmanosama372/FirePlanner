@@ -5,13 +5,13 @@ from dataclasses import dataclass
 from math import atan2, sqrt
 from typing import Any
 
-from .utils import color_name_to_aci
-
 from fireplanner.geometry.primitives import Arc, Line
 from fireplanner.geometry.primitives.line import LineType
 from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks.geometry_network import GeometryNetwork
 from fireplanner.units import LengthUnit
+
+from .utils import color_name_to_aci
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,7 @@
-from fireplanner.firecomponent import Tee, Reducer, Elbow, SteelDims
-from fireplanner.networks import CoreNetwork, ModelNetwork
 import pytest
+
+from fireplanner.firecomponent import Elbow, Reducer, SteelDims, Tee
+from fireplanner.networks import CoreNetwork, ModelNetwork
 
 
 @pytest.fixture

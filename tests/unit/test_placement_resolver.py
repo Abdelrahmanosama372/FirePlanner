@@ -1,22 +1,23 @@
 from math import radians
+
 import pytest
 
 from fireplanner.firecomponent import (
-    SteelDims,
+    Elbow,
+    Reducer,
     SteelConnection,
+    SteelDims,
     SteelMaterial,
     SteelSchedule,
     SteelSpecs,
     Tee,
-    Reducer,
-    Elbow,
 )
-from fireplanner.geometry.components.geometric_component import GeometricComponent
 from fireplanner.geometry.components import (
     GeometricElbow,
     GeometricReducer,
     GeometricTee,
 )
+from fireplanner.geometry.components.geometric_component import GeometricComponent
 from fireplanner.geometry.primitives import Line, Point
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction import Junction, JunctionType
@@ -168,7 +169,9 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
                 1: Line(start=Point(x=-1, y=1), end=Point(x=0, y=0), id=1),
                 2: Line(start=Point(x=0, y=0), end=Point(x=1, y=-1), id=2),
             },
-            Transform2D(Point(x=-176.7766952966369, y=176.77669529663686), radians(-45)),
+            Transform2D(
+                Point(x=-176.7766952966369, y=176.77669529663686), radians(-45)
+            ),
         ),
         (
             # 2nd quadrant reversed main line by reversing ids
@@ -176,7 +179,9 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
                 2: Line(start=Point(x=-1, y=1), end=Point(x=0, y=0), id=1),
                 1: Line(start=Point(x=0, y=0), end=Point(x=1, y=-1), id=2),
             },
-            Transform2D(Point(x=176.77669529663686, y=-176.7766952966369), radians(135)),
+            Transform2D(
+                Point(x=176.77669529663686, y=-176.7766952966369), radians(135)
+            ),
         ),
     ],
 )

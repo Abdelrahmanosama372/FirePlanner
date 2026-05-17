@@ -27,7 +27,9 @@ class BOQExcelExporter:
 
         row = 1
         row = BOQExcelExporter._write_section_title(sheet, row, "PIPES")
-        row = BOQExcelExporter._write_table(sheet, row, pipe_headers(), pipe_rows(report))
+        row = BOQExcelExporter._write_table(
+            sheet, row, pipe_headers(), pipe_rows(report)
+        )
         row = BOQExcelExporter._write_unit(sheet, row, report.pipes.unit.value)
         row += 1
 
@@ -66,7 +68,9 @@ class BOQExcelExporter:
         headers: tuple[str, ...],
         rows: list[tuple[str, ...]],
     ) -> int:
-        header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+        header_fill = PatternFill(
+            start_color="D9E1F2", end_color="D9E1F2", fill_type="solid"
+        )
 
         for col, header in enumerate(headers, start=1):
             cell = sheet.cell(row=row, column=col, value=header)

@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from typing import Any, final, override
+
 from ..base import (
     FireComponent,
     SteelConnection,
@@ -7,7 +10,6 @@ from ..base import (
     SteelSchedule,
     SteelSpecs,
 )
-from typing import final, override, Any
 
 
 class Hanger(FireComponent):

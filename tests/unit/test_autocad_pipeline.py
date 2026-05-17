@@ -2,7 +2,6 @@ from fireplanner.adaptors.autocad.pipeline import Pipeline
 from fireplanner.geometry.components import GeometricPipe
 from fireplanner.geometry.primitives import Point
 from fireplanner.networks import CoreNetwork, GeometryNetwork, ModelNetwork
-
 from tests.unit.test_autocad_reader import (
     CONFIG_YAML,
     FakeAcad,

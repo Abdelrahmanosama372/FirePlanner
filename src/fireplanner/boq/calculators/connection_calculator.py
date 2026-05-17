@@ -76,4 +76,6 @@ class ConnectionCalculator:
                 ),
             )
 
-        raise TypeError(f"Unsupported fitting type for BOQ calculation: {type(fitting)!r}")
+        raise TypeError(
+            f"Unsupported fitting type for BOQ calculation: {type(fitting)!r}"
+        )

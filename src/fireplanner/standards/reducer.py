@@ -1,4 +1,5 @@
 from typing import Dict
+
 from fireplanner.firecomponent.base import SteelDims
 
 reducer_end_to_end_table: Dict[SteelDims, float] = {

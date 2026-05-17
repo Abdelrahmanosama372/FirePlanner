@@ -1,3 +1,5 @@
+from math import pi
+
 from fireplanner.firecomponent import (
     Pipe,
     SteelConnection,
@@ -6,8 +8,7 @@ from fireplanner.firecomponent import (
     SteelSchedule,
     SteelSpecs,
 )
-from math import pi
-from fireplanner.geometry.primitives import Line, Point, Block
+from fireplanner.geometry.primitives import Block, Line, Point
 from fireplanner.networks import (
     CoreNetwork,
     CoreNetworkConfig,
@@ -16,7 +17,6 @@ from fireplanner.networks import (
 )
 from fireplanner.networks.core_network import FlowRoute
 from fireplanner.networks.junction import JunctionType
-
 
 MM_SCALE = 1000.0
 

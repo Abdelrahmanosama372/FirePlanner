@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from math import pi, isclose, radians
+from math import isclose, pi, radians
 
 from fireplanner.firecomponent import SteelDims
 from fireplanner.geometry.components import (

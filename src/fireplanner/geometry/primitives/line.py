@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from math import acos, atan2, degrees, isclose, sqrt, cos, sin
+from math import acos, atan2, cos, degrees, isclose, sin, sqrt
 from typing import Any, Optional, Tuple, override
 
 import numpy as np

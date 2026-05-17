@@ -1,8 +1,9 @@
 from __future__ import annotations
-from enum import StrEnum, Enum, auto
-from typing import final, Any, TypeVar
+
 from abc import ABC, abstractmethod
+from enum import Enum, StrEnum, auto
 from functools import total_ordering
+from typing import Any, TypeVar, final
 
 
 class SteelMaterial(StrEnum):

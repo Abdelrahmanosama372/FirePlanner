@@ -24,6 +24,7 @@ from fireplanner.networks import (
 )
 from fireplanner.standards.hazard import FireHazard
 from fireplanner.units import LengthUnit
+
 from .writer import LayerConfig
 
 if TYPE_CHECKING:
@@ -188,7 +189,9 @@ class Reader:
         config = LayerConfig(
             line_layer_name=str(line_layer_data.get("name", "")),
             line_color=(
-                str(line_properties.get("color")) if "color" in line_properties else None
+                str(line_properties.get("color"))
+                if "color" in line_properties
+                else None
             ),
             line_weight=(
                 float(line_properties["line_weight"])

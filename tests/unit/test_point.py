@@ -1,8 +1,8 @@
-import numpy as np
 from math import degrees, isclose, radians
 
-from fireplanner.geometry.primitives import Point, PrimitiveStyle, Transform2D
+import numpy as np
 
+from fireplanner.geometry.primitives import Point, PrimitiveStyle, Transform2D
 
 TOL = 1e-9
 

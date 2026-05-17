@@ -4,13 +4,13 @@ from fireplanner.geometry.primitives import Line
 from fireplanner.networks.core_network import CoreNetwork, CoreNetworkConfig, FlowRoute
 from fireplanner.networks.junction import JunctionType
 from tests.unit.core_network import (
-    build_complex_network_core_network,
-    build_simple_network_core_network,
     build_complex_network_blocks,
+    build_complex_network_core_network,
     build_complex_network_lines,
     build_loop_network_blocks,
     build_loop_network_lines,
     build_simple_network_blocks,
+    build_simple_network_core_network,
     build_simple_network_inverted_lines,
     build_simple_network_lines,
 )

@@ -1,9 +1,11 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from copy import deepcopy
-from math import pi
-from itertools import chain
 
+from copy import deepcopy
+from dataclasses import dataclass
+from itertools import chain
+from math import pi
+
+from fireplanner.firecomponent import SteelDims
 from fireplanner.geometry.components import (
     GeometricComponent,
     GeometricPipe,
@@ -14,7 +16,6 @@ from fireplanner.networks.core_network import CoreNetwork
 from fireplanner.networks.geometry_mapper import GeometryMapper, GeometryMapperConfig
 from fireplanner.networks.model_network import ModelNetwork
 from fireplanner.networks.placement_resolver import PlacementResolver
-from fireplanner.firecomponent import SteelDims
 
 
 @dataclass(frozen=True)

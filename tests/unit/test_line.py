@@ -1,14 +1,16 @@
 from logging import warning
+from math import radians
+
+import numpy as np
 import pytest
+
 from fireplanner.geometry.primitives import (
     Line,
-    Point,
     LineType,
+    Point,
     PrimitiveStyle,
     Transform2D,
 )
-from math import radians
-import numpy as np
 
 
 def test_line_construction():

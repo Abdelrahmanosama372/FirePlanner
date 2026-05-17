@@ -1,11 +1,13 @@
 from __future__ import annotations
+
 from typing import Any, List, override
 
-from fireplanner.geometry.primitives.transform import Transform2D
-from .geometric_component import GeometricComponent
-from ..primitives import Point, Line, LineType
 from fireplanner.firecomponent import Tee
-from fireplanner.standards import tee_center_dims, steel_dim_table
+from fireplanner.geometry.primitives.transform import Transform2D
+from fireplanner.standards import steel_dim_table, tee_center_dims
+
+from ..primitives import Line, LineType, Point
+from .geometric_component import GeometricComponent
 
 
 class GeometricTee(GeometricComponent):

@@ -1,12 +1,13 @@
+from dataclasses import dataclass
+from enum import StrEnum
+
 from fireplanner.firecomponent.base import (
+    SteelConnection,
     SteelDims,
     SteelMaterial,
-    SteelSpecs,
     SteelSchedule,
-    SteelConnection,
+    SteelSpecs,
 )
-from enum import StrEnum
-from dataclasses import dataclass
 
 
 class Unit(StrEnum):

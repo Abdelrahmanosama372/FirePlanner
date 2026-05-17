@@ -1,9 +1,9 @@
-from fireplanner.geometry.unit_converter import GeometryUnitConverter
-from fireplanner.units import LengthUnit
 import pytest
 
 from fireplanner.geometry.primitives import Block, Line, Point
+from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks.core_network import CoreNetwork, CoreNetworkConfig
+from fireplanner.units import LengthUnit
 
 
 def build_loop_network_lines() -> list[Line]:
@@ -17,7 +17,9 @@ def build_loop_network_lines() -> list[Line]:
         Line(id=6, start=Point(x=0, y=9), end=Point(x=0, y=12)),
     ]
     lines = [
-        GeometryUnitConverter.line_to_unit(line, from_unit=LengthUnit.METER, to_unit=LengthUnit.MILLIMETER)
+        GeometryUnitConverter.line_to_unit(
+            line, from_unit=LengthUnit.METER, to_unit=LengthUnit.MILLIMETER
+        )
         for line in lines
     ]
     return lines
@@ -34,7 +36,9 @@ def build_loop_network_blocks() -> list[Block]:
         Block(id=6, name="SPR", center=Point(x=0, y=10)),
     ]
     blocks = [
-        GeometryUnitConverter.block_to_unit(block, from_unit=LengthUnit.METER, to_unit=LengthUnit.MILLIMETER)
+        GeometryUnitConverter.block_to_unit(
+            block, from_unit=LengthUnit.METER, to_unit=LengthUnit.MILLIMETER
+        )
         for block in blocks
     ]
     return blocks

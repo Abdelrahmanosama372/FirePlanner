@@ -1,8 +1,9 @@
+from math import cos, isclose, pi, sin
+
 import numpy as np
 import pytest
-from math import cos, sin, pi, isclose
-from fireplanner.geometry.primitives import Point, Transform2D
 
+from fireplanner.geometry.primitives import Point, Transform2D
 
 TOL = 1e-9
 
@@ -23,11 +24,13 @@ def assert_matrix(a: np.ndarray, b: np.ndarray):
 def test_identity_transform_matrix():
     t = Transform2D(Point(x=0.0, y=0.0, z=0.0), 0.0)
 
-    expected = np.array([
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 0.0, 1.0],
-    ])
+    expected = np.array(
+        [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
 
     assert_matrix(t.transform, expected)
 
@@ -36,11 +39,13 @@ def test_transform_matrix_with_rotation_and_translation():
     angle = pi / 2
     t = Transform2D(Point(x=1.0, y=2.0, z=0.0), angle)
 
-    expected = np.array([
-        [cos(angle), -sin(angle), 1.0],
-        [sin(angle),  cos(angle), 2.0],
-        [0.0,         0.0,        1.0],
-    ])
+    expected = np.array(
+        [
+            [cos(angle), -sin(angle), 1.0],
+            [sin(angle), cos(angle), 2.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
 
     assert_matrix(t.transform, expected)
 
@@ -70,7 +75,7 @@ def test_translate_local_mutates():
 
 
 def test_rotated_local():
-    t = Transform2D(Point(x=1.0, y=2.0,z=0.0), pi / 4)
+    t = Transform2D(Point(x=1.0, y=2.0, z=0.0), pi / 4)
     t2 = t.rotated_local(pi / 4)
 
     assert_point(t2.origin, 1.0, 2.0)
@@ -107,11 +112,13 @@ def test_from_array_round_trip():
 
 def test_from_array_extracts_angle_correctly():
     angle = -pi / 2
-    mat = np.array([
-        [cos(angle), -sin(angle), 5.0],
-        [sin(angle),  cos(angle), 6.0],
-        [0.0,         0.0,        1.0],
-    ])
+    mat = np.array(
+        [
+            [cos(angle), -sin(angle), 5.0],
+            [sin(angle), cos(angle), 6.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
 
     t = Transform2D.from_array(mat)
 

@@ -1,7 +1,7 @@
-from .pipe import Pipe
-from .fitting.hanger import Hanger
+from .base import SteelConnection, SteelDims, SteelMaterial, SteelSchedule, SteelSpecs
 from .fitting.fireconnection import SteelPortsNum
-from .fitting.fireconnection.reducer import Reducer
 from .fitting.fireconnection.elbow import Elbow
+from .fitting.fireconnection.reducer import Reducer
 from .fitting.fireconnection.tee import Tee
-from .base import SteelDims, SteelConnection, SteelSchedule, SteelSpecs, SteelMaterial
+from .fitting.hanger import Hanger
+from .pipe import Pipe

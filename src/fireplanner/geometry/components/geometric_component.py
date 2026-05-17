@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
-from ..primitives import Primitive2D, Primitive3D, Transform2D
-from ..primitives import Point, Line
-
+from ..primitives import Line, Point, Primitive2D, Primitive3D, Transform2D
 
 T = TypeVar("T", bound="GeometricComponent")
 

@@ -50,41 +50,49 @@ def connection_sections(report: BOQReport) -> list[tuple[str, list[tuple[str, ..
     sections: list[tuple[str, list[tuple[str, ...]]]] = []
     for key, count in connection_items:
         if isinstance(key, TeeKey):
-            rows = [(
-                str(count),
-                f"run={key.run_diameter.value}, branch={key.branch_diameter.value}",
-                key.steel.material.value,
-                key.steel.schedule.value,
-                key.steel.specs.value,
-                key.connection.value,
-            )]
+            rows = [
+                (
+                    str(count),
+                    f"run={key.run_diameter.value}, branch={key.branch_diameter.value}",
+                    key.steel.material.value,
+                    key.steel.schedule.value,
+                    key.steel.specs.value,
+                    key.connection.value,
+                )
+            ]
         elif isinstance(key, ElbowKey):
-            rows = [(
-                str(count),
-                str(key.diameter.value),
-                key.steel.material.value,
-                key.steel.schedule.value,
-                key.steel.specs.value,
-                key.connection.value,
-            )]
+            rows = [
+                (
+                    str(count),
+                    str(key.diameter.value),
+                    key.steel.material.value,
+                    key.steel.schedule.value,
+                    key.steel.specs.value,
+                    key.connection.value,
+                )
+            ]
         elif isinstance(key, ReducerKey):
-            rows = [(
-                str(count),
-                f"{key.large_diameter.value}->{key.small_diameter.value}",
-                key.steel.material.value,
-                key.steel.schedule.value,
-                key.steel.specs.value,
-                key.connection.value,
-            )]
+            rows = [
+                (
+                    str(count),
+                    f"{key.large_diameter.value}->{key.small_diameter.value}",
+                    key.steel.material.value,
+                    key.steel.schedule.value,
+                    key.steel.specs.value,
+                    key.connection.value,
+                )
+            ]
         elif isinstance(key, HangerKey):
-            rows = [(
-                str(count),
-                str(key.pipe_diameter.value),
-                key.steel.material.value,
-                key.steel.schedule.value,
-                key.steel.specs.value,
-                "-",
-            )]
+            rows = [
+                (
+                    str(count),
+                    str(key.pipe_diameter.value),
+                    key.steel.material.value,
+                    key.steel.schedule.value,
+                    key.steel.specs.value,
+                    "-",
+                )
+            ]
         else:
             rows = [(str(count), "-", "-", "-", "-", "-")]
 
@@ -97,12 +105,14 @@ def paint_headers() -> tuple[str, ...]:
 
 
 def paint_rows(report: BOQReport) -> list[tuple[str, ...]]:
-    return [(
-        f"{report.paint.primer:.3f}",
-        f"{report.paint.lacque:.3f}",
-        f"{report.paint.thinner:.3f}",
-        report.paint.unit.value,
-    )]
+    return [
+        (
+            f"{report.paint.primer:.3f}",
+            f"{report.paint.lacque:.3f}",
+            f"{report.paint.thinner:.3f}",
+            report.paint.unit.value,
+        )
+    ]
 
 
 def connection_sort_key(key: ConnectionKey) -> tuple[float, float, str, str, str, str]:
