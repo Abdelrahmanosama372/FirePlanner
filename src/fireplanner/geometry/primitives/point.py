@@ -10,6 +10,8 @@ import numpy as np
 
 from .base import Primitive2D, PrimitiveStyle
 
+TOLERANCE_MM = 2
+
 
 @dataclass(init=False)
 class Point(Primitive2D):
@@ -54,22 +56,19 @@ class Point(Primitive2D):
             z=self.z - other.z,
         )
 
-    def __eq__(self, other: Point):
+    def _key(self):
         return (
-            isclose(self.x, other.x, abs_tol=1e-6)
-            and isclose(self.y, other.y, abs_tol=1e-6)
-            and isclose(self.z, other.z, abs_tol=1e-6)
+            round(self.x / TOLERANCE_MM),
+            round(self.y / TOLERANCE_MM),
+            round(self.z / TOLERANCE_MM),
         )
+
+    def __eq__(self, other: Point):
+        return self._key() == other._key()
 
     def __hash__(self):
         """Allow points to be used as dictionary keys by coordinate identity."""
-        return hash(
-            (
-                round(self.x, 6),
-                round(self.y, 6),
-                round(self.z, 6),
-            )
-        )
+        return hash(self._key())
 
     def array(self) -> np.ndarray:
         """Return point coordinates as a NumPy array `[x, y, z]`."""

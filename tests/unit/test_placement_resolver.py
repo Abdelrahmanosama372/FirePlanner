@@ -70,45 +70,45 @@ def geometric_elbow():
     [
         (
             {
-                1: Line(start=Point(x=-1, y=0), end=Point(x=0, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=1, y=0), id=2),
-                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=1), id=3),
+                1: Line(start=Point(x=-100, y=0), end=Point(x=0, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
             },
             Transform2D(Point(x=0, y=0), radians(0)),
         ),
         (
             # reversed main lines
             {
-                1: Line(end=Point(x=-1, y=0), start=Point(x=0, y=0), id=1),
-                2: Line(end=Point(x=0, y=0), start=Point(x=1, y=0), id=2),
-                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=1), id=3),
+                1: Line(end=Point(x=-100, y=0), start=Point(x=0, y=0), id=1),
+                2: Line(end=Point(x=0, y=0), start=Point(x=100, y=0), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
             },
             Transform2D(Point(x=0, y=0), radians(0)),
         ),
         (
             # reversed branch line
             {
-                1: Line(start=Point(x=0, y=0), end=Point(x=-1, y=0), id=1),
-                2: Line(start=Point(x=1, y=0), end=Point(x=0, y=0), id=2),
-                3: Line(start=Point(x=0, y=1), end=Point(x=0, y=0), id=3),
+                1: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=1),
+                2: Line(start=Point(x=100, y=0), end=Point(x=0, y=0), id=2),
+                3: Line(start=Point(x=0, y=100), end=Point(x=0, y=0), id=3),
             },
             Transform2D(Point(x=0, y=0), radians(0)),
         ),
         (
             # 2nd quadrant main line
             {
-                1: Line(start=Point(x=-1, y=1), end=Point(x=0, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=1, y=-1), id=2),
-                3: Line(start=Point(x=0, y=0), end=Point(x=-1, y=-1), id=3),
+                1: Line(start=Point(x=-100, y=100), end=Point(x=0, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=100, y=-100), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=-100, y=-100), id=3),
             },
             Transform2D(Point(x=0, y=0), radians(135)),
         ),
         (
             # 2nd quadrant reversed main line
             {
-                1: Line(end=Point(x=-1, y=1), start=Point(x=0, y=0), id=1),
-                2: Line(end=Point(x=0, y=0), start=Point(x=1, y=-1), id=2),
-                3: Line(start=Point(x=0, y=0), end=Point(x=-1, y=-1), id=3),
+                1: Line(end=Point(x=-100, y=100), start=Point(x=0, y=0), id=1),
+                2: Line(end=Point(x=0, y=0), start=Point(x=100, y=-100), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=-100, y=-100), id=3),
             },
             Transform2D(Point(x=0, y=0), radians(135)),
         ),
@@ -142,32 +142,32 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
     [
         (
             {
-                1: Line(start=Point(x=-1, y=0), end=Point(x=0, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=1, y=0), id=2),
+                1: Line(start=Point(x=-100, y=0), end=Point(x=0, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=2),
             },
             Transform2D(Point(x=-250.0, y=0.0), radians(0)),
         ),
         (
             # reversed main lines
             {
-                1: Line(end=Point(x=-1, y=0), start=Point(x=0, y=0), id=1),
-                2: Line(end=Point(x=0, y=0), start=Point(x=1, y=0), id=2),
+                1: Line(end=Point(x=-100, y=0), start=Point(x=0, y=0), id=1),
+                2: Line(end=Point(x=0, y=0), start=Point(x=100, y=0), id=2),
             },
             Transform2D(Point(x=-250.0, y=0.0), radians(0)),
         ),
         (
             # reversed lines order by reversing ids
             {
-                2: Line(start=Point(x=-1, y=0), end=Point(x=0, y=0), id=1),
-                1: Line(start=Point(x=0, y=0), end=Point(x=1, y=0), id=2),
+                2: Line(start=Point(x=-100, y=0), end=Point(x=0, y=0), id=1),
+                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=2),
             },
             Transform2D(Point(x=250.0, y=0.0), radians(180)),
         ),
         (
             # 2nd quadrant main line
             {
-                1: Line(start=Point(x=-1, y=1), end=Point(x=0, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=1, y=-1), id=2),
+                1: Line(start=Point(x=-100, y=100), end=Point(x=0, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=100, y=-100), id=2),
             },
             Transform2D(
                 Point(x=-176.7766952966369, y=176.77669529663686), radians(-45)
@@ -176,8 +176,8 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
         (
             # 2nd quadrant reversed main line by reversing ids
             {
-                2: Line(start=Point(x=-1, y=1), end=Point(x=0, y=0), id=1),
-                1: Line(start=Point(x=0, y=0), end=Point(x=1, y=-1), id=2),
+                2: Line(start=Point(x=-100, y=100), end=Point(x=0, y=0), id=1),
+                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=-100), id=2),
             },
             Transform2D(
                 Point(x=176.77669529663686, y=-176.7766952966369), radians(135)
@@ -215,40 +215,40 @@ def test_resolve_transform_for_reducer(
         (
             # simple test two lines
             {
-                1: Line(start=Point(x=0, y=0), end=Point(x=1, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=0, y=1), id=2),
+                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=2),
             },
             Transform2D(Point(x=0.38, y=0.38), radians(180)),
         ),
         (
             # simple test but reversed endpoints of lines
             {
-                1: Line(end=Point(x=0, y=0), start=Point(x=1, y=0), id=1),
-                2: Line(end=Point(x=0, y=0), start=Point(x=0, y=1), id=2),
+                1: Line(end=Point(x=0, y=0), start=Point(x=100, y=0), id=1),
+                2: Line(end=Point(x=0, y=0), start=Point(x=0, y=100), id=2),
             },
             Transform2D(Point(x=0.38, y=0.38), radians(180)),
         ),
         (
             # reversed lines order by reversing ids
             {
-                2: Line(start=Point(x=0, y=0), end=Point(x=1, y=0), id=1),
-                1: Line(start=Point(x=0, y=0), end=Point(x=0, y=1), id=2),
+                2: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
+                1: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=2),
             },
             Transform2D(Point(x=0.38, y=0.38), radians(180)),
         ),
         (
             # 2nd quadrant lines
             {
-                1: Line(start=Point(x=-1, y=1), end=Point(x=0, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=-1, y=-1), id=2),
+                1: Line(start=Point(x=-100, y=100), end=Point(x=0, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=-100), id=2),
             },
             Transform2D(Point(x=-0.537401, y=0.0), radians(-45)),
         ),
         (
             # 2nd quadrant reversed line by reversing ids
             {
-                2: Line(start=Point(x=-1, y=-1), end=Point(x=0, y=0), id=1),
-                1: Line(start=Point(x=0, y=0), end=Point(x=-1, y=-1), id=2),
+                2: Line(start=Point(x=-100, y=-100), end=Point(x=0, y=0), id=1),
+                1: Line(start=Point(x=0, y=0), end=Point(x=-100, y=-100), id=2),
             },
             Transform2D(Point(x=-0.537401, y=0.0), radians(45)),
         ),
