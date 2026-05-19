@@ -244,10 +244,7 @@ class Line(Primitive2D):
 
         for line in lines:
 
-            # must overlap and be on same infinite line
-            hit, _ = self.intersects_line_2D(line)
-
-            if not hit or not self.is_collinear_to(line):
+            if not self.is_collinear_to(line):
                 continue
 
             if self.pass_through_point(line.start):
@@ -259,7 +256,7 @@ class Line(Primitive2D):
         # sort points along self
         points = sorted(
             set(points),
-            key=lambda p: ((p.x - self.start.x) ** 2 + (p.y - self.start.y) ** 2),
+            key=lambda p: (self.start.distance(p)),
         )
 
         result: list[Line] = []

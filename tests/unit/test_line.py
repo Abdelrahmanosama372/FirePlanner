@@ -215,77 +215,77 @@ def test_line_transform_2d():
     [
         # simple middle cut
         (
-            Line(Point(0, 0), Point(10, 0)),
+            Line(Point(0, 0), Point(1000, 0)),
             [
-                Line(Point(2, 0), Point(4, 0)),
+                Line(Point(200, 0), Point(400, 0)),
             ],
             [
-                Line(Point(0, 0), Point(2, 0)),
-                Line(Point(4, 0), Point(10, 0)),
+                Line(Point(0, 0), Point(200, 0)),
+                Line(Point(400, 0), Point(1000, 0)),
             ],
         ),
         # multiple cuts
         (
-            Line(Point(0, 0), Point(10, 0)),
+            Line(Point(0, 0), Point(1000, 0)),
             [
-                Line(Point(2, 0), Point(4, 0)),
-                Line(Point(6, 0), Point(8, 0)),
+                Line(Point(200, 0), Point(400, 0)),
+                Line(Point(600, 0), Point(800, 0)),
             ],
             [
-                Line(Point(0, 0), Point(2, 0)),
-                Line(Point(4, 0), Point(6, 0)),
-                Line(Point(8, 0), Point(10, 0)),
+                Line(Point(0, 0), Point(200, 0)),
+                Line(Point(400, 0), Point(600, 0)),
+                Line(Point(800, 0), Point(1000, 0)),
             ],
         ),
         # reversed cut direction
         (
-            Line(Point(0, 0), Point(10, 0)),
+            Line(Point(0, 0), Point(1000, 0)),
             [
-                Line(Point(4, 0), Point(2, 0)),
+                Line(Point(400, 0), Point(200, 0)),
             ],
             [
-                Line(Point(0, 0), Point(2, 0)),
-                Line(Point(4, 0), Point(10, 0)),
+                Line(Point(0, 0), Point(200, 0)),
+                Line(Point(400, 0), Point(1000, 0)),
             ],
         ),
         # fully covered
         (
-            Line(Point(0, 0), Point(10, 0)),
+            Line(Point(0, 0), Point(1000, 0)),
             [
-                Line(Point(0, 0), Point(10, 0)),
+                Line(Point(0, 0), Point(1000, 0)),
             ],
             [],
         ),
         # overlapping cuts
         (
-            Line(Point(0, 0), Point(10, 0)),
+            Line(Point(0, 0), Point(1000, 0)),
             [
-                Line(Point(2, 0), Point(6, 0)),
-                Line(Point(4, 0), Point(8, 0)),
+                Line(Point(200, 0), Point(600, 0)),
+                Line(Point(400, 0), Point(800, 0)),
             ],
             [
-                Line(Point(0, 0), Point(2, 0)),
-                Line(Point(8, 0), Point(10, 0)),
+                Line(Point(0, 0), Point(200, 0)),
+                Line(Point(800, 0), Point(1000, 0)),
             ],
         ),
         # cut extends beyond self
         (
-            Line(Point(0, 0), Point(10, 0)),
+            Line(Point(0, 0), Point(1000, 0)),
             [
-                Line(Point(-5, 0), Point(4, 0)),
+                Line(Point(-500, 0), Point(400, 0)),
             ],
             [
-                Line(Point(4, 0), Point(10, 0)),
+                Line(Point(400, 0), Point(1000, 0)),
             ],
         ),
         # no overlap
         (
-            Line(Point(0, 0), Point(10, 0)),
+            Line(Point(0, 0), Point(1000, 0)),
             [
-                Line(Point(20, 0), Point(30, 0)),
+                Line(Point(2000, 0), Point(3000, 0)),
             ],
             [
-                Line(Point(0, 0), Point(10, 0)),
+                Line(Point(0, 0), Point(1000, 0)),
             ],
         ),
     ],
