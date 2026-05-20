@@ -29,12 +29,12 @@ class PlacementResolver:
 
     def group_resolve_transform(
         self,
-        junction: Junction,
-        edge_id_line_map: dict[int, Line],
-        edge_pipe_dim_map: dict[int, SteelDims],
+        junction_assembly: JunctionAssembly,
         geometric_components: list[GeometricComponent],
-        junction_assembly: JunctionAssembly | None = None,
     ) -> list[tuple[GeometricComponent, Transform2D]]:
+        junction = self._require_junction(junction_assembly)
+        edge_id_line_map = self._edge_id_line_map(junction_assembly)
+        edge_pipe_dim_map = self._edge_pipe_dim_map(junction_assembly)
 
         components_with_transforms: list[tuple[GeometricComponent, Transform2D]] = []
 
@@ -96,12 +96,10 @@ class PlacementResolver:
         temp_edge_pipe_dim_map = {first_reducer_line_id: first_reducer_pipe_dim}
 
         transform = self.resolve_transform(
-            junction,
-            edge_id_line_map,
-            temp_edge_pipe_dim_map,
+            junction_assembly,
             reducer,
             reducers_offset,
-            junction_assembly,
+            edge_pipe_dim_map_override=temp_edge_pipe_dim_map,
         )
 
         components_with_transforms.append((reducer, transform))
@@ -124,12 +122,10 @@ class PlacementResolver:
             temp_edge_pipe_dim_map = {second_reducer_line_id: second_reducer_pipe_dim}
 
             transform = self.resolve_transform(
-                junction,
-                edge_id_line_map,
-                temp_edge_pipe_dim_map,
+                junction_assembly,
                 reducer2,
                 reducers_offset,
-                junction_assembly,
+                edge_pipe_dim_map_override=temp_edge_pipe_dim_map,
             )
 
             components_with_transforms.append((reducer2, transform))
@@ -155,13 +151,16 @@ class PlacementResolver:
 
     def resolve_transform(
         self,
-        junction: Junction,
-        edge_id_line_map: dict[int, Line],
-        edge_pipe_dim_map: dict[int, SteelDims],
+        junction_assembly: JunctionAssembly,
         geometric_component: GeometricComponent,
         junction_origin_offset: float | None = None,
-        junction_assembly: JunctionAssembly | None = None,
+        edge_pipe_dim_map_override: dict[int, SteelDims] | None = None,
     ) -> Transform2D:
+        junction = self._require_junction(junction_assembly)
+        edge_id_line_map = self._edge_id_line_map(junction_assembly)
+        edge_pipe_dim_map = edge_pipe_dim_map_override or self._edge_pipe_dim_map(
+            junction_assembly
+        )
         if isinstance(geometric_component, (GeometricTee, GeometricWeldedBranch)):
             return self._resolve_tee_connection(
                 junction,
@@ -189,17 +188,39 @@ class PlacementResolver:
                 geometric_component,
             )
         if isinstance(geometric_component, GeometricPipe):
-            return self._resolve_pipe_transform(geometric_component)
+            return self.resolve_pipe_transform(geometric_component)
 
         raise ValueError(
             f"Unsupported geometric component type: {type(geometric_component).__name__}"
         )
 
-    def _resolve_pipe_transform(self, geometric_pipe: GeometricPipe) -> Transform2D:
+    def resolve_pipe_transform(self, geometric_pipe: GeometricPipe) -> Transform2D:
         if geometric_pipe.start is None or geometric_pipe.end is None:
             raise ValueError("Cannot resolve pipe transform without start/end points.")
         line = Line(start=geometric_pipe.start, end=geometric_pipe.end)
         return Transform2D(origin=geometric_pipe.start, rotation=line.direction())
+
+    def _require_junction(self, junction_assembly: JunctionAssembly) -> Junction:
+        junction = junction_assembly.junction
+        if junction is None:
+            raise ValueError(
+                "JunctionAssembly must include a Junction for connection transform resolving."
+            )
+        return junction
+
+    def _edge_id_line_map(self, junction_assembly: JunctionAssembly) -> dict[int, Line]:
+        return {
+            pipe_assembly.edge_info.edge_id: pipe_assembly.edge_info.line
+            for pipe_assembly in junction_assembly.pipes
+        }
+
+    def _edge_pipe_dim_map(
+        self, junction_assembly: JunctionAssembly
+    ) -> dict[int, SteelDims]:
+        return {
+            pipe_assembly.edge_info.edge_id: pipe_assembly.diameter
+            for pipe_assembly in junction_assembly.pipes
+        }
 
     def _resolve_tee_connection(
         self,

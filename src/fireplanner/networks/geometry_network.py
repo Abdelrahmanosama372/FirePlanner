@@ -76,45 +76,29 @@ class GeometryNetwork:
         self._edge_id_to_pipe = self.construct_edges()
 
     def construct_nodes(self) -> dict[int, list[GeometricComponent]]:
-        junctions = self._core_network.get_junctions()
         geometric_components_map: dict[int, list[GeometricComponent]] = {}
         for assembly in self._model_network.get_junctions_assembly():
             junction_id = assembly.junction_info.junction_id
             fire_connections = assembly.connections
-            junction = junctions[junction_id]
             geometric_components = [
                 self._geometry_mapper.get_geometry(connection)
                 for connection in fire_connections
             ]
-            junction_edge_id_line_map = {
-                pipe_assembly.edge_info.edge_id: pipe_assembly.edge_info.line
-                for pipe_assembly in assembly.pipes
-            }
-            junction_pipe_dim_map = {
-                pipe_assembly.edge_info.edge_id: pipe_assembly.diameter
-                for pipe_assembly in assembly.pipes
-            }
 
             transformed_geometric_components: list[GeometricComponent] = []
 
             if len(geometric_components) <= 1:
                 transform = self._placement_resolver.resolve_transform(
-                    junction=junction,
-                    edge_id_line_map=junction_edge_id_line_map,
-                    edge_pipe_dim_map=junction_pipe_dim_map,
-                    geometric_component=geometric_components[0],
                     junction_assembly=assembly,
+                    geometric_component=geometric_components[0],
                 )
                 geometric_components[0].transform = transform
                 transformed_geometric_components.append(geometric_components[0])
             else:
                 geometric_components_with_transform = (
                     self._placement_resolver.group_resolve_transform(
-                        junction=junction,
-                        edge_id_line_map=junction_edge_id_line_map,
-                        edge_pipe_dim_map=junction_pipe_dim_map,
-                        geometric_components=geometric_components,
                         junction_assembly=assembly,
+                        geometric_components=geometric_components,
                     )
                 )
                 for component, transform in geometric_components_with_transform:
@@ -157,11 +141,8 @@ class GeometryNetwork:
                 # no reducer on network edge
                 geometric_pipe.start = free_pipe_lines[0].start
                 geometric_pipe.end = free_pipe_lines[0].end
-                geometric_pipe.transform = self._placement_resolver.resolve_transform(
-                    junction=None,
-                    edge_id_line_map={},
-                    edge_pipe_dim_map={},
-                    geometric_component=geometric_pipe,
+                geometric_pipe.transform = (
+                    self._placement_resolver.resolve_pipe_transform(geometric_pipe)
                 )
                 geometric_pipes.setdefault(edge_id, []).append(geometric_pipe)
 
@@ -191,17 +172,11 @@ class GeometryNetwork:
                 )
                 geometric_pipe2.diameter = second_line_pipe_dim
 
-                geometric_pipe1.transform = self._placement_resolver.resolve_transform(
-                    junction=None,
-                    edge_id_line_map={},
-                    edge_pipe_dim_map={},
-                    geometric_component=geometric_pipe1,
+                geometric_pipe1.transform = (
+                    self._placement_resolver.resolve_pipe_transform(geometric_pipe1)
                 )
-                geometric_pipe2.transform = self._placement_resolver.resolve_transform(
-                    junction=None,
-                    edge_id_line_map={},
-                    edge_pipe_dim_map={},
-                    geometric_component=geometric_pipe2,
+                geometric_pipe2.transform = (
+                    self._placement_resolver.resolve_pipe_transform(geometric_pipe2)
                 )
                 geometric_pipes.setdefault(edge_id, []).append(geometric_pipe1)
                 geometric_pipes[edge_id].append(geometric_pipe2)

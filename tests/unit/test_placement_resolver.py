@@ -22,6 +22,8 @@ from fireplanner.geometry.components.geometric_component import GeometricCompone
 from fireplanner.geometry.primitives import Line, Point
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction import Junction, JunctionType
+from fireplanner.networks.junction_assembly import JunctionAssembly, PipeAssembly
+from fireplanner.networks.junction_info import EdgeInfo, JunctionInfo
 from fireplanner.networks.placement_resolver import (
     PlacementResolver,
 )
@@ -77,6 +79,32 @@ def geometric_elbow():
         connection_type=SteelConnection.Grooved,
     )
     return GeometricElbow(elbow)
+
+
+def _build_junction_assembly(
+    junction: Junction,
+    edge_id_line_map: dict[int, Line],
+    edge_pipe_dim_map: dict[int, SteelDims],
+) -> JunctionAssembly:
+    default_dim = next(iter(edge_pipe_dim_map.values()), SteelDims.DIM_1_INCHES)
+    return JunctionAssembly(
+        junction_info=JunctionInfo(junction_id=junction.id),
+        junction=junction,
+        connections=[],
+        pipes=[
+            PipeAssembly(
+                edge_info=EdgeInfo(
+                    edge_id=edge_id,
+                    line=line,
+                    length=line.length(),
+                    sprinkler_count=0,
+                ),
+                diameter=edge_pipe_dim_map.get(edge_id, default_dim),
+                pipe=None,
+            )
+            for edge_id, line in edge_id_line_map.items()
+        ],
+    )
 
 
 @pytest.mark.parametrize(
@@ -137,13 +165,15 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
         connected_edges_ids=[1, 2, 3],
     )
     transform = resolver.resolve_transform(
-        junction=junction,
-        edge_id_line_map=edge_id_line_map,
-        edge_pipe_dim_map={
-            1: SteelDims.DIM_1_INCHES,
-            2: SteelDims.DIM_1_INCHES,
-            3: SteelDims.DIM_1_INCHES,
-        },
+        junction_assembly=_build_junction_assembly(
+            junction,
+            edge_id_line_map,
+            {
+                1: SteelDims.DIM_1_INCHES,
+                2: SteelDims.DIM_1_INCHES,
+                3: SteelDims.DIM_1_INCHES,
+            },
+        ),
         geometric_component=geometric_tee,
     )
 
@@ -210,12 +240,14 @@ def test_resolve_transform_for_reducer(
         connected_edges_ids=[1, 2],
     )
     transform = resolver.resolve_transform(
-        junction=junction,
-        edge_id_line_map=edge_id_line_map,
-        edge_pipe_dim_map={
-            1: SteelDims.DIM_0_75_INCHES,
-            2: SteelDims.DIM_1_INCHES,
-        },
+        junction_assembly=_build_junction_assembly(
+            junction,
+            edge_id_line_map,
+            {
+                1: SteelDims.DIM_0_75_INCHES,
+                2: SteelDims.DIM_1_INCHES,
+            },
+        ),
         geometric_component=geometric_reducer,
     )
 
@@ -279,12 +311,14 @@ def test_resolve_transform_for_elbow(
         connected_edges_ids=[1, 2],
     )
     transform = resolver.resolve_transform(
-        junction=junction,
-        edge_id_line_map=edge_id_line_map,
-        edge_pipe_dim_map={
-            2: SteelDims.DIM_1_INCHES,
-            3: SteelDims.DIM_1_INCHES,
-        },
+        junction_assembly=_build_junction_assembly(
+            junction,
+            edge_id_line_map,
+            {
+                2: SteelDims.DIM_1_INCHES,
+                3: SteelDims.DIM_1_INCHES,
+            },
+        ),
         geometric_component=geometric_elbow,
     )
 
@@ -388,9 +422,11 @@ def test_group_transform_resolve(
     )
 
     component_with_transform = resolver.group_resolve_transform(
-        junction=junction,
-        edge_id_line_map=edge_id_line_map,
-        edge_pipe_dim_map=edge_pipe_dim_map,
+        junction_assembly=_build_junction_assembly(
+            junction,
+            edge_id_line_map,
+            edge_pipe_dim_map,
+        ),
         geometric_components=geometric_components,
     )
 
