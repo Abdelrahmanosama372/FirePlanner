@@ -309,7 +309,7 @@ def test_resolve_transform_for_elbow(
             },
             [
                 Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=38, y=0), radians(180)),
+                Transform2D(Point(x=138, y=0), radians(180)),
             ],
         ),
         (
@@ -326,7 +326,7 @@ def test_resolve_transform_for_elbow(
             },
             [
                 Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=-38, y=0), radians(0)),
+                Transform2D(Point(x=-138, y=0), radians(0)),
             ],
         ),
         (
@@ -343,8 +343,8 @@ def test_resolve_transform_for_elbow(
             },
             [
                 Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=-38, y=0), radians(0)),
-                Transform2D(Point(x=38, y=0), radians(180)),
+                Transform2D(Point(x=-138, y=0), radians(0)),
+                Transform2D(Point(x=138, y=0), radians(180)),
             ],
         ),
         (
@@ -361,8 +361,8 @@ def test_resolve_transform_for_elbow(
             },
             [
                 Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=-38, y=0), radians(0)),
-                Transform2D(Point(x=38, y=0), radians(180)),
+                Transform2D(Point(x=-138, y=0), radians(0)),
+                Transform2D(Point(x=138, y=0), radians(180)),
             ],
         ),
     ],

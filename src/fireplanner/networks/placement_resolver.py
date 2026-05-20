@@ -46,7 +46,7 @@ class PlacementResolver:
             (
                 component
                 for component in geometric_components
-                if isinstance(component, GeometricTee)
+                if isinstance(component, (GeometricTee, GeometricWeldedBranch))
             ),
             None,
         )
@@ -65,7 +65,11 @@ class PlacementResolver:
         )
 
         components_with_transforms.append((tee, tee_transform))
-        reducers_offset: float = tee.run_center_to_end
+
+        if isinstance(tee, GeometricWeldedBranch):
+            reducers_offset: float = 100  # will be turned into config later
+        else:
+            reducers_offset: float = tee.run_center_to_end + 100
 
         reducer = next(
             (
