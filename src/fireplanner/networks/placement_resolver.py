@@ -124,7 +124,7 @@ class PlacementResolver:
                 reducers_offset,
             )
 
-            components_with_transforms.append((reducer, transform))
+            components_with_transforms.append((reducer2, transform))
 
         # # Resolve remaining components
         # for component in geometric_components:

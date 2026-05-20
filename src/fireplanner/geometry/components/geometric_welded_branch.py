@@ -53,7 +53,9 @@ class GeometricWeldedBranch(GeometricComponent):
         R = steel_dim_table[self._run_diameter] / 2
         return [
             Line(
-                start=Point(x=0, y=0), end=Point(x=0, y=R), LineType=LineType.CenterLine
+                start=Point(x=0, y=0),
+                end=Point(x=0, y=R),
+                line_type=LineType.CenterLine,
             ),  # branch center line
         ]
 
