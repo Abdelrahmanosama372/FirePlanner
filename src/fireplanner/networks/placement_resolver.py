@@ -36,6 +36,7 @@ class PlacementResolver:
 
         components_with_transforms: list[tuple[GeometricComponent, Transform2D]] = []
 
+        ########### Temporary implementation to be refactored later #############
         # Possible geometric component groups:
         # - tee + reducer
         # - tee + two reducers
@@ -64,25 +65,83 @@ class PlacementResolver:
         )
 
         components_with_transforms.append((tee, tee_transform))
-
         reducers_offset: float = tee.run_center_to_end
 
-        # Resolve remaining components
-        for component in geometric_components:
+        reducer = next(
+            (
+                component
+                for component in geometric_components
+                if isinstance(component, GeometricReducer)
+            ),
+            None,
+        )
 
-            # Skip tee since already resolved
-            if component is tee:
-                continue
+        if reducer is None:
+            raise ValueError(
+                "Expected at least one GeometricReducer in grouped placement resolving "
+                "of geometric components"
+            )
+
+        first_reducer_line_id, first_reducer_pipe_dim = next(
+            (edge_id, dim)
+            for edge_id, dim in edge_pipe_dim_map.items()
+            if dim == reducer.small_diameter
+        )
+        temp_edge_pipe_dim_map = {first_reducer_line_id: first_reducer_pipe_dim}
+
+        transform = self.resolve_transform(
+            junction,
+            edge_id_line_map,
+            temp_edge_pipe_dim_map,
+            reducer,
+            reducers_offset,
+        )
+
+        components_with_transforms.append((reducer, transform))
+
+        if len(geometric_components) == 3:
+            reducer2 = next(
+                (
+                    component
+                    for component in geometric_components
+                    if isinstance(component, GeometricReducer) and component != reducer
+                ),
+                None,
+            )
+
+            second_reducer_line_id, second_reducer_pipe_dim = next(
+                (edge_id, dim)
+                for edge_id, dim in edge_pipe_dim_map.items()
+                if dim == reducer2.small_diameter and edge_id != first_reducer_line_id
+            )
+            temp_edge_pipe_dim_map = {second_reducer_line_id: second_reducer_pipe_dim}
 
             transform = self.resolve_transform(
                 junction,
                 edge_id_line_map,
-                edge_pipe_dim_map,
-                component,
+                temp_edge_pipe_dim_map,
+                reducer2,
                 reducers_offset,
             )
 
-            components_with_transforms.append((component, transform))
+            components_with_transforms.append((reducer, transform))
+
+        # # Resolve remaining components
+        # for component in geometric_components:
+        #
+        #     # Skip tee since already resolved
+        #     if component is tee:
+        #         continue
+        #
+        #     transform = self.resolve_transform(
+        #         junction,
+        #         edge_id_line_map,
+        #         edge_pipe_dim_map,
+        #         component,
+        #         reducers_offset,
+        #     )
+        #
+        #     components_with_transforms.append((component, transform))
 
         return components_with_transforms
 
@@ -190,27 +249,18 @@ class PlacementResolver:
         # the tranform is at reducer center, smaller diameter end is
         # on left side and large diameter end is on right side
 
-        collinear_edge_ids = find_collinear_edge_ids(edge_id_line_map)
-        first_edge_id, second_edge_id = collinear_edge_ids
-        first_diameter = edge_pipe_dim_map[first_edge_id]
-        second_diameter = edge_pipe_dim_map[second_edge_id]
-
-        if first_diameter.value >= second_diameter.value:
-            large_edge_id, small_edge_id = first_edge_id, second_edge_id
-        else:
-            large_edge_id, small_edge_id = second_edge_id, first_edge_id
-
+        small_edge_id = next(
+            edge_id
+            for edge_id, dim in edge_pipe_dim_map.items()
+            if dim == geometric_reducer.small_diameter
+        )
         small_edge_line = deepcopy(edge_id_line_map[small_edge_id])
-        large_edge_line = deepcopy(edge_id_line_map[large_edge_id])
 
         if not small_edge_line.end == junction.origin:
             small_edge_line.swap_end_points()
 
-        if large_edge_line.end == junction.origin:
-            large_edge_line.swap_end_points()
-
         return Transform2D(
-            origin=small_edge_line.point_from_end(250.0),
+            origin=small_edge_line.point_from_end(reducers_offset),
             rotation=small_edge_line.direction(),
         )
 

@@ -555,11 +555,11 @@ def test_geometry_network_construction():
     } == {
         1: [
             ("GeometricTee", mm(27.094), mm(19.2562), pi / 2.0),
-            ("GeometricReducer", mm(27.094), mm(19.5062), -pi / 2.0),
+            ("GeometricReducer", mm(27.094), mm(19.3322), -pi / 2.0),
         ],
         2: [
             ("GeometricTee", mm(27.094), mm(22.1564), pi / 2.0),
-            ("GeometricReducer", mm(27.094), mm(22.4064), -pi / 2.0),
+            ("GeometricReducer", mm(27.094), mm(22.2204), -pi / 2.0),
         ],
         3: [("GeometricElbow", 27037.0, 24999.4, 2 * pi)],
         5: [("GeometricReducer", 23588.6, mm(25.0564), 0.0)],
@@ -586,12 +586,10 @@ def test_geometry_network_construction():
             ("GeometricPipe", mm(27.094), mm(18.819), mm(27.094), mm(19.1802)),
         ],
         2: [
-            ("GeometricPipe", mm(27.094), mm(19.3322), mm(27.094), mm(19.46175)),
-            ("GeometricPipe", mm(27.094), mm(19.55065), mm(27.094), mm(22.0924)),
+            ("GeometricPipe", mm(27.094), mm(19.37665), mm(27.094), mm(22.0924)),
         ],
         3: [
-            ("GeometricPipe", mm(27.094), mm(22.2204), mm(27.094), mm(22.3683)),
-            ("GeometricPipe", mm(27.094), mm(22.4445), mm(27.094), mm(24.9994)),
+            ("GeometricPipe", mm(27.094), mm(22.2585), mm(27.094), mm(24.9994)),
         ],
         4: [
             ("GeometricPipe", mm(27.027), mm(19.2562), mm(26.7686), mm(19.2562)),

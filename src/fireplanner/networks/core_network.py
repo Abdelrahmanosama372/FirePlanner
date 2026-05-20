@@ -269,8 +269,10 @@ class CoreNetwork:
                     else FlowRoute.BRANCH
                 )
 
-        for line, intersection_point in sorted_intersected_lines:
+        for line, _ in sorted_intersected_lines:
             visited_line_ids.add(line.id)
+
+        for line, intersection_point in sorted_intersected_lines:
             child_flow_route = child_flow_route_by_line_id.get(
                 line.id,
                 FlowRoute.CONTINUATION,

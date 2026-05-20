@@ -1,3 +1,4 @@
+from copy import deepcopy
 from math import radians
 
 import pytest
@@ -44,6 +45,19 @@ def geometric_reducer():
     reducer = Reducer(
         diameter1=SteelDims.DIM_1_INCHES,
         diameter2=SteelDims.DIM_0_75_INCHES,
+        material=SteelMaterial.ERW,
+        schedule=SteelSchedule.SCD40,
+        specs=SteelSpecs.ASTM,
+        connection_type=SteelConnection.Grooved,
+    )
+    return GeometricReducer(reducer)
+
+
+@pytest.fixture
+def geometric_reducer2():
+    reducer = Reducer(
+        diameter1=SteelDims.DIM_1_INCHES,
+        diameter2=SteelDims.DIM_0_5_INCHES,
         material=SteelMaterial.ERW,
         schedule=SteelSchedule.SCD40,
         specs=SteelSpecs.ASTM,
@@ -276,3 +290,116 @@ def test_resolve_transform_for_elbow(
 
     # assert transform.origin == expected_transform.origin
     assert transform.angle == expected_transform.angle
+
+
+@pytest.mark.parametrize(
+    "geometric_component_names, edge_id_line_map, edge_pipe_dim_map, expected_transforms",
+    [
+        (
+            ["geometric_tee", "geometric_reducer"],
+            {
+                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
+            },
+            {
+                1: SteelDims.DIM_0_75_INCHES,
+                2: SteelDims.DIM_1_INCHES,
+                3: SteelDims.DIM_1_INCHES,
+            },
+            [
+                Transform2D(Point(x=0, y=0), radians(0)),
+                Transform2D(Point(x=38, y=0), radians(180)),
+            ],
+        ),
+        (
+            ["geometric_tee", "geometric_reducer"],
+            {
+                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
+            },
+            {
+                1: SteelDims.DIM_1_INCHES,
+                2: SteelDims.DIM_0_75_INCHES,
+                3: SteelDims.DIM_1_INCHES,
+            },
+            [
+                Transform2D(Point(x=0, y=0), radians(0)),
+                Transform2D(Point(x=-38, y=0), radians(0)),
+            ],
+        ),
+        (
+            ["geometric_tee", "geometric_reducer", "geometric_reducer"],
+            {
+                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
+            },
+            {
+                1: SteelDims.DIM_0_75_INCHES,
+                2: SteelDims.DIM_0_75_INCHES,
+                3: SteelDims.DIM_1_INCHES,
+            },
+            [
+                Transform2D(Point(x=0, y=0), radians(0)),
+                Transform2D(Point(x=-38, y=0), radians(0)),
+                Transform2D(Point(x=38, y=0), radians(180)),
+            ],
+        ),
+        (
+            ["geometric_tee", "geometric_reducer", "geometric_reducer2"],
+            {
+                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
+            },
+            {
+                1: SteelDims.DIM_0_5_INCHES,
+                2: SteelDims.DIM_0_75_INCHES,
+                3: SteelDims.DIM_1_INCHES,
+            },
+            [
+                Transform2D(Point(x=0, y=0), radians(0)),
+                Transform2D(Point(x=-38, y=0), radians(0)),
+                Transform2D(Point(x=38, y=0), radians(180)),
+            ],
+        ),
+    ],
+)
+def test_group_transform_resolve(
+    request,
+    geometric_component_names,
+    edge_id_line_map,
+    edge_pipe_dim_map,
+    expected_transforms,
+):
+    geometric_components = {
+        deepcopy(request.getfixturevalue(name)) for name in geometric_component_names
+    }
+
+    resolver = PlacementResolver()
+
+    junction = Junction(
+        id=3,
+        origin=Point(x=0, y=0),
+        junction_type=JunctionType.THREE_WAY,
+        connected_edges_ids=[1, 2, 3],
+    )
+
+    component_with_transform = resolver.group_resolve_transform(
+        junction=junction,
+        edge_id_line_map=edge_id_line_map,
+        edge_pipe_dim_map=edge_pipe_dim_map,
+        geometric_components=geometric_components,
+    )
+
+    _, transforms = zip(*component_with_transform)
+    transforms = list(transforms)
+
+    assert len(transforms) == len(expected_transforms)
+    for expected in expected_transforms:
+        assert any(
+            actual.origin == expected.origin and actual.angle == expected.angle
+            for actual in transforms
+        )
