@@ -6,6 +6,8 @@ from typing import Any
 
 from ..geometry.primitives import Block, Line, Point
 from .junction import Junction, JunctionType
+from .junction_info import EdgeInfo, JunctionInfo
+from .topology_interpreter import TopologyInterpreter
 
 
 class FlowRoute(StrEnum):
@@ -388,6 +390,32 @@ class CoreNetwork:
         edge_id_line_map: dict[int, Line] = {}
         self._get_lines_with_edge_ids_recursive(self.root, edge_id_line_map)
         return edge_id_line_map
+
+    def get_junctions_info(self) -> list[JunctionInfo]:
+        junctions = self.get_junctions()
+        if not junctions:
+            return []
+
+        topology_interpreter = TopologyInterpreter(
+            edge_id_line_map=self.get_lines_with_edge_ids(),
+            edge_id_sprinkler_map=self._edge_sprinkler_map,
+            sprinkler_blocks=self._sprinkles,
+            sprinkler_block_data=self._config.sprinkler_block_data,
+        )
+        return [
+            topology_interpreter.interpret_junction(junction)
+            for junction in junctions.values()
+        ]
+
+    def get_edges_info(self) -> list[EdgeInfo]:
+        return [
+            EdgeInfo(
+                edge_id=edge_id,
+                length=line.length(),
+                sprinkler_count=self._edge_sprinkler_map[edge_id],
+            )
+            for edge_id, line in self.get_lines_with_edge_ids().items()
+        ]
 
     def _get_lines_with_edge_ids_recursive(
         self,

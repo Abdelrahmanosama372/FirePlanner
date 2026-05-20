@@ -22,6 +22,11 @@ from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
 from fireplanner.geometry.primitives.line import Line
 from fireplanner.networks.core_network import CoreNetwork
 from fireplanner.networks.junction import Junction, JunctionType
+from fireplanner.networks.junction_info import (
+    EdgeInfo,
+    ThreeWayJunctionInfo,
+    TwoWayJunctionInfo,
+)
 from fireplanner.standards.hazard import (
     FireHazard,
     find_min_steel_dim_for_sprinklers,
@@ -141,25 +146,22 @@ class ModelNetwork:
         return dict(self._edge_id_to_pipe_dimension)
 
     def construct_edges(self) -> list[ModelEdge]:
-        edges_ids = self._core_network.get_edges_ids()
+        edges_info = self._core_network.get_edges_info()
         model_edges: list[ModelEdge] = []
         self._edge_id_to_pipe_dimension = {}
 
-        for edge_id in edges_ids:
-            pipe = self._create_pipe_for_edge_id(edge_id)
-            self._edge_id_to_pipe_dimension[edge_id] = pipe.diameter
-            model_edges.append(ModelEdge(edge_id=edge_id, pipe=pipe))
+        for info in edges_info:
+            pipe = self._create_pipe_for_edge_id(info)
+            self._edge_id_to_pipe_dimension[info.edge_id] = pipe.diameter
+            model_edges.append(ModelEdge(edge_id=info.edge_id, pipe=pipe))
 
         return model_edges
 
-    def _create_pipe_for_edge_id(self, edge_id: int) -> Pipe:
-        sprinklers_count = self._core_network.find_edge_sprinkler_count(edge_id)
-        if sprinklers_count is None:
-            raise ValueError(f"Could not find sprinkler count for edge id {edge_id}.")
+    def _create_pipe_for_edge_id(self, edge_info: EdgeInfo) -> Pipe:
 
         pipe_dimension = find_min_steel_dim_for_sprinklers(
             self.config.hazard,
-            sprinklers_count,
+            edge_info.sprinkler_count,
         )
 
         return Pipe(
@@ -175,41 +177,35 @@ class ModelNetwork:
     def construct_nodes(self) -> list[ModelNode]:
         nodes: list[ModelNode] = []
 
-        edges_ids_line_map = self._core_network.get_lines_with_edge_ids()
+        fire_connections: FireConnection = []
 
-        for junction in self._core_network.get_junctions().values():
-            connected_edges_diameters = [
-                self._edge_id_to_pipe_dimension[edge_id]
-                for edge_id in junction.connected_edges_ids
-            ]
-            connected_edges_lines = [
-                edges_ids_line_map[edge_id] for edge_id in junction.connected_edges_ids
-            ]
+        for junction_info in self._core_network.get_junctions_info():
 
-            fire_connections: FireConnection = []
-
-            if junction.junction_type == JunctionType.TWO_WAY:
-                if junction.angle is None:
-                    raise ValueError(
-                        f"two way junction angle is None for junction id: {junction.id}"
-                    )
-
-                pipe1_dim, pipe2_dim = connected_edges_diameters
+            if isinstance(junction_info, TwoWayJunctionInfo):
+                pipe1_dim, pipe2_dim = [
+                    self._edge_id_to_pipe_dimension[edge_info.edge_id]
+                    for edge_info in junction_info.edges
+                ]
 
                 fire_connections = self._create_fire_connection_for_two_way_junction(
                     pipe1_dim=pipe1_dim,
                     pipe2_dim=pipe2_dim,
-                    angle=junction.angle,
+                    angle=junction_info.angle,
                 )
 
-            elif junction.junction_type == JunctionType.THREE_WAY:
-                run1_dim, run2_dim, branch_dim = self._extract_three_way_dimensions(
-                    connected_edges_lines, connected_edges_diameters
-                )
+            elif isinstance(junction_info, ThreeWayJunctionInfo):
+                pipe1_dim, pipe2_dim = [
+                    self._edge_id_to_pipe_dimension[edge_info.edge_id]
+                    for edge_info in junction_info.run
+                ]
+
+                branch_dim = self._edge_id_to_pipe_dimension[
+                    junction_info.branch.edge_id
+                ]
 
                 fire_connections = self._create_fire_connection_for_three_way_junction(
-                    run1_dim=run1_dim,
-                    run2_dim=run2_dim,
+                    run1_dim=pipe1_dim,
+                    run2_dim=pipe2_dim,
                     branch_dim=branch_dim,
                 )
 
@@ -224,7 +220,7 @@ class ModelNetwork:
 
             nodes.append(
                 ModelNode(
-                    junction_id=junction.id,
+                    junction_id=junction_info.junction_id,
                     fire_connection=fire_connections,
                 )
             )
