@@ -17,6 +17,7 @@ from fireplanner.geometry.components import (
 from fireplanner.geometry.primitives import Line
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction import Junction, JunctionType
+from fireplanner.networks.junction_assembly import JunctionAssembly
 from fireplanner.networks.utils import find_collinear_edge_ids
 
 
@@ -32,6 +33,7 @@ class PlacementResolver:
         edge_id_line_map: dict[int, Line],
         edge_pipe_dim_map: dict[int, SteelDims],
         geometric_components: list[GeometricComponent],
+        junction_assembly: JunctionAssembly | None = None,
     ) -> list[tuple[GeometricComponent, Transform2D]]:
 
         components_with_transforms: list[tuple[GeometricComponent, Transform2D]] = []
@@ -99,6 +101,7 @@ class PlacementResolver:
             temp_edge_pipe_dim_map,
             reducer,
             reducers_offset,
+            junction_assembly,
         )
 
         components_with_transforms.append((reducer, transform))
@@ -126,6 +129,7 @@ class PlacementResolver:
                 temp_edge_pipe_dim_map,
                 reducer2,
                 reducers_offset,
+                junction_assembly,
             )
 
             components_with_transforms.append((reducer2, transform))
@@ -156,6 +160,7 @@ class PlacementResolver:
         edge_pipe_dim_map: dict[int, SteelDims],
         geometric_component: GeometricComponent,
         junction_origin_offset: float | None = None,
+        junction_assembly: JunctionAssembly | None = None,
     ) -> Transform2D:
         if isinstance(geometric_component, (GeometricTee, GeometricWeldedBranch)):
             return self._resolve_tee_connection(

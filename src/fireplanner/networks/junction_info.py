@@ -1,9 +1,12 @@
 from dataclasses import dataclass, field
 
+from fireplanner.geometry.primitives import Line
+
 
 @dataclass(frozen=True)
 class EdgeInfo:
     edge_id: int
+    line: Line
     length: float
     sprinkler_count: int
     elevation: float = 0.0

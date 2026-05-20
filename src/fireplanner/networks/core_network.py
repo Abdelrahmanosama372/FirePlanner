@@ -411,6 +411,7 @@ class CoreNetwork:
         return [
             EdgeInfo(
                 edge_id=edge_id,
+                line=line,
                 length=line.length(),
                 sprinkler_count=self._edge_sprinkler_map[edge_id],
             )

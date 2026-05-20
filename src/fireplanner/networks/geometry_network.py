@@ -77,29 +77,22 @@ class GeometryNetwork:
 
     def construct_nodes(self) -> dict[int, list[GeometricComponent]]:
         junctions = self._core_network.get_junctions()
-        edge_id_line_map = self._core_network.get_lines_with_edge_ids()
-        edge_pipe_dim_map = self._model_network.get_edge_id_to_pipe_diameter_map()
-
         geometric_components_map: dict[int, list[GeometricComponent]] = {}
-        for (
-            junction_id,
-            fire_connections,
-        ) in self._model_network.get_fire_connections_with_junctions_ids().items():
+        for assembly in self._model_network.get_junctions_assembly():
+            junction_id = assembly.junction_info.junction_id
+            fire_connections = assembly.connections
             junction = junctions[junction_id]
             geometric_components = [
                 self._geometry_mapper.get_geometry(connection)
                 for connection in fire_connections
             ]
             junction_edge_id_line_map = {
-                edge_id: line
-                for edge_id, line in edge_id_line_map.items()
-                if edge_id in junction.connected_edges_ids
+                pipe_assembly.edge_info.edge_id: pipe_assembly.edge_info.line
+                for pipe_assembly in assembly.pipes
             }
-
             junction_pipe_dim_map = {
-                edge_id: dim
-                for edge_id, dim in edge_pipe_dim_map.items()
-                if edge_id in junction.connected_edges_ids
+                pipe_assembly.edge_info.edge_id: pipe_assembly.diameter
+                for pipe_assembly in assembly.pipes
             }
 
             transformed_geometric_components: list[GeometricComponent] = []
@@ -110,6 +103,7 @@ class GeometryNetwork:
                     edge_id_line_map=junction_edge_id_line_map,
                     edge_pipe_dim_map=junction_pipe_dim_map,
                     geometric_component=geometric_components[0],
+                    junction_assembly=assembly,
                 )
                 geometric_components[0].transform = transform
                 transformed_geometric_components.append(geometric_components[0])
@@ -120,6 +114,7 @@ class GeometryNetwork:
                         edge_id_line_map=junction_edge_id_line_map,
                         edge_pipe_dim_map=junction_pipe_dim_map,
                         geometric_components=geometric_components,
+                        junction_assembly=assembly,
                     )
                 )
                 for component, transform in geometric_components_with_transform:

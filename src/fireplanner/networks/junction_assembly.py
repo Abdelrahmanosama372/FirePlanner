@@ -1,0 +1,22 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from fireplanner.firecomponent import SteelDims
+from fireplanner.firecomponent.fitting.fireconnection import FireConnection
+from fireplanner.firecomponent.pipe import Pipe
+from fireplanner.networks.junction_info import EdgeInfo, JunctionInfo
+
+
+@dataclass(frozen=True)
+class PipeAssembly:
+    edge_info: EdgeInfo
+    diameter: SteelDims
+    pipe: Pipe
+
+
+@dataclass(frozen=True)
+class JunctionAssembly:
+    junction_info: JunctionInfo
+    connections: list[FireConnection] = field(default_factory=list)
+    pipes: list[PipeAssembly] = field(default_factory=list)

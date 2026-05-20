@@ -22,8 +22,10 @@ from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
 from fireplanner.geometry.primitives.line import Line
 from fireplanner.networks.core_network import CoreNetwork
 from fireplanner.networks.junction import Junction, JunctionType
+from fireplanner.networks.junction_assembly import JunctionAssembly, PipeAssembly
 from fireplanner.networks.junction_info import (
     EdgeInfo,
+    JunctionInfo,
     ThreeWayJunctionInfo,
     TwoWayJunctionInfo,
 )
@@ -144,6 +146,53 @@ class ModelNetwork:
 
     def get_edge_id_to_pipe_diameter_map(self) -> dict[int, SteelDims]:
         return dict(self._edge_id_to_pipe_dimension)
+
+    def get_junctions_assembly(self) -> list[JunctionAssembly]:
+        junction_info_by_id: dict[int, JunctionInfo] = {
+            info.junction_id: info for info in self._core_network.get_junctions_info()
+        }
+        edge_info_by_id: dict[int, EdgeInfo] = {
+            info.edge_id: info for info in self._core_network.get_edges_info()
+        }
+        edge_id_to_pipe = self.get_pipes_with_edges_ids()
+
+        assemblies: list[JunctionAssembly] = []
+        for node in self.model_nodes:
+            junction_info = junction_info_by_id.get(node.junction_id)
+            if junction_info is None:
+                continue
+
+            if isinstance(junction_info, TwoWayJunctionInfo):
+                edge_infos = junction_info.edges
+            elif isinstance(junction_info, ThreeWayJunctionInfo):
+                edge_infos = list(junction_info.run)
+                if junction_info.branch is not None:
+                    edge_infos.append(junction_info.branch)
+            else:
+                edge_infos = []
+
+            pipes: list[PipeAssembly] = []
+            for edge_info in edge_infos:
+                pipe = edge_id_to_pipe.get(edge_info.edge_id)
+                if pipe is None:
+                    continue
+                canonical_edge_info = edge_info_by_id.get(edge_info.edge_id, edge_info)
+                pipes.append(
+                    PipeAssembly(
+                        edge_info=canonical_edge_info,
+                        diameter=pipe.diameter,
+                        pipe=pipe,
+                    )
+                )
+
+            assemblies.append(
+                JunctionAssembly(
+                    junction_info=junction_info,
+                    connections=node.fire_connection,
+                    pipes=pipes,
+                )
+            )
+        return assemblies
 
     def construct_edges(self) -> list[ModelEdge]:
         edges_info = self._core_network.get_edges_info()

@@ -61,7 +61,10 @@ class TopologyInterpreter:
         line = self._edge_id_line_map[edge_id]
         sprinkler_count = self._edge_id_sprinkler_map[edge_id]
         return EdgeInfo(
-            edge_id=edge_id, length=line.length(), sprinkler_count=sprinkler_count
+            edge_id=edge_id,
+            line=line,
+            length=line.length(),
+            sprinkler_count=sprinkler_count,
         )
 
     def _find_collinear_edge_ids(self, edge_ids: list[int]) -> list[int]:
