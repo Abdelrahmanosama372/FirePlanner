@@ -32,7 +32,7 @@ class TeeReducerPlacementStrategy(PlacementStrategy):
             *placement_assembly.components.weldedbranch(),
         ]
         if len(tee_like) != 1:
-            raise ValueError("Expected one tee component in tee+reducer strategy.")
+            raise ValueError("Expected one tee component in tee+reducers strategy.")
 
         tee = tee_like[0]
         contexts = dict(
@@ -45,22 +45,12 @@ class TeeReducerPlacementStrategy(PlacementStrategy):
             reducers_offset = tee.run_center_to_end + 100
 
         reducers = placement_assembly.components.reducers()
-        if not reducers:
-            raise ValueError("Expected at least one reducer in tee+reducer strategy.")
 
         used_edge_ids: set[int] = set()
         edge_pipe_dim_map = {
             pipe.edge_info.edge_id: pipe.diameter
             for pipe in placement_assembly.run_pipes
         }
-        if placement_assembly.branch_pipe is not None:
-            edge_pipe_dim_map[placement_assembly.branch_pipe.edge_info.edge_id] = (
-                placement_assembly.branch_pipe.diameter
-            )
-
-        all_pipes = list(placement_assembly.run_pipes)
-        if placement_assembly.branch_pipe is not None:
-            all_pipes.append(placement_assembly.branch_pipe)
 
         for reducer in reducers:
             reducer_edge_id = next(
@@ -70,7 +60,9 @@ class TeeReducerPlacementStrategy(PlacementStrategy):
             )
             used_edge_ids.add(reducer_edge_id)
             reducer_pipe = next(
-                pipe for pipe in all_pipes if pipe.edge_info.edge_id == reducer_edge_id
+                pipe
+                for pipe in placement_assembly.run_pipes
+                if pipe.edge_info.edge_id == reducer_edge_id
             )
             reducer_assembly = replace(
                 placement_assembly,

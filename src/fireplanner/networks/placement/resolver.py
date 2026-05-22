@@ -47,7 +47,7 @@ class PlacementResolver:
             if isinstance(component, GeometricElbow):
                 return SingleElbowPlacementStrategy(placement_assembly)
 
-        if len(placement_assembly.components.items) > 1 and any(
+        if len(placement_assembly.components.reducers()) >= 1 and any(
             isinstance(component, (GeometricTee, GeometricWeldedBranch))
             for component in placement_assembly.components.items
         ):
