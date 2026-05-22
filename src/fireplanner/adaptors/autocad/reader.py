@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import yaml
 
 from fireplanner.adaptors.autocad.utils import color_name_to_aci
+from fireplanner.adaptors.autocad.xdata_parser import XDataParser
 from fireplanner.firecomponent import (
     SteelConnection,
     SteelDims,
@@ -120,12 +121,14 @@ class Reader:
         line_network_data = self._mapping(input_data.get("line_network_layer"))
         sprinkler_block_data = self._mapping(input_data.get("sprinkler_blocks"))
         root_identifier = self._mapping(input_data.get("root_line_identifier"))
+        xdata_config = self._read_xdata_config(input_data)
         logger.info("Reading AutoCAD entities to build core network configs.")
 
-        line_records = self._read_line_records(
+        line_records, line_elevations = self._read_line_records_with_xdata(
             acad=acad,
             layer_name=str(line_network_data.get("name", "")),
             drawing_unit=drawing_unit,
+            xdata_config=xdata_config,
         )
         root_lines = self._find_root_lines(line_records, root_identifier)
         sprinkler_blocks = self._read_sprinkler_blocks(
@@ -147,6 +150,7 @@ class Reader:
                     lines=[record.line for record in line_records],
                     root_line=root_line,
                     root_flow_route=root_flow_route,
+                    line_elevations=line_elevations,
                 )
             )
 
@@ -276,16 +280,40 @@ class Reader:
             return SteelConnection.Threaded
         raise ValueError(f"Unsupported connection type: {value}")
 
-    def _read_line_records(
-        self, acad: Autocad | Any, layer_name: str, drawing_unit: LengthUnit
-    ) -> list[_LineRecord]:
+    def _read_xdata_config(self, input_data: dict[str, Any]) -> dict[str, Any] | None:
+        xdata_data = self._mapping(input_data.get("xdata"))
+        if not xdata_data:
+            return None
+        return xdata_data
+
+    def _read_line_records_with_xdata(
+        self,
+        acad: Autocad | Any,
+        layer_name: str,
+        drawing_unit: LengthUnit,
+        xdata_config: dict[str, Any] | None,
+    ) -> tuple[list[_LineRecord], dict[int, float]]:
         line_records: list[_LineRecord] = []
+        line_elevations: dict[int, float] = {}
+
         for index, entity in enumerate(self._iter_objects(acad, "AcDbLine"), start=1):
             entity_layer = str(self._get_entity_attr(entity, "Layer", "")).strip()
             if layer_name and entity_layer != layer_name:
                 continue
+
+            # Assign sequential ID to each line
+            line_id = index
+
+            # Read xdata and parse elevation if config is provided
+            if xdata_config:
+                xdata = self._get_entity_xdata(entity, xdata_config)
+                if xdata is not None:
+                    elevation = self._parse_elevation_from_xdata(xdata, xdata_config)
+                    if elevation is not None:
+                        line_elevations[line_id] = elevation
+
             line = Line(
-                id=self._entity_id(entity, index),
+                id=line_id,
                 start=self._point_from_entity_value(
                     self._get_entity_attr(entity, "StartPoint")
                 ),
@@ -301,12 +329,63 @@ class Reader:
                     ),
                 )
             )
+
         logger.info(
             "Collected %d line entity record(s) from layer '%s' and normalized to mm.",
             len(line_records),
             layer_name,
         )
-        return line_records
+        if line_elevations:
+            logger.info(
+                "Parsed elevations for %d line(s) from xdata.",
+                len(line_elevations),
+            )
+        return line_records, line_elevations
+
+    def _get_entity_xdata(
+        self, entity: Any, xdata_config: dict[str, Any]
+    ) -> list[str] | None:
+        app_name = str(xdata_config.get("application_name", "")).strip()
+        if not app_name:
+            return None
+
+        # Try to get xdata from the entity
+        raw_xdata = self._get_entity_attr(entity, "XData", None)
+        if raw_xdata is None:
+            return None
+
+        # raw_xdata is typically a list where the first item is the app name
+        # followed by xdata strings in format "KEY=VALUE"
+        if isinstance(raw_xdata, (list, tuple)) and len(raw_xdata) > 0:
+            # Filter xdata for our application
+            result = []
+            for item in raw_xdata:
+                item_str = str(item).strip()
+                if item_str == app_name or "=" in item_str:
+                    result.append(item_str)
+            return result
+
+        return None
+
+    def _parse_elevation_from_xdata(
+        self, xdata: list[str], xdata_config: dict[str, Any]
+    ) -> float | None:
+        fields = self._mapping(xdata_config.get("fields", {}))
+        elevation_key = fields.get("elevation", "")
+
+        if not elevation_key:
+            return None
+
+        try:
+            parser = XDataParser()
+            parsed = parser.parse(xdata)
+            elevation_str = parsed.get(str(elevation_key))
+            if elevation_str is not None:
+                return float(elevation_str)
+        except (ValueError, TypeError):
+            raise ValueError(f"Cannot parse elevation Xdata {parsed}")
+
+        return None
 
     def _read_sprinkler_blocks(
         self,

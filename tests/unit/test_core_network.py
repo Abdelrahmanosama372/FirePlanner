@@ -459,3 +459,37 @@ def test_get_junctions_has_correct_has_sprinkler_on_simple_network():
         8: True,
         9: True,
     }
+
+
+def test_simple_network_elevations_assignment():
+
+    network = CoreNetwork(
+        config=CoreNetworkConfig(
+            sprinkler_blocks=build_simple_network_blocks(),
+            lines=build_simple_network_lines(),
+            line_elevations={
+                0: 2000,
+                1: 2200,
+                2: 2200,
+                3: 2000,
+                4: 2000,
+            },
+        )
+    )
+
+    print(network.get_edges_id_elevation_map())
+
+    assert network.get_edges_id_elevation_map() == {
+        1: 2000,
+        2: 2000,
+        3: 2000,
+        4: 2000,
+        5: 2200,
+        6: 2200,
+        7: 2200,
+        8: 2200,
+        9: 2000,
+        10: 2000,
+        11: 2000,
+        12: 2000,
+    }

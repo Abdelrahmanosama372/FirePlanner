@@ -22,6 +22,7 @@ class CoreNetworkConfig:
     lines: list[Line] = field(default_factory=list)
     root_line: Line | None = None
     root_flow_route: FlowRoute = FlowRoute.CONTINUATION
+    line_elevations: dict[int, int] = field(default_factory=dict)
 
     def ordered_lines(self) -> list[Line]:
         if self.root_line is None:
@@ -33,14 +34,23 @@ class CoreNetworkConfig:
 
 
 class CoreNode:
-    def __init__(self, line: Line):
+    def __init__(self, line: Line, elevation: int = 0):
         self._edge = line
+        self._elevation = elevation
         self._intersection_point: Point | None = None
         self._connected_nodes: list[CoreNode] = []
 
     @property
     def edge(self) -> Line:
         return self._edge
+
+    @property
+    def elevation(self) -> int:
+        return self._elevation
+
+    @elevation.setter
+    def elevation(self, value: int):
+        self._elevation = value
 
     @property
     def line(self) -> Line:
@@ -75,6 +85,7 @@ class CoreNode:
             "CoreNode": {
                 "id": self.edge.id,
                 "edge": self.edge.to_json(),
+                "elevation": str(self._elevation),
                 "intersection_point": (
                     self.intersection_point.to_json()
                     if self.intersection_point is not None
@@ -222,12 +233,13 @@ class CoreNetwork:
             self._edge_flow_route_map[split_line.id] = parent_flow_route
             self._next_created_line_id += 1
 
-        root_node = CoreNode(split_lines[0])
+        root_elevation = self._config.line_elevations.get(root_line.id, 0)
+        root_node = CoreNode(split_lines[0], root_elevation)
         segment_nodes = [root_node]
         previous_node = root_node
 
         for split_line in split_lines[1:]:
-            node = CoreNode(split_line)
+            node = CoreNode(split_line, root_elevation)
             node.set_intersection_point(split_line.start)
             previous_node.add_node(node)
             segment_nodes.append(node)
@@ -383,6 +395,24 @@ class CoreNetwork:
         for connected_node in core_node.connected_nodes:
             self._get_edges_ids_recursive(connected_node, edges_ids)
 
+    def get_edges_id_elevation_map(self) -> dict[int, int]:
+        if self.root is None:
+            return {}
+
+        edge_id_elevation_map: dict[int, int] = {}
+        self._get_edges_id_elevation_map(self.root, edge_id_elevation_map)
+        return edge_id_elevation_map
+
+    def _get_edges_id_elevation_map(
+        self, core_node: CoreNode, edge_id_elevation_map: dict[int, int]
+    ) -> None:
+        edge_id_elevation_map[core_node.edge.id] = core_node.elevation
+        for connected_node in core_node.connected_nodes:
+            self._get_edges_id_elevation_map(
+                connected_node,
+                edge_id_elevation_map,
+            )
+
     def get_lines_with_edge_ids(self) -> dict[int, Line]:
         if self.root is None:
             return {}
@@ -398,6 +428,7 @@ class CoreNetwork:
 
         topology_interpreter = TopologyInterpreter(
             edge_id_line_map=self.get_lines_with_edge_ids(),
+            edge_id_elevation_map=self.get_edges_id_elevation_map(),
             edge_id_sprinkler_map=self._edge_sprinkler_map,
             sprinkler_blocks=self._sprinkles,
             sprinkler_block_data=self._config.sprinkler_block_data,
@@ -408,12 +439,14 @@ class CoreNetwork:
         ]
 
     def get_edges_info(self) -> list[EdgeInfo]:
+        edge_id_elevation_map = self.get_edges_id_elevation_map()
         return [
             EdgeInfo(
                 edge_id=edge_id,
                 line=line,
                 length=line.length(),
                 sprinkler_count=self._edge_sprinkler_map[edge_id],
+                elevation=edge_id_elevation_map[edge_id],
             )
             for edge_id, line in self.get_lines_with_edge_ids().items()
         ]

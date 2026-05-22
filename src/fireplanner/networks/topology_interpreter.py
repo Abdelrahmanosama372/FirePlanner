@@ -14,12 +14,14 @@ class TopologyInterpreter:
     def __init__(
         self,
         edge_id_line_map: dict[int, Line],
+        edge_id_elevation_map: dict[int, int],
         edge_id_sprinkler_map: dict[int, int],
         sprinkler_blocks: list[Block] | None = None,
         sprinkler_block_data: dict[str, dict[str, float]] | None = None,
     ) -> None:
         self._edge_id_line_map = edge_id_line_map
         self._edge_id_sprinkler_map = edge_id_sprinkler_map
+        self._edge_id_elevation_map = edge_id_elevation_map
         self._sprinkler_blocks = sprinkler_blocks or []
         self._sprinkler_block_data = sprinkler_block_data or {}
 
@@ -65,11 +67,13 @@ class TopologyInterpreter:
     def _edge_info(self, edge_id: int) -> EdgeInfo:
         line = self._edge_id_line_map[edge_id]
         sprinkler_count = self._edge_id_sprinkler_map[edge_id]
+        line_elevation = self._edge_id_elevation_map[edge_id]
         return EdgeInfo(
             edge_id=edge_id,
             line=line,
             length=line.length(),
             sprinkler_count=sprinkler_count,
+            elevation=line_elevation,
         )
 
     def _find_collinear_edge_ids(self, edge_ids: list[int]) -> list[int]:
