@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from fireplanner.geometry.primitives import Line
+from fireplanner.geometry.primitives import Line, Point
 
 
 @dataclass(frozen=True)
@@ -15,6 +15,7 @@ class EdgeInfo:
 @dataclass(frozen=True)
 class JunctionInfo:
     junction_id: int
+    origin: Point
 
 
 @dataclass(frozen=True)

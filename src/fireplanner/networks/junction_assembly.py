@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from fireplanner.firecomponent import SteelDims
 from fireplanner.firecomponent.fitting.fireconnection import FireConnection
 from fireplanner.firecomponent.pipe import Pipe
-from fireplanner.networks.junction import Junction
 from fireplanner.networks.junction_info import EdgeInfo, JunctionInfo
 
 
@@ -19,6 +18,5 @@ class PipeAssembly:
 @dataclass(frozen=True)
 class JunctionAssembly:
     junction_info: JunctionInfo
-    junction: Junction | None = None
     connections: list[FireConnection] = field(default_factory=list)
     pipes: list[PipeAssembly] = field(default_factory=list)

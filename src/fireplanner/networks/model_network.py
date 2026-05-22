@@ -148,7 +148,6 @@ class ModelNetwork:
         return dict(self._edge_id_to_pipe_dimension)
 
     def get_junctions_assembly(self) -> list[JunctionAssembly]:
-        junction_by_id = self._core_network.get_junctions()
         junction_info_by_id: dict[int, JunctionInfo] = {
             info.junction_id: info for info in self._core_network.get_junctions_info()
         }
@@ -189,7 +188,6 @@ class ModelNetwork:
             assemblies.append(
                 JunctionAssembly(
                     junction_info=junction_info,
-                    junction=junction_by_id.get(node.junction_id),
                     connections=node.fire_connection,
                     pipes=pipes,
                 )

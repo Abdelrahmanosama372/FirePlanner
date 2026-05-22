@@ -11,7 +11,7 @@ from fireplanner.geometry.components import (
     GeometricPipe,
     GeometricReducer,
 )
-from fireplanner.geometry.primitives import Line
+from fireplanner.geometry.primitives import Line, Transform2D
 from fireplanner.networks.core_network import CoreNetwork
 from fireplanner.networks.geometry_mapper import GeometryMapper, GeometryMapperConfig
 from fireplanner.networks.model_network import ModelNetwork
@@ -86,23 +86,14 @@ class GeometryNetwork:
             ]
 
             transformed_geometric_components: list[GeometricComponent] = []
-
-            if len(geometric_components) <= 1:
-                transform = self._placement_resolver.resolve_transform(
+            if geometric_components:
+                strategy = self._placement_resolver.resolve(
                     junction_assembly=assembly,
-                    geometric_component=geometric_components[0],
+                    geometric_components=geometric_components,
                 )
-                geometric_components[0].transform = transform
-                transformed_geometric_components.append(geometric_components[0])
-            else:
-                geometric_components_with_transform = (
-                    self._placement_resolver.group_resolve_transform(
-                        junction_assembly=assembly,
-                        geometric_components=geometric_components,
-                    )
-                )
-                for component, transform in geometric_components_with_transform:
-                    component.transform = transform
+                for component in geometric_components:
+                    context = strategy.get_placement_context(component)
+                    component.transform = context.transform
                     transformed_geometric_components.append(component)
 
             geometric_components_map[junction_id] = transformed_geometric_components
@@ -141,8 +132,12 @@ class GeometryNetwork:
                 # no reducer on network edge
                 geometric_pipe.start = free_pipe_lines[0].start
                 geometric_pipe.end = free_pipe_lines[0].end
-                geometric_pipe.transform = (
-                    self._placement_resolver.resolve_pipe_transform(geometric_pipe)
+                geometric_pipe.transform = Transform2D(
+                    origin=geometric_pipe.start,
+                    rotation=Line(
+                        start=geometric_pipe.start,
+                        end=geometric_pipe.end,
+                    ).direction(),
                 )
                 geometric_pipes.setdefault(edge_id, []).append(geometric_pipe)
 
@@ -172,11 +167,19 @@ class GeometryNetwork:
                 )
                 geometric_pipe2.diameter = second_line_pipe_dim
 
-                geometric_pipe1.transform = (
-                    self._placement_resolver.resolve_pipe_transform(geometric_pipe1)
+                geometric_pipe1.transform = Transform2D(
+                    origin=geometric_pipe1.start,
+                    rotation=Line(
+                        start=geometric_pipe1.start,
+                        end=geometric_pipe1.end,
+                    ).direction(),
                 )
-                geometric_pipe2.transform = (
-                    self._placement_resolver.resolve_pipe_transform(geometric_pipe2)
+                geometric_pipe2.transform = Transform2D(
+                    origin=geometric_pipe2.start,
+                    rotation=Line(
+                        start=geometric_pipe2.start,
+                        end=geometric_pipe2.end,
+                    ).direction(),
                 )
                 geometric_pipes.setdefault(edge_id, []).append(geometric_pipe1)
                 geometric_pipes[edge_id].append(geometric_pipe2)

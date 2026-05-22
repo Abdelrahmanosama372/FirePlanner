@@ -1,3 +1,5 @@
+from math import pi
+
 from fireplanner.geometry.primitives.line import Line
 
 
@@ -22,3 +24,7 @@ def find_collinear_edge_ids(edge_id_line_map: dict[int, Line]) -> list[int]:
         raise ValueError("Could not find collinear pair of edges for tee placement.")
 
     return best_pair
+
+
+def wrap_to_pi(angle: float) -> float:
+    return (angle + pi) % (2 * pi) - pi

@@ -33,12 +33,16 @@ class TopologyInterpreter:
             if sprinkler_info is not None:
                 return SprinklerJunctionInfo(
                     junction_id=junction.id,
+                    origin=junction.origin,
                     edges=edge_infos,
                     angle=junction.angle,
                     sprinkler_info=sprinkler_info,
                 )
             return TwoWayJunctionInfo(
-                junction_id=junction.id, edges=edge_infos, angle=junction.angle
+                junction_id=junction.id,
+                origin=junction.origin,
+                edges=edge_infos,
+                angle=junction.angle,
             )
 
         if junction.junction_type == JunctionType.THREE_WAY:
@@ -51,11 +55,12 @@ class TopologyInterpreter:
             )
             return ThreeWayJunctionInfo(
                 junction_id=junction.id,
+                origin=junction.origin,
                 run=run,
                 branch=self._edge_info(branch_id),
             )
 
-        return JunctionInfo(junction_id=junction.id)
+        return JunctionInfo(junction_id=junction.id, origin=junction.origin)
 
     def _edge_info(self, edge_id: int) -> EdgeInfo:
         line = self._edge_id_line_map[edge_id]

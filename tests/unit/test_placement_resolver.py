@@ -1,4 +1,3 @@
-from copy import deepcopy
 from math import radians
 
 import pytest
@@ -18,14 +17,20 @@ from fireplanner.geometry.components import (
     GeometricReducer,
     GeometricTee,
 )
-from fireplanner.geometry.components.geometric_component import GeometricComponent
 from fireplanner.geometry.primitives import Line, Point
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction import Junction, JunctionType
 from fireplanner.networks.junction_assembly import JunctionAssembly, PipeAssembly
-from fireplanner.networks.junction_info import EdgeInfo, JunctionInfo
-from fireplanner.networks.placement_resolver import (
-    PlacementResolver,
+from fireplanner.networks.junction_info import (
+    EdgeInfo,
+    ThreeWayJunctionInfo,
+    TwoWayJunctionInfo,
+)
+from fireplanner.networks.placement.resolver import PlacementResolver
+from fireplanner.networks.placement.strategy import (
+    SingleElbowPlacementStrategy,
+    SingleReducerPlacementStrategy,
+    SingleTeePlacementStrategy,
 )
 
 
@@ -86,25 +91,113 @@ def _build_junction_assembly(
     edge_id_line_map: dict[int, Line],
     edge_pipe_dim_map: dict[int, SteelDims],
 ) -> JunctionAssembly:
-    default_dim = next(iter(edge_pipe_dim_map.values()), SteelDims.DIM_1_INCHES)
+    edge_infos = [
+        EdgeInfo(
+            edge_id=edge_id,
+            line=line,
+            length=line.length(),
+            sprinkler_count=0,
+        )
+        for edge_id, line in edge_id_line_map.items()
+    ]
+
+    if junction.junction_type == JunctionType.THREE_WAY:
+        junction_info = ThreeWayJunctionInfo(
+            junction_id=junction.id,
+            origin=junction.origin,
+            run=edge_infos[:2],
+            branch=edge_infos[2] if len(edge_infos) > 2 else None,
+        )
+    else:
+        junction_info = TwoWayJunctionInfo(
+            junction_id=junction.id,
+            origin=junction.origin,
+            edges=edge_infos[:2],
+            angle=junction.angle or 0.0,
+        )
+
     return JunctionAssembly(
-        junction_info=JunctionInfo(junction_id=junction.id),
-        junction=junction,
-        connections=[],
+        junction_info=junction_info,
         pipes=[
             PipeAssembly(
-                edge_info=EdgeInfo(
-                    edge_id=edge_id,
-                    line=line,
-                    length=line.length(),
-                    sprinkler_count=0,
-                ),
-                diameter=edge_pipe_dim_map.get(edge_id, default_dim),
+                edge_info=edge_info,
+                diameter=edge_pipe_dim_map[edge_info.edge_id],
                 pipe=None,
             )
-            for edge_id, line in edge_id_line_map.items()
+            for edge_info in edge_infos
+            if edge_info.edge_id in edge_pipe_dim_map
         ],
     )
+
+
+@pytest.mark.parametrize(
+    "component_fixture, junction, edge_id_line_map, edge_pipe_dim_map, expected_strategy, expected_transform",
+    [
+        (
+            "geometric_tee",
+            Junction(
+                id=1,
+                origin=Point(x=0, y=0),
+                junction_type=JunctionType.THREE_WAY,
+                connected_edges_ids=[1, 2, 3],
+            ),
+            {
+                1: Line(start=Point(x=-100, y=0), end=Point(x=0, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
+            },
+            {
+                1: SteelDims.DIM_1_INCHES,
+                2: SteelDims.DIM_1_INCHES,
+                3: SteelDims.DIM_1_INCHES,
+            },
+            SingleTeePlacementStrategy,
+            Transform2D(Point(x=0, y=0), radians(0)),
+        ),
+        (
+            "geometric_reducer",
+            Junction(
+                id=2,
+                origin=Point(x=0, y=0),
+                junction_type=JunctionType.TWO_WAY,
+                connected_edges_ids=[1, 2],
+            ),
+            {
+                1: Line(start=Point(x=-100, y=0), end=Point(x=0, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=2),
+            },
+            {
+                1: SteelDims.DIM_0_75_INCHES,
+                2: SteelDims.DIM_1_INCHES,
+            },
+            SingleReducerPlacementStrategy,
+            Transform2D(Point(x=-250.0, y=0.0), radians(0)),
+        ),
+    ],
+)
+def test_resolver_strategy_and_context(
+    request,
+    component_fixture,
+    junction,
+    edge_id_line_map,
+    edge_pipe_dim_map,
+    expected_strategy,
+    expected_transform,
+):
+    component = request.getfixturevalue(component_fixture)
+    resolver = PlacementResolver()
+    junction_assembly = _build_junction_assembly(
+        junction=junction,
+        edge_id_line_map=edge_id_line_map,
+        edge_pipe_dim_map=edge_pipe_dim_map,
+    )
+
+    strategy = resolver.resolve(junction_assembly, [component])
+
+    assert isinstance(strategy, expected_strategy)
+    context = strategy.get_placement_context(component)
+    assert context.transform.origin == expected_transform.origin
+    assert context.transform.angle == expected_transform.angle
 
 
 @pytest.mark.parametrize(
@@ -119,7 +212,6 @@ def _build_junction_assembly(
             Transform2D(Point(x=0, y=0), radians(0)),
         ),
         (
-            # reversed main lines
             {
                 1: Line(end=Point(x=-100, y=0), start=Point(x=0, y=0), id=1),
                 2: Line(end=Point(x=0, y=0), start=Point(x=100, y=0), id=2),
@@ -128,7 +220,6 @@ def _build_junction_assembly(
             Transform2D(Point(x=0, y=0), radians(0)),
         ),
         (
-            # reversed branch line
             {
                 1: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=1),
                 2: Line(start=Point(x=100, y=0), end=Point(x=0, y=0), id=2),
@@ -137,7 +228,6 @@ def _build_junction_assembly(
             Transform2D(Point(x=0, y=0), radians(0)),
         ),
         (
-            # 2nd quadrant main line
             {
                 1: Line(start=Point(x=-100, y=100), end=Point(x=0, y=0), id=1),
                 2: Line(start=Point(x=0, y=0), end=Point(x=100, y=-100), id=2),
@@ -146,7 +236,6 @@ def _build_junction_assembly(
             Transform2D(Point(x=0, y=0), radians(135)),
         ),
         (
-            # 2nd quadrant reversed main line
             {
                 1: Line(end=Point(x=-100, y=100), start=Point(x=0, y=0), id=1),
                 2: Line(end=Point(x=0, y=0), start=Point(x=100, y=-100), id=2),
@@ -156,29 +245,35 @@ def _build_junction_assembly(
         ),
     ],
 )
-def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_transform):
-    resolver = PlacementResolver()
+def test_single_tee_strategy_matches_legacy_cases(
+    geometric_tee,
+    edge_id_line_map,
+    expected_transform,
+):
     junction = Junction(
         id=1,
         origin=Point(x=0, y=0),
         junction_type=JunctionType.THREE_WAY,
         connected_edges_ids=[1, 2, 3],
     )
-    transform = resolver.resolve_transform(
-        junction_assembly=_build_junction_assembly(
-            junction,
-            edge_id_line_map,
-            {
-                1: SteelDims.DIM_1_INCHES,
-                2: SteelDims.DIM_1_INCHES,
-                3: SteelDims.DIM_1_INCHES,
-            },
-        ),
-        geometric_component=geometric_tee,
+    edge_pipe_dim_map = {
+        1: SteelDims.DIM_1_INCHES,
+        2: SteelDims.DIM_1_INCHES,
+        3: SteelDims.DIM_1_INCHES,
+    }
+    resolver = PlacementResolver()
+    junction_assembly = _build_junction_assembly(
+        junction=junction,
+        edge_id_line_map=edge_id_line_map,
+        edge_pipe_dim_map=edge_pipe_dim_map,
     )
 
-    assert transform.origin == expected_transform.origin
-    assert transform.angle == expected_transform.angle
+    strategy = resolver.resolve(junction_assembly, [geometric_tee])
+    assert isinstance(strategy, SingleTeePlacementStrategy)
+    context = strategy.get_placement_context(geometric_tee)
+
+    assert context.transform.origin == expected_transform.origin
+    assert context.transform.angle == expected_transform.angle
 
 
 @pytest.mark.parametrize(
@@ -229,30 +324,34 @@ def test_resolve_transform_for_tee(geometric_tee, edge_id_line_map, expected_tra
         ),
     ],
 )
-def test_resolve_transform_for_reducer(
-    geometric_reducer, edge_id_line_map, expected_transform
+def test_single_reducer_strategy_matches_legacy_cases(
+    geometric_reducer,
+    edge_id_line_map,
+    expected_transform,
 ):
-    resolver = PlacementResolver()
     junction = Junction(
-        id=2,
+        id=1,
         origin=Point(x=0, y=0),
         junction_type=JunctionType.TWO_WAY,
         connected_edges_ids=[1, 2],
     )
-    transform = resolver.resolve_transform(
-        junction_assembly=_build_junction_assembly(
-            junction,
-            edge_id_line_map,
-            {
-                1: SteelDims.DIM_0_75_INCHES,
-                2: SteelDims.DIM_1_INCHES,
-            },
-        ),
-        geometric_component=geometric_reducer,
+    edge_pipe_dim_map = {
+        1: SteelDims.DIM_0_75_INCHES,
+        2: SteelDims.DIM_1_INCHES,
+    }
+    resolver = PlacementResolver()
+    junction_assembly = _build_junction_assembly(
+        junction=junction,
+        edge_id_line_map=edge_id_line_map,
+        edge_pipe_dim_map=edge_pipe_dim_map,
     )
 
-    assert transform.origin == expected_transform.origin
-    assert transform.angle == expected_transform.angle
+    strategy = resolver.resolve(junction_assembly, [geometric_reducer])
+    assert isinstance(strategy, SingleReducerPlacementStrategy)
+    context = strategy.get_placement_context(geometric_reducer)
+
+    assert context.transform.origin == expected_transform.origin
+    assert context.transform.angle == expected_transform.angle
 
 
 @pytest.mark.parametrize(
@@ -264,7 +363,7 @@ def test_resolve_transform_for_reducer(
                 1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
                 2: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=2),
             },
-            Transform2D(Point(x=0.38, y=0.38), radians(180)),
+            Transform2D(Point(x=38, y=38), radians(180)),
         ),
         (
             # simple test but reversed endpoints of lines
@@ -272,7 +371,7 @@ def test_resolve_transform_for_reducer(
                 1: Line(end=Point(x=0, y=0), start=Point(x=100, y=0), id=1),
                 2: Line(end=Point(x=0, y=0), start=Point(x=0, y=100), id=2),
             },
-            Transform2D(Point(x=0.38, y=0.38), radians(180)),
+            Transform2D(Point(x=38, y=38), radians(180)),
         ),
         (
             # reversed lines order by reversing ids
@@ -280,7 +379,7 @@ def test_resolve_transform_for_reducer(
                 2: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
                 1: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=2),
             },
-            Transform2D(Point(x=0.38, y=0.38), radians(180)),
+            Transform2D(Point(x=38, y=38), radians(180)),
         ),
         (
             # 2nd quadrant lines
@@ -288,154 +387,42 @@ def test_resolve_transform_for_reducer(
                 1: Line(start=Point(x=-100, y=100), end=Point(x=0, y=0), id=1),
                 2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=-100), id=2),
             },
-            Transform2D(Point(x=-0.537401, y=0.0), radians(-45)),
+            Transform2D(Point(x=-53.7401, y=0.0), radians(-45)),
         ),
         (
             # 2nd quadrant reversed line by reversing ids
             {
-                2: Line(start=Point(x=-100, y=-100), end=Point(x=0, y=0), id=1),
+                2: Line(start=Point(x=-100, y=100), end=Point(x=0, y=0), id=1),
                 1: Line(start=Point(x=0, y=0), end=Point(x=-100, y=-100), id=2),
             },
-            Transform2D(Point(x=-0.537401, y=0.0), radians(45)),
+            Transform2D(Point(x=-53.7401, y=0.0), radians(-45)),
         ),
     ],
 )
-def test_resolve_transform_for_elbow(
+def test_single_elbow_strategy_matches_legacy_cases(
     geometric_elbow, edge_id_line_map, expected_transform
 ):
-    resolver = PlacementResolver()
     junction = Junction(
-        id=3,
+        id=1,
         origin=Point(x=0, y=0),
         junction_type=JunctionType.TWO_WAY,
         connected_edges_ids=[1, 2],
     )
-    transform = resolver.resolve_transform(
-        junction_assembly=_build_junction_assembly(
-            junction,
-            edge_id_line_map,
-            {
-                2: SteelDims.DIM_1_INCHES,
-                3: SteelDims.DIM_1_INCHES,
-            },
-        ),
-        geometric_component=geometric_elbow,
-    )
-
-    # assert transform.origin == expected_transform.origin
-    assert transform.angle == expected_transform.angle
-
-
-@pytest.mark.parametrize(
-    "geometric_component_names, edge_id_line_map, edge_pipe_dim_map, expected_transforms",
-    [
-        (
-            ["geometric_tee", "geometric_reducer"],
-            {
-                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=2),
-                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
-            },
-            {
-                1: SteelDims.DIM_0_75_INCHES,
-                2: SteelDims.DIM_1_INCHES,
-                3: SteelDims.DIM_1_INCHES,
-            },
-            [
-                Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=138, y=0), radians(180)),
-            ],
-        ),
-        (
-            ["geometric_tee", "geometric_reducer"],
-            {
-                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=2),
-                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
-            },
-            {
-                1: SteelDims.DIM_1_INCHES,
-                2: SteelDims.DIM_0_75_INCHES,
-                3: SteelDims.DIM_1_INCHES,
-            },
-            [
-                Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=-138, y=0), radians(0)),
-            ],
-        ),
-        (
-            ["geometric_tee", "geometric_reducer", "geometric_reducer"],
-            {
-                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=2),
-                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
-            },
-            {
-                1: SteelDims.DIM_0_75_INCHES,
-                2: SteelDims.DIM_0_75_INCHES,
-                3: SteelDims.DIM_1_INCHES,
-            },
-            [
-                Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=-138, y=0), radians(0)),
-                Transform2D(Point(x=138, y=0), radians(180)),
-            ],
-        ),
-        (
-            ["geometric_tee", "geometric_reducer", "geometric_reducer2"],
-            {
-                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
-                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=2),
-                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
-            },
-            {
-                1: SteelDims.DIM_0_5_INCHES,
-                2: SteelDims.DIM_0_75_INCHES,
-                3: SteelDims.DIM_1_INCHES,
-            },
-            [
-                Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=-138, y=0), radians(0)),
-                Transform2D(Point(x=138, y=0), radians(180)),
-            ],
-        ),
-    ],
-)
-def test_group_transform_resolve(
-    request,
-    geometric_component_names,
-    edge_id_line_map,
-    edge_pipe_dim_map,
-    expected_transforms,
-):
-    geometric_components = {
-        deepcopy(request.getfixturevalue(name)) for name in geometric_component_names
+    edge_pipe_dim_map = {
+        1: SteelDims.DIM_1_INCHES,
+        2: SteelDims.DIM_1_INCHES,
     }
-
     resolver = PlacementResolver()
-
-    junction = Junction(
-        id=3,
-        origin=Point(x=0, y=0),
-        junction_type=JunctionType.THREE_WAY,
-        connected_edges_ids=[1, 2, 3],
+    junction_assembly = _build_junction_assembly(
+        junction=junction,
+        edge_id_line_map=edge_id_line_map,
+        edge_pipe_dim_map=edge_pipe_dim_map,
     )
 
-    component_with_transform = resolver.group_resolve_transform(
-        junction_assembly=_build_junction_assembly(
-            junction,
-            edge_id_line_map,
-            edge_pipe_dim_map,
-        ),
-        geometric_components=geometric_components,
-    )
+    strategy = resolver.resolve(junction_assembly, [geometric_elbow])
+    assert isinstance(strategy, SingleElbowPlacementStrategy)
 
-    _, transforms = zip(*component_with_transform)
-    transforms = list(transforms)
+    context = strategy.get_placement_context(geometric_elbow)
 
-    assert len(transforms) == len(expected_transforms)
-    for expected in expected_transforms:
-        assert any(
-            actual.origin == expected.origin and actual.angle == expected.angle
-            for actual in transforms
-        )
+    assert context.transform.origin == expected_transform.origin
+    assert context.transform.angle == expected_transform.angle
