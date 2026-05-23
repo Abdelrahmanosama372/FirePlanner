@@ -21,7 +21,6 @@ from fireplanner.firecomponent.fitting.fireconnection.reducer import Reducer
 from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
 from fireplanner.geometry.primitives.line import Line
 from fireplanner.networks.core_network import CoreNetwork
-from fireplanner.networks.junction import Junction, JunctionType
 from fireplanner.networks.junction_assembly import JunctionAssembly, PipeAssembly
 from fireplanner.networks.junction_info import (
     EdgeInfo,
@@ -401,3 +400,17 @@ class ModelNetwork:
                 ]
             )
         return fire_connections
+
+    def get_pipes_assembly(self) -> list[PipeAssembly]:
+        edge_id_info_map = {
+            info.edge_id: info for info in self._core_network.get_edges_info()
+        }
+
+        return [
+            PipeAssembly(
+                edge_info=edge_id_info_map[edge.edge_id],
+                diameter=edge.pipe.diameter,
+                pipe=edge.pipe,
+            )
+            for edge in self._model_edges
+        ]
