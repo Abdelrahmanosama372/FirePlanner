@@ -294,7 +294,7 @@ class Reader:
         xdata_config: dict[str, Any] | None,
     ) -> tuple[list[_LineRecord], dict[int, float]]:
         line_records: list[_LineRecord] = []
-        line_elevations: dict[int, float] = {}
+        line_elevations: dict[int, int] = {}
 
         for index, entity in enumerate(self._iter_objects(acad, "AcDbLine"), start=1):
             entity_layer = str(self._get_entity_attr(entity, "Layer", "")).strip()
@@ -350,7 +350,7 @@ class Reader:
             return None
 
         # Try to get xdata from the entity
-        raw_xdata = self._get_entity_attr(entity, "XData", None)
+        raw_xdata = entity.GetXData(app_name)[1]
         if raw_xdata is None:
             return None
 
@@ -369,7 +369,7 @@ class Reader:
 
     def _parse_elevation_from_xdata(
         self, xdata: list[str], xdata_config: dict[str, Any]
-    ) -> float | None:
+    ) -> int | None:
         fields = self._mapping(xdata_config.get("fields", {}))
         elevation_key = fields.get("elevation", "")
 
@@ -381,7 +381,7 @@ class Reader:
             parsed = parser.parse(xdata)
             elevation_str = parsed.get(str(elevation_key))
             if elevation_str is not None:
-                return float(elevation_str)
+                return int(elevation_str)
         except (ValueError, TypeError):
             raise ValueError(f"Cannot parse elevation Xdata {parsed}")
 

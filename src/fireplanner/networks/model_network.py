@@ -259,17 +259,18 @@ class ModelNetwork:
                 )
 
                 if junction_info.run[0].elevation != junction_info.branch.elevation:
+                    connection_type = self.config.get_connection_type_for_diameter(
+                        branch_dim
+                    )
                     fire_connections.append(
-                        [
-                            Elbow(
-                                diameter=branch_dim,
-                                angle=90,
-                                material=self.config.material,
-                                schedule=self.config.schedule,
-                                specs=self.config.specs,
-                                connection_type=connection_type,
-                            )
-                        ]
+                        Elbow(
+                            diameter=branch_dim,
+                            angle=90,
+                            material=self.config.material,
+                            schedule=self.config.schedule,
+                            specs=self.config.specs,
+                            connection_type=connection_type,
+                        )
                     )
 
             else:

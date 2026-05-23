@@ -87,4 +87,4 @@ class GeometricWeldedBranch(GeometricComponent):
 
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
-        return self._local_centerlines(view_type)
+        return self._local_centerlines()
