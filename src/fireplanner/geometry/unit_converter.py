@@ -33,7 +33,7 @@ class GeometryUnitConverter:
             center=GeometryUnitConverter.point_to_unit(
                 circle.center, from_unit, to_unit
             ),
-            radius=circle.radius,
+            radius=LengthUnitConverter.convert(circle.radius, from_unit, to_unit),
             line_type=circle.line_type,
             id=circle.id,
             style=circle.style,
