@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from math import pi
 
 from fireplanner.geometry.components import (
@@ -30,18 +31,22 @@ class TeeReducerElbowPlacementStrategy(PlacementStrategy):
         tee_reducers.extend(placement_assembly.components.reducers())
         tee_reducers.extend(placement_assembly.components.tees())
 
-        contexts: dict[int, PlacementContext] = TeeReducerPlacementStrategy._build(
+        contexts: dict[int, PlacementContext] = TeeReducerPlacementStrategy(
             placement_assembly
-        )
+        )._build(placement_assembly)
 
         tee = next(
             comp
-            for comp in placement_assembly.components
-            if isinstance(comp, GeometricTee, GeometricWeldedBranch)
+            for comp in placement_assembly.components.items
+            if isinstance(comp, (GeometricTee, GeometricWeldedBranch))
         )
         contexts[id(tee)].view_type = ViewType.PLAN
 
-        branch_dirction = placement_assembly.branch_pipe.edge_info.line.direction()
+        branch_line = deepcopy(placement_assembly.branch_pipe.edge_info.line)
+        if branch_line.end == junction_origin:
+            branch_line.swap_end_points()
+        branch_dirction = branch_line.direction()
+
         elbow_transform = Transform2D(
             origin=junction_origin, rotation=branch_dirction - pi / 2
         )

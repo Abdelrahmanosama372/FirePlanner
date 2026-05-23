@@ -6,7 +6,7 @@ from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
 
 
-@dataclass(frozen=True)
+@dataclass
 class PlacementContext:
     transform: Transform2D
     view_type: ViewType
