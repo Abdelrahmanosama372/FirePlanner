@@ -105,3 +105,51 @@ def test_pipeline_builds_multiple_results_when_multiple_roots_exist():
         {},
         {},
     ]
+
+
+def test_pipeline_runs_boq_outputs_from_config(monkeypatch):
+    yaml_with_boq = (
+        CONFIG_YAML
+        + """
+boq:
+  output:
+    excel:
+      enabled: false
+      path: "boq_test.xlsx"
+    console:
+      enabled: true
+"""
+    )
+
+    acad = FakeAcad(
+        lines=[
+            FakeLineEntity(
+                start=(0.0, 0.0, 0.0),
+                end=(10.0, 0.0, 0.0),
+                layer="line-network",
+                color=1,
+                handle="A",
+            ),
+        ],
+        blocks=[
+            FakeBlockEntity(
+                name="SPR",
+                insertion_point=(10.0, 0.0, 0.0),
+                handle="10",
+            ),
+        ],
+    )
+
+    calls = {"console": 0}
+
+    def _fake_console(_report):
+        calls["console"] += 1
+
+    monkeypatch.setattr(
+        "fireplanner.adaptors.autocad.pipeline.BOQConsolePrinter.print_report",
+        _fake_console,
+    )
+
+    results = Pipeline(yaml_with_boq, acad).build()
+    assert len(results) == 1
+    assert calls["console"] == 1

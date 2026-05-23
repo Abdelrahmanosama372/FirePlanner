@@ -4,6 +4,11 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from fireplanner.boq.calculators.connection_calculator import ConnectionCalculator
+from fireplanner.boq.calculators.paint_calculator import PaintCalculator
+from fireplanner.boq.calculators.pipe_calculator import PipeCalculator
+from fireplanner.boq.models import BOQReport
+from fireplanner.boq.output.console import BOQConsolePrinter
 from fireplanner.networks import (
     CoreNetwork,
     CoreNetworkConfig,
@@ -13,8 +18,9 @@ from fireplanner.networks import (
     ModelNetworkConfig,
     PlacementResolver,
 )
+from fireplanner.units import LengthUnit, LengthUnitConverter
 
-from .reader import Reader
+from .reader import BOQConfig, Reader
 from .writer import Writer
 
 if TYPE_CHECKING:
@@ -70,6 +76,7 @@ class Pipeline:
             )
 
         logger.info("Pipeline build completed with %d result set(s).", len(results))
+        self._run_boq_pipeline(results)
         return results
 
     def build_one(self) -> NetworkPipelineResult:
@@ -98,3 +105,55 @@ class Pipeline:
             len(written_entities_per_network),
         )
         return written_entities_per_network
+
+    def _run_boq_pipeline(self, results: list[NetworkPipelineResult]) -> None:
+        boq_config = self._reader.read_boq_config()
+        if not boq_config.console.enabled and not boq_config.excel.enabled:
+            logger.info("BOQ pipeline skipped: all outputs disabled.")
+            return
+
+        logger.info("BOQ pipeline started.")
+        for result in results:
+            report = self._build_boq_report(result, boq_config)
+            self._emit_boq_report(report, boq_config)
+        logger.info("BOQ pipeline completed for %d network(s).", len(results))
+
+    def _build_boq_report(
+        self, result: NetworkPipelineResult, boq_config: BOQConfig
+    ) -> BOQReport:
+        pipes_lengths = []
+        for pipe_assembly in result.model_network.get_pipes_assembly():
+            length_m = LengthUnitConverter.convert(
+                pipe_assembly.edge_info.length,
+                from_unit=LengthUnit.MILLIMETER,
+                to_unit=LengthUnit.METER,
+            )
+            if pipe_assembly.pipe is not None:
+                pipes_lengths.append((pipe_assembly.pipe, length_m))
+
+        connections = []
+        for (
+            junction_connections
+        ) in result.model_network.get_fire_connections_with_junctions_ids().values():
+            connections.extend(junction_connections)
+
+        pipe_boq = PipeCalculator.compute(pipes_lengths)
+        connection_boq = ConnectionCalculator.compute(connections)
+        paint_boq = PaintCalculator.compute(
+            pipe_boq=pipe_boq,
+            paint_config=boq_config.paint,
+        )
+        return BOQReport(pipes=pipe_boq, connections=connection_boq, paint=paint_boq)
+
+    def _emit_boq_report(self, report: BOQReport, config: BOQConfig) -> None:
+        if config.console.enabled:
+            BOQConsolePrinter.print_report(report)
+        if config.excel.enabled:
+            try:
+                from fireplanner.boq.output.excel import BOQExcelExporter
+            except ModuleNotFoundError:
+                logger.warning(
+                    "Excel BOQ export skipped because required dependency is missing."
+                )
+                return
+            BOQExcelExporter.export(report=report, output_path=config.excel.path)

@@ -55,3 +55,14 @@ autocad:
           properties:
             color: "gray"
             line_weight: 0.05
+boq:
+  output:
+    excel:
+      enabled: true
+      path: "boq_report.xlsx"
+    console:
+      enabled: true
+  paint:
+    thickness: 140
+    scrap_precentage: 0.4
+    volume_solids_precentage: 0.75

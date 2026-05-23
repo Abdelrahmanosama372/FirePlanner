@@ -149,6 +149,35 @@ def test_reader_builds_output_layer_config_from_yaml_string():
     assert config.centerlines_enabled is True
 
 
+def test_reader_builds_boq_config_from_yaml_string():
+    boq_yaml = (
+        CONFIG_YAML
+        + """
+boq:
+  output:
+    excel:
+      enabled: true
+      path: "test_boq.xlsx"
+    console:
+      enabled: false
+  paint:
+    thickness: 180
+    scrap_precentage: 0.2
+    volume_solids_precentage: 0.8
+"""
+    )
+    reader = Reader(boq_yaml)
+
+    config = reader.read_boq_config()
+
+    assert config.excel.enabled is True
+    assert config.excel.path == "test_boq.xlsx"
+    assert config.console.enabled is False
+    assert config.paint.thickness == 180
+    assert config.paint.scrap_precentage == 0.2
+    assert config.paint.volume_solids_precentage == 0.8
+
+
 def test_reader_builds_core_network_config_from_autocad_entities():
     reader = Reader(CONFIG_YAML)
     acad = FakeAcad(

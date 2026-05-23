@@ -8,6 +8,7 @@ import yaml
 
 from fireplanner.adaptors.autocad.utils import color_name_to_aci
 from fireplanner.adaptors.autocad.xdata_parser import XDataParser
+from fireplanner.boq.models import PaintConfig
 from fireplanner.firecomponent import (
     SteelConnection,
     SteelDims,
@@ -38,6 +39,28 @@ logger = logging.getLogger(__name__)
 class _LineRecord:
     entity: Any
     line: Line
+
+
+@dataclass(frozen=True)
+class BOQExcelOutputConfig:
+    enabled: bool = False
+    path: str = "boq_report.xlsx"
+
+
+@dataclass(frozen=True)
+class BOQConsoleOutputConfig:
+    enabled: bool = False
+
+
+@dataclass(frozen=True)
+class BOQConfig:
+    excel: BOQExcelOutputConfig = BOQExcelOutputConfig()
+    console: BOQConsoleOutputConfig = BOQConsoleOutputConfig()
+    paint: PaintConfig = PaintConfig(
+        thickness=140,
+        scrap_precentage=0.4,
+        volume_solids_precentage=0.75,
+    )
 
 
 class Reader:
@@ -220,6 +243,37 @@ class Reader:
             config.line_layer_name,
             config.centerline_layer_name,
             config.centerlines_enabled,
+        )
+        return config
+
+    def read_boq_config(self) -> BOQConfig:
+        boq_data = self._mapping(self._raw_data.get("boq"))
+        output_data = self._mapping(boq_data.get("output"))
+        excel_data = self._mapping(output_data.get("excel"))
+        console_data = self._mapping(output_data.get("console"))
+        paint_data = self._mapping(boq_data.get("paint"))
+
+        config = BOQConfig(
+            excel=BOQExcelOutputConfig(
+                enabled=bool(excel_data.get("enabled", False)),
+                path=str(excel_data.get("path", "boq_report.xlsx")),
+            ),
+            console=BOQConsoleOutputConfig(
+                enabled=bool(console_data.get("enabled", False))
+            ),
+            paint=PaintConfig(
+                thickness=int(paint_data.get("thickness", 140)),
+                scrap_precentage=float(paint_data.get("scrap_precentage", 0.4)),
+                volume_solids_precentage=float(
+                    paint_data.get("volume_solids_precentage", 0.75)
+                ),
+            ),
+        )
+        logger.info(
+            "BOQ config parsed (excel_enabled=%s, console_enabled=%s, excel_path=%s).",
+            config.excel.enabled,
+            config.console.enabled,
+            config.excel.path,
         )
         return config
 
