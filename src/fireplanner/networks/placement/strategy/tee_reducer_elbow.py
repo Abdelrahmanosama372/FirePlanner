@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from math import pi
 
+from fireplanner.geometry.components import (
+    GeometricComponent,
+    GeometricTee,
+    GeometricWeldedBranch,
+)
 from fireplanner.geometry.components.base import ViewType
-from fireplanner.geometry.components.geometric_component import GeometricComponent
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.context import PlacementContext
@@ -29,6 +33,13 @@ class TeeReducerElbowPlacementStrategy(PlacementStrategy):
         contexts: dict[int, PlacementContext] = TeeReducerPlacementStrategy._build(
             placement_assembly
         )
+
+        tee = next(
+            comp
+            for comp in placement_assembly.components
+            if isinstance(comp, GeometricTee, GeometricWeldedBranch)
+        )
+        contexts[id(tee)].view_type = ViewType.PLAN
 
         branch_dirction = placement_assembly.branch_pipe.edge_info.line.direction()
         elbow_transform = Transform2D(
