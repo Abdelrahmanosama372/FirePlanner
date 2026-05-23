@@ -1,7 +1,13 @@
-from abc import ABC, abstractmethod
-from typing import Any, TypeVar
+from __future__ import annotations
 
-from ..primitives import Line, Point, Primitive2D, Primitive3D, Transform2D
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from fireplanner.networks.placement import PlacementContext
+
+from ..primitives import Line, Point, Primitive2D, Primitive3D
+from .base import ViewType
 
 T = TypeVar("T", bound="GeometricComponent")
 
@@ -12,7 +18,7 @@ class GeometricComponent(ABC):
         self._end: Point | None = end
         self._primitives_2d: list[Primitive2D] = []
         self._primitives_3d: list[Primitive3D] = []
-        self._transform: Transform2D | None = None
+        self._placement_context: PlacementContext | None = None
 
     @property
     def start(self):
@@ -31,15 +37,15 @@ class GeometricComponent(ABC):
         self._end = value
 
     @property
-    def transform(self):
-        return self._transform
+    def placement_context(self):
+        return self._placement_context
 
-    @transform.setter
-    def transform(self, value: Transform2D):
-        self._transform = value
+    @placement_context.setter
+    def placement_context(self, value: PlacementContext):
+        self._placement_context = value
 
     def has_transform(self) -> bool:
-        return self._transform is not None
+        return self._placement_context.transform is not None
 
     @abstractmethod
     def _local_primitives_2d(self) -> list[Primitive2D]:
@@ -62,29 +68,33 @@ class GeometricComponent(ABC):
         ]
 
     def layout_skeleton(self):
-        if self.transform is None:
-            raise ValueError("Couldn't build layout skeleton, Tranform is None")
+        if self.placement_context is None:
+            raise ValueError(
+                "Couldn't build layout skeleton, the Placement Context is None"
+            )
         return [
-            line.transform_2d(self._transform) for line in self._local_layout_skeleton()
+            line.transform_2d(self._placement_context.transform)
+            for line in self._local_layout_skeleton()
         ]
 
-    def _build_primitives_2d(self, include_centerlines):
-        if self.transform is None:
-            raise ValueError("Couldn't build 2d Primitive, Tranform is None")
+    def build_primitives_2d(self):
+        if self._placement_context is None:
+            raise ValueError(
+                "Couldn't build 2d Primitive, the Placement Context is None"
+            )
 
         primitives = self._local_primitives_2d()
-        if include_centerlines:
-            primitives.extend(self._local_centerlines())
+        primitives.extend(self._local_centerlines())
         self._primitives_2d = [
-            prim.transform_2d(self._transform) for prim in primitives
+            prim.transform_2d(self._placement_context.transform) for prim in primitives
         ]
 
-    def _build_primitives_3d(self):
+    def build_primitives_3d(self):
         raise NotImplementedError
 
-    def get_primitives_2d(self, include_centerlines: bool = False) -> list[Primitive2D]:
+    def get_primitives_2d(self) -> list[Primitive2D]:
         if len(self._primitives_2d) == 0:
-            self._build_primitives_2d(include_centerlines)
+            self.build_primitives_2d()
         return self._primitives_2d
 
     def get_primitives_3d(self) -> list[Primitive3D]:

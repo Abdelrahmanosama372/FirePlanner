@@ -17,6 +17,7 @@ from fireplanner.geometry.components import (
     GeometricReducer,
     GeometricTee,
 )
+from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives import Line, Point
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction import Junction, JunctionType
@@ -359,6 +360,7 @@ def test_single_reducer_strategy_matches_legacy_cases(
 
     assert context.transform.origin == expected_transform.origin
     assert context.transform.angle == expected_transform.angle
+    assert context.view_type == ViewType.ELEVATION
 
 
 @pytest.mark.parametrize(
@@ -436,6 +438,7 @@ def test_single_elbow_strategy_matches_legacy_cases(
 
     assert context.transform.origin == expected_transform.origin
     assert context.transform.angle == expected_transform.angle
+    assert context.view_type == ViewType.ELEVATION
 
 
 @pytest.mark.parametrize(
@@ -548,3 +551,4 @@ def test_group_transform_resolve(
         context = strategy.get_placement_context(component)
         assert context.transform.origin == expected_transform.origin
         assert context.transform.angle == expected_transform.angle
+        assert context.view_type == ViewType.ELEVATION

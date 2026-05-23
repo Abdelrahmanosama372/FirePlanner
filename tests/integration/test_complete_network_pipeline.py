@@ -543,9 +543,9 @@ def test_geometry_network_construction():
         junction_id: [
             (
                 type(component).__name__,
-                component.transform.origin.x,
-                component.transform.origin.y,
-                component.transform.angle,
+                component.placement_context.transform.origin.x,
+                component.placement_context.transform.origin.y,
+                component.placement_context.transform.angle,
             )
             for component in components
         ]

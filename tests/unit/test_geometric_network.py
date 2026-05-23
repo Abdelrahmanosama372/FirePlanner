@@ -1,6 +1,5 @@
 from copy import deepcopy
-from math import pi, radians
-from typing import List
+from math import pi
 
 import pytest
 
@@ -17,12 +16,20 @@ from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
 from fireplanner.firecomponent.pipe import Pipe
 from fireplanner.geometry.components import (
     GeometricElbow,
-    GeometricPipe,
     GeometricReducer,
     GeometricTee,
+    ViewType,
 )
-from fireplanner.geometry.primitives import Arc, Line, Point, Primitive2D, Transform2D
+from fireplanner.geometry.primitives import (
+    Arc,
+    Line,
+    Point,
+    Primitive2D,
+    Transform2D,
+    transform,
+)
 from fireplanner.networks import CoreNetwork, GeometryNetwork, ModelNetwork
+from fireplanner.networks.placement.context import PlacementContext
 
 
 @pytest.fixture
@@ -81,10 +88,14 @@ def test_correct_geometric_pipes_segmenting_for_two_tees_on_main(
     tee2 = geometric_tee
 
     tee1_transform = Transform2D(origin=pipe_line.start, rotation=0.0)
-    tee1.transform = tee1_transform
+    tee1.placement_context = PlacementContext(
+        transform=tee1_transform, view_type=ViewType.ELEVATION
+    )
 
     tee2_transform = Transform2D(origin=pipe_line.end, rotation=0.0)
-    tee2.transform = tee2_transform
+    tee2.placement_context = PlacementContext(
+        transform=tee2_transform, view_type=ViewType.ELEVATION
+    )
 
     connections = [tee1, tee2]
 
@@ -110,6 +121,9 @@ def test_correct_geometric_pipes_segmenting_for_one_tees(
 
     tee1_transform = Transform2D(origin=pipe_line.start, rotation=0.0)
     tee1.transform = tee1_transform
+    tee1.placement_context = PlacementContext(
+        transform=tee1_transform, view_type=ViewType.ELEVATION
+    )
 
     free_lines = geometric_network.find_free_pipes_lines(
         pipe_line,
@@ -138,6 +152,13 @@ def test_correct_geometric_pipes_segmenting_for_two_tees_on_branch(
     tee2_transform = Transform2D(origin=pipe_line.end, rotation=pi / 2)
     tee2.transform = tee2_transform
 
+    tee1.placement_context = PlacementContext(
+        transform=tee1_transform, view_type=ViewType.ELEVATION
+    )
+    tee2.placement_context = PlacementContext(
+        transform=tee2_transform, view_type=ViewType.ELEVATION
+    )
+
     connections = [tee1, tee2]
 
     free_lines = geometric_network.find_free_pipes_lines(
@@ -165,7 +186,12 @@ def test_correct_geometric_pipes_segmenting_for_tee_and_elbow(
     elbow_transform = Transform2D(
         origin=Point(x=pipe_line.end.x - 38.1, y=38), rotation=-pi / 2
     )
-    geometric_elbow.transform = elbow_transform
+    geometric_tee.placement_context = PlacementContext(
+        transform=tee_transform, view_type=ViewType.ELEVATION
+    )
+    geometric_elbow.placement_context = PlacementContext(
+        transform=elbow_transform, view_type=ViewType.ELEVATION
+    )
 
     connections = [geometric_tee, geometric_elbow]
 

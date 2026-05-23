@@ -11,10 +11,12 @@ from fireplanner.geometry.components import (
     GeometricPipe,
     GeometricReducer,
 )
+from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives import Line, Transform2D
 from fireplanner.networks.core_network import CoreNetwork
 from fireplanner.networks.geometry_mapper import GeometryMapper, GeometryMapperConfig
 from fireplanner.networks.model_network import ModelNetwork
+from fireplanner.networks.placement.context import PlacementContext
 from fireplanner.networks.placement_resolver import PlacementResolver
 
 
@@ -93,7 +95,7 @@ class GeometryNetwork:
                 )
                 for component in geometric_components:
                     context = strategy.get_placement_context(component)
-                    component.transform = context.transform
+                    component.placement_context = context
                     transformed_geometric_components.append(component)
 
             geometric_components_map[junction_id] = transformed_geometric_components
@@ -132,12 +134,15 @@ class GeometryNetwork:
                 # no reducer on network edge
                 geometric_pipe.start = free_pipe_lines[0].start
                 geometric_pipe.end = free_pipe_lines[0].end
-                geometric_pipe.transform = Transform2D(
-                    origin=geometric_pipe.start,
-                    rotation=Line(
-                        start=geometric_pipe.start,
-                        end=geometric_pipe.end,
-                    ).direction(),
+                geometric_pipe.placement_context = PlacementContext(
+                    Transform2D(
+                        origin=geometric_pipe.start,
+                        rotation=Line(
+                            start=geometric_pipe.start,
+                            end=geometric_pipe.end,
+                        ).direction(),
+                    ),
+                    view_type=ViewType.ELEVATION,
                 )
                 geometric_pipes.setdefault(edge_id, []).append(geometric_pipe)
 
@@ -147,7 +152,9 @@ class GeometryNetwork:
                     con
                     for con in connections
                     if isinstance(con, GeometricReducer)
-                    and pipe_line.pass_through_point(con.transform.origin)
+                    and pipe_line.pass_through_point(
+                        con.placement_context.transform.origin
+                    )
                 )
                 reducer_center_line = geometric_reducer_on_pipe.layout_skeleton()[0]
                 if reducer_center_line.start in [first_line.start, first_line.end]:
@@ -167,19 +174,25 @@ class GeometryNetwork:
                 )
                 geometric_pipe2.diameter = second_line_pipe_dim
 
-                geometric_pipe1.transform = Transform2D(
-                    origin=geometric_pipe1.start,
-                    rotation=Line(
-                        start=geometric_pipe1.start,
-                        end=geometric_pipe1.end,
-                    ).direction(),
+                geometric_pipe1.placement_context = PlacementContext(
+                    Transform2D(
+                        origin=geometric_pipe1.start,
+                        rotation=Line(
+                            start=geometric_pipe1.start,
+                            end=geometric_pipe1.end,
+                        ).direction(),
+                    ),
+                    view_type=ViewType.ELEVATION,
                 )
-                geometric_pipe2.transform = Transform2D(
-                    origin=geometric_pipe2.start,
-                    rotation=Line(
-                        start=geometric_pipe2.start,
-                        end=geometric_pipe2.end,
-                    ).direction(),
+                geometric_pipe2.placement_context = PlacementContext(
+                    Transform2D(
+                        origin=geometric_pipe2.start,
+                        rotation=Line(
+                            start=geometric_pipe2.start,
+                            end=geometric_pipe2.end,
+                        ).direction(),
+                    ),
+                    view_type=ViewType.ELEVATION,
                 )
                 geometric_pipes.setdefault(edge_id, []).append(geometric_pipe1)
                 geometric_pipes[edge_id].append(geometric_pipe2)

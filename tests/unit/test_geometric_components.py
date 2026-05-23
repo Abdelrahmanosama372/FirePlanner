@@ -20,8 +20,17 @@ from fireplanner.geometry.components import (
     GeometricReducer,
     GeometricTee,
     GeometricWeldedBranch,
+    ViewType,
 )
-from fireplanner.geometry.primitives import Arc, Line, Point, Primitive2D, Transform2D
+from fireplanner.geometry.primitives import (
+    Arc,
+    Line,
+    LineType,
+    Point,
+    Primitive2D,
+    Transform2D,
+)
+from fireplanner.networks.placement.context import PlacementContext
 
 
 @pytest.fixture
@@ -129,8 +138,15 @@ def geometric_reducer():
 def test_tee_build_primitives_2d(
     geometric_tee, transform: Transform2D, expected_primitives: List[Primitive2D]
 ):
-    geometric_tee.transform = transform
-    primitives = geometric_tee.get_primitives_2d()
+    geometric_tee.placement_context = PlacementContext(
+        transform=transform, view_type=ViewType.ELEVATION
+    )
+    geometric_tee.build_primitives_2d()
+    primitives = [
+        prim
+        for prim in geometric_tee.get_primitives_2d()
+        if prim.line_type != LineType.CenterLine
+    ]
     assert len(primitives) == len(expected_primitives)
     assert {prim for prim in primitives} == expected_primitives
 
@@ -158,8 +174,15 @@ def test_tee_build_primitives_2d(
 def test_reducer_build_primitives_2d(
     geometric_reducer, transform: Transform2D, expected_primitives: List[Primitive2D]
 ):
-    geometric_reducer.transform = transform
-    primitives = geometric_reducer.get_primitives_2d()
+    geometric_reducer.placement_context = PlacementContext(
+        transform=transform, view_type=ViewType.ELEVATION
+    )
+    geometric_reducer.build_primitives_2d()
+    primitives = [
+        prim
+        for prim in geometric_reducer.get_primitives_2d()
+        if prim.line_type != LineType.CenterLine
+    ]
     assert len(primitives) == len(expected_primitives)
     assert {prim for prim in primitives} == expected_primitives
 
@@ -191,8 +214,15 @@ def test_reducer_build_primitives_2d(
 def test_elbow_build_primitives_2d(
     geometric_elbow, transform: Transform2D, expected_primitives: List[Primitive2D]
 ):
-    geometric_elbow.transform = transform
-    primitives = geometric_elbow.get_primitives_2d()
+    geometric_elbow.placement_context = PlacementContext(
+        transform=transform, view_type=ViewType.ELEVATION
+    )
+    geometric_elbow.build_primitives_2d()
+    primitives = [
+        prim
+        for prim in geometric_elbow.get_primitives_2d()
+        if prim.line_type != LineType.CenterLine
+    ]
     assert len(primitives) == len(expected_primitives)
     assert {prim for prim in primitives} == expected_primitives
 
@@ -212,12 +242,20 @@ def test_elbow_build_primitives_2d(
         ),
     ],
 )
-def test_elbow_build_primitives_2d(
+def test_geometric_welded_branch_build_primitives_2d(
     geometric_welded_branch,
     transform: Transform2D,
     expected_primitives: List[Primitive2D],
 ):
-    geometric_welded_branch.transform = transform
-    primitives = geometric_welded_branch.get_primitives_2d()
+    geometric_welded_branch.placement_context = PlacementContext(
+        transform=transform, view_type=ViewType.ELEVATION
+    )
+    geometric_welded_branch.build_primitives_2d()
+    primitives = [
+        prim
+        for prim in geometric_welded_branch.get_primitives_2d()
+        if prim.line_type != LineType.CenterLine
+    ]
     assert len(primitives) == len(expected_primitives)
     assert {prim for prim in primitives} == expected_primitives
+    geometric_welded_branch.transform = transform

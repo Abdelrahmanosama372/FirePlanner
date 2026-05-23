@@ -5,9 +5,10 @@ from typing import override
 
 from fireplanner.firecomponent import Pipe
 from fireplanner.firecomponent.base import SteelDims
-from fireplanner.geometry.primitives import Line, LineType, Point, Primitive2D
+from fireplanner.geometry.primitives import Circle, Line, LineType, Point, Primitive2D
 from fireplanner.standards.steel_dim import steel_dim_table
 
+from .base import ViewType
 from .geometric_component import GeometricComponent
 
 
@@ -46,20 +47,47 @@ class GeometricPipe(GeometricComponent):
         length = self.length
         if isclose(length, 0.0, abs_tol=1e-9):
             raise ValueError("Cannot build local pipe geometry for zero-length pipe.")
-        top = Line(start=Point(x=0.0, y=r), end=Point(x=length, y=r))
-        bottom = Line(start=Point(x=0.0, y=-r), end=Point(x=length, y=-r))
-        return [top, bottom]
+
+        primitives = []
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION | ViewType.PLAN:
+                primitives = [
+                    Line(start=Point(x=0.0, y=r), end=Point(x=length, y=r)),
+                    Line(start=Point(x=0.0, y=-r), end=Point(x=length, y=-r)),
+                ]
+            case ViewType.SIDE:
+                primitives = [Circle(center=Point(x=0, y=0), radius=r)]
+
+        return primitives
 
     @override
     def _local_centerlines(self) -> list[Primitive2D]:
-        return [
-            Line(
-                start=Point(x=0, y=0),
-                end=Point(x=self.length, y=0),
-                line_type=LineType.CenterLine,
-            ),
-        ]
+        primitives = []
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION | ViewType.PLAN:
+                primitives = [
+                    Line(
+                        start=Point(x=0, y=0),
+                        end=Point(x=self.length, y=0),
+                        line_type=LineType.CenterLine,
+                    ),
+                ]
+            case ViewType.SIDE:
+                r = steel_dim_table[self._diameter] / 2.0
+                primitives = [
+                    Line(
+                        start=Point(x=-r, y=0),
+                        end=Point(x=r, y=0),
+                        line_type=LineType.CenterLine,
+                    ),
+                    Line(
+                        start=Point(x=0, y=-r),
+                        end=Point(x=0, y=r),
+                        line_type=LineType.CenterLine,
+                    ),
+                ]
+        return primitives
 
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
-        return self._local_centerlines()
+        return self._local_centerlines(view_type)

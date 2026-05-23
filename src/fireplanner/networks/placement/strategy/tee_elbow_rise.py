@@ -4,6 +4,7 @@ from copy import deepcopy
 from math import isclose, radians
 
 from fireplanner.geometry.components import GeometricComponent, GeometricElbow
+from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction_info import TwoWayJunctionInfo
 from fireplanner.networks.placement.assembly import PlacementAssembly
@@ -77,4 +78,8 @@ class TeeElbowRisePlacementStrategy(PlacementStrategy):
 
         transform_offset = -component.center_to_end
         transform.translate_local(dx=transform_offset, dy=transform_offset)
-        return {id(component): PlacementContext(transform=transform)}
+        return {
+            id(component): PlacementContext(
+                transform=transform, view_type=ViewType.ELEVATION
+            )
+        }

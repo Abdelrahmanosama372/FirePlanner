@@ -3,8 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from math import isclose, radians
 
-from fireplanner.firecomponent import SteelDims
-from fireplanner.geometry.components import GeometricComponent, GeometricReducer
+from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.context import PlacementContext
@@ -57,7 +56,11 @@ class SingleElbowPlacementStrategy(PlacementStrategy):
         transform_offset = -elbow.center_to_end
         transform.translate_local(dx=transform_offset, dy=transform_offset)
 
-        return {id(elbow): PlacementContext(transform=transform)}
+        return {
+            id(elbow): PlacementContext(
+                transform=transform, view_type=ViewType.ELEVATION
+            )
+        }
 
 
 #

@@ -4,10 +4,10 @@ from copy import deepcopy
 from math import isclose, pi, radians
 
 from fireplanner.geometry.components import (
-    GeometricComponent,
     GeometricTee,
     GeometricWeldedBranch,
 )
+from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives import Line
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction_info import JunctionInfo, ThreeWayJunctionInfo
@@ -82,6 +82,7 @@ class SingleTeePlacementStrategy(PlacementStrategy):
                 transform=Transform2D(
                     origin=junction_info.origin,
                     rotation=rotation,
-                )
+                ),
+                view_type=ViewType.ELEVATION,
             )
         }

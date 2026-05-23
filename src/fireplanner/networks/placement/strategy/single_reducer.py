@@ -3,7 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 
 from fireplanner.firecomponent import SteelDims
-from fireplanner.geometry.components import GeometricComponent, GeometricReducer
+from fireplanner.geometry.components import GeometricReducer
+from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.context import PlacementContext
@@ -64,4 +65,8 @@ class SingleReducerPlacementStrategy(PlacementStrategy):
             origin=small_edge_line.point_from_end(self._reducer_offset),
             rotation=small_edge_line.direction(),
         )
-        return {id(component): PlacementContext(transform=transform)}
+        return {
+            id(component): PlacementContext(
+                transform=transform, view_type=ViewType.ELEVATION
+            )
+        }

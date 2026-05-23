@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, List, override
+from typing import override
 
 from fireplanner.firecomponent import Tee
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.standards import steel_dim_table, tee_center_dims
 
 from ..primitives import Line, LineType, Point
+from .base import ViewType
 from .geometric_component import GeometricComponent
 
 
@@ -45,40 +46,104 @@ class GeometricTee(GeometricComponent):
         rw = steel_dim_table[self.run_diameter] / 2.0
         bw = steel_dim_table[self.branch_diameter] / 2.0
 
-        run_lines = [
-            Line(start=Point(x=-R, y=-rw), end=Point(x=R, y=-rw)),  # bottom
-            Line(start=Point(x=R, y=-rw), end=Point(x=R, y=rw)),  # right
-            Line(start=Point(x=-R, y=rw), end=Point(x=-bw, y=rw)),  # top left
-            Line(start=Point(x=bw, y=rw), end=Point(x=R, y=rw)),  # top right
-            Line(start=Point(x=-R, y=rw), end=Point(x=-R, y=-rw)),  # left
-        ]
+        primitives = []
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION:
+                run_lines = [
+                    Line(start=Point(x=-R, y=-rw), end=Point(x=R, y=-rw)),  # bottom
+                    Line(start=Point(x=R, y=-rw), end=Point(x=R, y=rw)),  # right
+                    Line(start=Point(x=-R, y=rw), end=Point(x=-bw, y=rw)),  # top left
+                    Line(start=Point(x=bw, y=rw), end=Point(x=R, y=rw)),  # top right
+                    Line(start=Point(x=-R, y=rw), end=Point(x=-R, y=-rw)),  # left
+                ]
 
-        branch_lines = [
-            Line(start=Point(x=-bw, y=B), end=Point(x=bw, y=B)),  # bottom
-            Line(start=Point(x=bw, y=B), end=Point(x=bw, y=rw)),  # right
-            Line(start=Point(x=-bw, y=B), end=Point(x=-bw, y=rw)),  # left
-            Line(start=Point(x=0, y=0), end=Point(x=bw, y=rw)),  # center right
-            Line(start=Point(x=0, y=0), end=Point(x=-bw, y=rw)),  # center left
-        ]
+                branch_lines = [
+                    Line(start=Point(x=-bw, y=B), end=Point(x=bw, y=B)),  # bottom
+                    Line(start=Point(x=bw, y=B), end=Point(x=bw, y=rw)),  # right
+                    Line(start=Point(x=-bw, y=B), end=Point(x=-bw, y=rw)),  # left
+                    Line(start=Point(x=0, y=0), end=Point(x=bw, y=rw)),  # center right
+                    Line(start=Point(x=0, y=0), end=Point(x=-bw, y=rw)),  # center left
+                ]
 
-        return run_lines + branch_lines
+            case ViewType.PLAN:
+                run_lines = [
+                    Line(start=Point(x=-R, y=-rw), end=Point(x=R, y=-rw)),  # bottom
+                    Line(start=Point(x=R, y=-rw), end=Point(x=R, y=rw)),  # right
+                    Line(start=Point(x=-R, y=rw), end=Point(x=R, y=rw)),  # top
+                    Line(start=Point(x=-R, y=rw), end=Point(x=-R, y=-rw)),  # left
+                ]
+
+                branch_lines = [
+                    # Line(start=Point(x=-bw, y=B), end=Point(x=bw, y=B)),  # bottom
+                    # Line(start=Point(x=bw, y=B), end=Point(x=bw, y=rw)),  # right
+                    # Line(start=Point(x=-bw, y=B), end=Point(x=-bw, y=rw)),  # left
+                    # Line(start=Point(x=0, y=0), end=Point(x=bw, y=rw)),  # center right
+                    # Line(start=Point(x=0, y=0), end=Point(x=-bw, y=rw)),  # center left
+                ]
+
+            case ViewType.SIDE:
+                run_lines = [Circle(center=Point(x=0, y=0), radius=self._run_diameter)]
+
+                branch_lines = [
+                    Line(start=Point(x=-rw, y=0), end=Point(x=-rw, y=B)),
+                    Line(start=Point(x=rw, y=0), end=Point(x=rw, y=B)),
+                    Line(start=Point(x=-rw, y=B), end=Point(x=rw, y=B)),
+                ]
+
+        primitives = run_lines + branch_lines
+
+        return primitives
 
     @override
     def _local_centerlines(self) -> list[Primitive2D]:
         R = self.run_center_to_end
         B = self.branch_center_to_end
-        return [
-            Line(
-                start=Point(x=-R, y=0),
-                end=Point(x=R, y=0),
-                line_type=LineType.CenterLine,
-            ),  # run center line
-            Line(
-                start=Point(x=0, y=0),
-                end=Point(x=0, y=B),
-                line_type=LineType.CenterLine,
-            ),  # branch center line
-        ]
+        rw = steel_dim_table[self.run_diameter] / 2.0
+
+        primitives = []
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION:
+                primitives = [
+                    Line(
+                        start=Point(x=-R, y=0),
+                        end=Point(x=R, y=0),
+                        line_type=LineType.CenterLine,
+                    ),  # run center line
+                    Line(
+                        start=Point(x=0, y=0),
+                        end=Point(x=0, y=B),
+                        line_type=LineType.CenterLine,
+                    ),  # branch center line
+                ]
+
+            case ViewType.PLAN:
+                primitives = [
+                    Line(
+                        start=Point(x=-R, y=0),
+                        end=Point(x=R, y=0),
+                        line_type=LineType.CenterLine,
+                    ),  # run center line
+                    Line(
+                        start=Point(x=0, y=rw),
+                        end=Point(x=0, y=-rw),
+                        line_type=LineType.CenterLine,
+                    ),  # branch center line
+                ]
+
+            case ViewType.SIDE:
+                primitives = [
+                    Line(
+                        start=Point(x=-rw, y=0),
+                        end=Point(x=rw, y=0),
+                        line_type=LineType.CenterLine,
+                    ),  # run center line
+                    Line(
+                        start=Point(x=0, y=-rw),
+                        end=Point(x=0, y=B),
+                        line_type=LineType.CenterLine,
+                    ),  # branch center line
+                ]
+        return primitives
 
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:

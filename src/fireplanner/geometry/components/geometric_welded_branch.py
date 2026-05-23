@@ -9,7 +9,8 @@ from fireplanner.standards import (
     steel_dim_table,
 )
 
-from ..primitives import Arc, Line, LineType, Point, Primitive2D
+from ..primitives import Arc, Circle, Line, LineType, Point, Primitive2D
+from .base import ViewType
 from .geometric_component import GeometricComponent
 
 
@@ -44,21 +45,46 @@ class GeometricWeldedBranch(GeometricComponent):
         arc_start = Point(x=-branch_raduis, y=run_raduis)
         arc_angle = 2 * asin(branch_raduis / arc_raduis)
 
-        weld_arc = Arc(start=arc_start, center=arc_center, angle=arc_angle)
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION | ViewType.SIDE:
+                primitives = [Arc(start=arc_start, center=arc_center, angle=arc_angle)]
 
-        return [weld_arc]
+            case ViewType.PLAN:
+                primitives = [
+                    Circle(
+                        center=Point(x=0, y=0),
+                        radius=branch_raduis,
+                    ),
+                ]
+
+        return primitives
 
     @override
     def _local_centerlines(self) -> list[Primitive2D]:
         R = steel_dim_table[self._run_diameter] / 2
-        return [
-            Line(
-                start=Point(x=0, y=0),
-                end=Point(x=0, y=R),
-                line_type=LineType.CenterLine,
-            ),  # branch center line
-        ]
+
+        primitives = []
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION | ViewType.SIDE:
+                primitives = [
+                    Line(
+                        start=Point(x=0, y=0),
+                        end=Point(x=0, y=R),
+                        line_type=LineType.CenterLine,
+                    ),  # branch center line
+                ]
+
+            case ViewType.PLAN:
+                primitives = [
+                    Circle(
+                        center=Point(x=0, y=0),
+                        radius=R,
+                        line_type=LineType.CenterLine,
+                    ),
+                ]
+
+        return primitives
 
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
-        return self._local_centerlines()
+        return self._local_centerlines(view_type)
