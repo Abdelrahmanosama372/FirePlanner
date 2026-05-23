@@ -258,6 +258,20 @@ class ModelNetwork:
                     branch_dim=branch_dim,
                 )
 
+                if junction_info.run[0].elevation != junction_info.branch.elevation:
+                    fire_connections.append(
+                        [
+                            Elbow(
+                                diameter=branch_dim,
+                                angle=90,
+                                material=self.config.material,
+                                schedule=self.config.schedule,
+                                specs=self.config.specs,
+                                connection_type=connection_type,
+                            )
+                        ]
+                    )
+
             else:
                 raise ValueError(
                     "Unsupported junction type for model node construction: "
@@ -385,31 +399,4 @@ class ModelNetwork:
                     ),
                 ]
             )
-
         return fire_connections
-
-    def _extract_three_way_dimensions(
-        self,
-        connected_edges_lines: list[Line],
-        connected_edge_diameters: list[SteelDims],
-    ) -> tuple[SteelDims, SteelDims, SteelDims]:
-        if len(connected_edges_lines) != 3 or len(connected_edge_diameters) != 3:
-            raise ValueError(
-                "Incomplete information for three way dimension extraction"
-            )
-        line1 = connected_edges_lines[0]
-        line2 = connected_edges_lines[1]
-        line3 = connected_edges_lines[2]
-        if line1.is_collinear_to(line2):
-            run1_dim = connected_edge_diameters[0]
-            run2_dim = connected_edge_diameters[1]
-            branch_dim = connected_edge_diameters[2]
-        elif line1.is_collinear_to(line3):
-            run1_dim = connected_edge_diameters[0]
-            branch_dim = connected_edge_diameters[1]
-            run2_dim = connected_edge_diameters[2]
-        else:
-            branch_dim = connected_edge_diameters[0]
-            run1_dim = connected_edge_diameters[1]
-            run2_dim = connected_edge_diameters[2]
-        return run1_dim, run2_dim, branch_dim
