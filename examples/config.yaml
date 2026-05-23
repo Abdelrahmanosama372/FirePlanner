@@ -29,6 +29,10 @@ autocad:
   input:
     drawing:
       units: "m"
+    xdata:
+      application_name: "FIREPLANNER"
+      fields:
+        elevation: "cop"
     root_line_identifier: 
       color: "red"
     line_network_layer:

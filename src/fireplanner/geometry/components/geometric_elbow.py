@@ -72,20 +72,20 @@ class GeometricElbow(GeometricComponent):
             case ViewType.PLAN:
                 primitives = [
                     Circle(
-                        center=Point(x=self._center_to_end, y=0),
+                        center=Point(x=0, y=0),
                         radius=r,
                     ),
                     Line(
-                        start=Point(x=0, y=r),
-                        end=Point(x=self._center_to_end, y=r),
+                        start=Point(x=r, y=0),
+                        end=Point(x=r, y=self._center_to_end + r),
                     ),
                     Line(
-                        start=Point(x=0, y=-r),
-                        end=Point(x=self._center_to_end, y=-r),
+                        start=Point(x=-r, y=0),
+                        end=Point(x=-r, y=self._center_to_end + r),
                     ),
                     Line(
-                        start=Point(x=0, y=-r),
-                        end=Point(x=0, y=r),
+                        start=Point(x=-r, y=self._center_to_end + r),
+                        end=Point(x=r, y=self._center_to_end + r),
                     ),
                 ]
 
@@ -133,13 +133,13 @@ class GeometricElbow(GeometricComponent):
             case ViewType.PLAN:
                 primitives = [
                     Line(
-                        start=Point(x=0, y=0),
-                        end=Point(x=self._center_to_end + r, y=0),
+                        start=Point(x=0, y=-r),
+                        end=Point(x=0, y=self._center_to_end + r),
                         line_type=LineType.CenterLine,
                     ),
                     Line(
-                        start=Point(x=self._center_to_end, y=r),
-                        end=Point(x=self._center_to_end, y=-r),
+                        start=Point(x=-r, y=0),
+                        end=Point(x=r, y=0),
                         line_type=LineType.CenterLine,
                     ),
                 ]

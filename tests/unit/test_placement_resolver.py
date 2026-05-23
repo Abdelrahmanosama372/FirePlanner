@@ -27,11 +27,12 @@ from fireplanner.networks.junction_info import (
     ThreeWayJunctionInfo,
     TwoWayJunctionInfo,
 )
-from fireplanner.networks.placement.resolver import PlacementResolver
+from fireplanner.networks.placement import PlacementContext, PlacementResolver
 from fireplanner.networks.placement.strategy import (
     SingleElbowPlacementStrategy,
     SingleReducerPlacementStrategy,
     SingleTeePlacementStrategy,
+    TeeElbowRisePlacementStrategy,
     TeeReducerPlacementStrategy,
 )
 
@@ -552,3 +553,82 @@ def test_group_transform_resolve(
         assert context.transform.origin == expected_transform.origin
         assert context.transform.angle == expected_transform.angle
         assert context.view_type == ViewType.ELEVATION
+
+
+@pytest.mark.parametrize(
+    "edge_id_line_map, edge_pipe_dim_map, expected_contexts",
+    [
+        (
+            {
+                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=0), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=0, y=100), id=3),
+            },
+            {
+                1: SteelDims.DIM_1_INCHES,
+                2: SteelDims.DIM_1_INCHES,
+                3: SteelDims.DIM_1_INCHES,
+            },
+            [
+                PlacementContext(
+                    transform=Transform2D(Point(x=0, y=0), radians(0)),
+                    view_type=ViewType.PLAN,
+                ),
+                PlacementContext(
+                    transform=Transform2D(Point(x=0, y=0), radians(0)),
+                    view_type=ViewType.PLAN,
+                ),
+            ],
+        ),
+        (
+            {
+                1: Line(start=Point(x=0, y=0), end=Point(x=100, y=100), id=1),
+                2: Line(start=Point(x=0, y=0), end=Point(x=-100, y=-100), id=2),
+                3: Line(start=Point(x=0, y=0), end=Point(x=-100, y=100), id=3),
+            },
+            {
+                1: SteelDims.DIM_1_INCHES,
+                2: SteelDims.DIM_1_INCHES,
+                3: SteelDims.DIM_1_INCHES,
+            },
+            [
+                PlacementContext(
+                    transform=Transform2D(Point(x=0, y=0), radians(45)),
+                    view_type=ViewType.PLAN,
+                ),
+                PlacementContext(
+                    transform=Transform2D(Point(x=0, y=0), radians(45)),
+                    view_type=ViewType.PLAN,
+                ),
+            ],
+        ),
+    ],
+)
+def test_tee_with_elbow_placement(
+    edge_id_line_map,
+    edge_pipe_dim_map,
+    expected_contexts,
+):
+    geometric_components = [geometric_tee_builder(), geometric_elbow_builder()]
+    junction = Junction(
+        id=1,
+        origin=Point(x=0, y=0),
+        junction_type=JunctionType.THREE_WAY,
+        connected_edges_ids=[1, 2, 3],
+    )
+
+    resolver = PlacementResolver()
+    junction_assembly = _build_junction_assembly(
+        junction=junction,
+        edge_id_line_map=edge_id_line_map,
+        edge_pipe_dim_map=edge_pipe_dim_map,
+    )
+
+    strategy = resolver.resolve(junction_assembly, geometric_components)
+    assert isinstance(strategy, TeeElbowRisePlacementStrategy)
+
+    for component, expected_context in zip(geometric_components, expected_contexts):
+        context = strategy.get_placement_context(component)
+        assert context.transform.origin == expected_context.transform.origin
+        assert context.transform.angle == expected_context.transform.angle
+        assert context.view_type == expected_context.view_type
