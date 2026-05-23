@@ -1,4 +1,4 @@
-from fireplanner.geometry.primitives import Arc, Block, Line, Point
+from fireplanner.geometry.primitives import Arc, Block, Circle, Line, Point
 from fireplanner.units import LengthUnit, LengthUnitConverter
 
 
@@ -23,6 +23,20 @@ class GeometryUnitConverter:
             line_type=line.line_type,
             id=line.id,
             style=line.style,
+        )
+
+    @staticmethod
+    def circle_to_unit(
+        circle: Circle, from_unit: LengthUnit, to_unit: LengthUnit
+    ) -> Circle:
+        return Circle(
+            center=GeometryUnitConverter.point_to_unit(
+                circle.center, from_unit, to_unit
+            ),
+            radius=circle.radius,
+            line_type=circle.line_type,
+            id=circle.id,
+            style=circle.style,
         )
 
     @staticmethod

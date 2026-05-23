@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from math import atan2, sqrt
 from typing import Any
 
-from fireplanner.geometry.primitives import Arc, Line
+from fireplanner.geometry.primitives import Arc, Circle, Line
 from fireplanner.geometry.primitives.line import LineType
 from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks.geometry_network import GeometryNetwork
@@ -60,9 +60,12 @@ class Writer:
             geometry_network.get_geometric_fire_connections_with_junctions_ids().values()
         ):
             for component in components:
-                for primitive in component.get_primitives_2d(
-                    include_centerlines=self._layer_config.centerlines_enabled
-                ):
+                for primitive in component.get_primitives_2d():
+                    if (
+                        primitive.line_type == LineType.CenterLine
+                        and not self._layer_config.centerlines_enabled
+                    ):
+                        continue
                     created_entities.extend(self._write_primitive(primitive))
 
         logger.info("Wrote %d AutoCAD entity(ies).", len(created_entities))
@@ -85,6 +88,19 @@ class Writer:
             entity = self._acad.model.AddLine(
                 APoint(primitive.start.to_list3d()),
                 APoint(primitive.end.to_list3d()),
+            )
+            self._apply_layer(entity, primitive)
+            return [entity]
+
+        if isinstance(primitive, Circle):
+            primitive = GeometryUnitConverter.circle_to_unit(
+                primitive,
+                from_unit=LengthUnit.MILLIMETER,
+                to_unit=self._drawing_unit,
+            )
+            entity = self._acad.model.AddCircle(
+                APoint(primitive.center.to_list3d()),
+                primitive.radius,
             )
             self._apply_layer(entity, primitive)
             return [entity]
@@ -117,7 +133,7 @@ class Writer:
 
     def _apply_layer(self, entity: Any, primitive: object) -> None:
         is_centerline = (
-            isinstance(primitive, (Line, Arc))
+            isinstance(primitive, (Line, Arc, Circle))
             and primitive.line_type == LineType.CenterLine
         )
 
