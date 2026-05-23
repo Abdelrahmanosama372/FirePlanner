@@ -46,9 +46,12 @@ class Writer:
         created_entities: list[Any] = []
 
         for pipe in geometry_network.get_geometric_pipes():
-            for primitive in pipe.get_primitives_2d(
-                include_centerlines=self._layer_config.centerlines_enabled
-            ):
+            for primitive in pipe.get_primitives_2d():
+                if (
+                    primitive.line_type == LineType.CenterLine
+                    and not self._layer_config.centerlines_enabled
+                ):
+                    continue
                 created_entities.extend(self._write_primitive(primitive))
 
         for (
