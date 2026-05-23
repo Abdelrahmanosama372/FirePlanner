@@ -4,3 +4,4 @@ from .single_reducer import SingleReducerPlacementStrategy
 from .single_tee import SingleTeePlacementStrategy
 from .tee_elbow_rise import TeeElbowRisePlacementStrategy
 from .tee_reducer import TeeReducerPlacementStrategy
+from .tee_reducer_elbow import TeeReducerElbowPlacementStrategy

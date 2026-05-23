@@ -14,6 +14,7 @@ from fireplanner.networks.placement.strategy import (
     SingleReducerPlacementStrategy,
     SingleTeePlacementStrategy,
     TeeElbowRisePlacementStrategy,
+    TeeReducerElbowPlacementStrategy,
     TeeReducerPlacementStrategy,
 )
 from fireplanner.networks.placement.strategy.base import PlacementStrategy
@@ -51,7 +52,10 @@ class PlacementResolver:
             isinstance(component, (GeometricTee, GeometricWeldedBranch))
             for component in placement_assembly.components.items
         ):
-            return TeeReducerPlacementStrategy(placement_assembly)
+            if len(placement_assembly.components.elbow()) == 1:
+                return TeeReducerElbowPlacementStrategy(placement_assembly)
+            else:
+                return TeeReducerPlacementStrategy(placement_assembly)
 
         if len(placement_assembly.components.elbow()) == 1 and any(
             isinstance(component, (GeometricTee, GeometricWeldedBranch))
