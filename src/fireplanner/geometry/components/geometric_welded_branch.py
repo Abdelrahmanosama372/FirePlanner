@@ -76,9 +76,14 @@ class GeometricWeldedBranch(GeometricComponent):
 
             case ViewType.PLAN:
                 primitives = [
-                    Circle(
-                        center=Point(x=0, y=0),
-                        radius=R,
+                    Line(
+                        start=Point(x=0, y=-R),
+                        end=Point(x=0, y=R),
+                        line_type=LineType.CenterLine,
+                    ),
+                    Line(
+                        start=Point(x=-R, y=0),
+                        end=Point(x=R, y=0),
                         line_type=LineType.CenterLine,
                     ),
                 ]

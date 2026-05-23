@@ -7,7 +7,7 @@ from fireplanner.firecomponent import Elbow
 from fireplanner.standards import elbow_90_lr_center_to_end
 from fireplanner.standards.steel_dim import steel_dim_table
 
-from ..primitives import Arc, Line, LineType, Point, Primitive2D
+from ..primitives import Arc, Circle, Line, LineType, Point, Primitive2D
 from .base import ViewType
 from .geometric_component import GeometricComponent
 
@@ -177,6 +177,6 @@ class GeometricElbow(GeometricComponent):
                 ]
 
             case ViewType.PLAN | ViewType.SIDE:
-                primitives = self._local_centerlines(view_type)
+                primitives = self._local_centerlines()
 
         return primitives
