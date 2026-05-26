@@ -232,6 +232,13 @@ class Line(Primitive2D):
         # move backwards from end
         return self.point_from(self.end, -offset)
 
+    def middle_point(self) -> Point:
+        return Point(
+            x=(self.start.x + self.end.x) / 2.0,
+            y=(self.start.y + self.end.y) / 2.0,
+            z=(self.start.z + self.end.z) / 2.0,
+        )
+
     @override
     def transform_2d(self, transform: "Transform2D") -> Primitive2D:
         start_trans = self.start.transform_2d(transform)

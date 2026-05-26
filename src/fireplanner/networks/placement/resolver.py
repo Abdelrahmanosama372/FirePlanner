@@ -3,13 +3,14 @@ from __future__ import annotations
 from fireplanner.geometry.components import (
     GeometricComponent,
     GeometricElbow,
+    GeometricHanger,
     GeometricReducer,
     GeometricTee,
     GeometricWeldedBranch,
 )
-from fireplanner.networks.junction_assembly import JunctionAssembly
-from fireplanner.networks.placement.assembly_builder import PlacementAssemblyBuilder
+from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.strategy import (
+    HangerPlacementStrategy,
     SingleElbowPlacementStrategy,
     SingleReducerPlacementStrategy,
     SingleTeePlacementStrategy,
@@ -21,22 +22,10 @@ from fireplanner.networks.placement.strategy.base import PlacementStrategy
 
 
 class PlacementResolver:
-    def __init__(
-        self, placement_assembly_builder: PlacementAssemblyBuilder | None = None
-    ):
-        self._placement_assembly_builder = (
-            placement_assembly_builder or PlacementAssemblyBuilder()
-        )
-
     def resolve(
         self,
-        junction_assembly: JunctionAssembly,
-        geometric_components: list[GeometricComponent],
+        placement_assembly: PlacementAssembly,
     ) -> PlacementStrategy:
-        placement_assembly = self._placement_assembly_builder.build(
-            junction_assembly, geometric_components
-        )
-
         if len(placement_assembly.components.items) == 1:
             component = placement_assembly.components.items[0]
             if isinstance(component, (GeometricTee, GeometricWeldedBranch)):
@@ -47,6 +36,13 @@ class PlacementResolver:
                 )
             if isinstance(component, GeometricElbow):
                 return SingleElbowPlacementStrategy(placement_assembly)
+            if isinstance(component, GeometricHanger):
+                return HangerPlacementStrategy(placement_assembly)
+
+        if len(placement_assembly.components.items) >= 1 and len(
+            placement_assembly.components.hangers()
+        ) == len(placement_assembly.components.items):
+            return HangerPlacementStrategy(placement_assembly)
 
         if len(placement_assembly.components.reducers()) >= 1 and any(
             isinstance(component, (GeometricTee, GeometricWeldedBranch))

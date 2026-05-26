@@ -68,6 +68,15 @@ class Writer:
                         continue
                     created_entities.extend(self._write_primitive(primitive))
 
+        for hanger in geometry_network.get_geometric_hangers():
+            for primitive in hanger.get_primitives_2d():
+                if (
+                    primitive.line_type == LineType.CenterLine
+                    and not self._layer_config.centerlines_enabled
+                ):
+                    continue
+                created_entities.extend(self._write_primitive(primitive))
+
         logger.info("Wrote %d AutoCAD entity(ies).", len(created_entities))
         return created_entities
 

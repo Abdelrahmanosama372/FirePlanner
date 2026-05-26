@@ -8,6 +8,7 @@ from math import pi
 from fireplanner.firecomponent import SteelDims
 from fireplanner.geometry.components import (
     GeometricComponent,
+    GeometricHanger,
     GeometricPipe,
     GeometricReducer,
 )
@@ -16,6 +17,7 @@ from fireplanner.geometry.primitives import Line, Transform2D
 from fireplanner.networks.core_network import CoreNetwork
 from fireplanner.networks.geometry_mapper import GeometryMapper, GeometryMapperConfig
 from fireplanner.networks.model_network import ModelNetwork
+from fireplanner.networks.placement.assembly_builder import PlacementAssemblyBuilder
 from fireplanner.networks.placement.context import PlacementContext
 from fireplanner.networks.placement_resolver import PlacementResolver
 
@@ -45,8 +47,10 @@ class GeometryNetwork:
             )
         )
         self._placement_resolver = placement_resolver or PlacementResolver()
+        self._placement_assembly_builder = PlacementAssemblyBuilder()
         self._junction_id_to_component: dict[int, list[GeometricComponent]] = {}
         self._edge_id_to_pipe: dict[int, list[GeometricPipe]] = {}
+        self._geometric_hangers: list[GeometricHanger] = []
         self._create_network()
 
     @property
@@ -73,9 +77,13 @@ class GeometryNetwork:
     def get_geometric_pipes(self) -> dict[int, list[GeometricPipe]]:
         return list(chain.from_iterable(self.edge_id_to_pipe.values()))
 
+    def get_geometric_hangers(self) -> list[GeometricHanger]:
+        return list(self._geometric_hangers)
+
     def _create_network(self) -> None:
         self._junction_id_to_component = self.construct_nodes()
         self._edge_id_to_pipe = self.construct_edges()
+        self._geometric_hangers = self.construct_hangers()
 
     def construct_nodes(self) -> dict[int, list[GeometricComponent]]:
         geometric_components_map: dict[int, list[GeometricComponent]] = {}
@@ -89,9 +97,11 @@ class GeometryNetwork:
 
             transformed_geometric_components: list[GeometricComponent] = []
             if geometric_components:
+                placement_assembly = self._placement_assembly_builder.build(
+                    assembly, geometric_components
+                )
                 strategy = self._placement_resolver.resolve(
-                    junction_assembly=assembly,
-                    geometric_components=geometric_components,
+                    placement_assembly=placement_assembly,
                 )
                 for component in geometric_components:
                     context = strategy.get_placement_context(component)
@@ -202,6 +212,34 @@ class GeometryNetwork:
                 )
 
         return geometric_pipes
+
+    def construct_hangers(self) -> list[GeometricHanger]:
+        geometric_hangers: list[GeometricHanger] = []
+        for hanger_assembly in self._model_network.get_hangers_assembly():
+            hangers_for_pipe: list[GeometricHanger] = []
+            for _ in range(hanger_assembly.hangers_count):
+                geometric_hanger = self._geometry_mapper.get_geometry(
+                    hanger_assembly.hanger
+                )
+                if not isinstance(geometric_hanger, GeometricHanger):
+                    raise TypeError(
+                        "Hanger geometry mapping must return GeometricHanger, "
+                        f"got {type(geometric_hanger).__name__}."
+                    )
+                hangers_for_pipe.append(geometric_hanger)
+            placement_assembly = (
+                self._placement_assembly_builder.build_from_hanger_assembly(
+                    hanger_assembly,
+                    hangers_for_pipe,
+                )
+            )
+            strategy = self._placement_resolver.resolve(placement_assembly)
+            for geometric_hanger in hangers_for_pipe:
+                geometric_hanger.placement_context = strategy.get_placement_context(
+                    geometric_hanger
+                )
+                geometric_hangers.append(geometric_hanger)
+        return geometric_hangers
 
     def find_free_pipes_lines(
         self, pipe_line: Line, connections: GeometricComponent

@@ -8,6 +8,7 @@ from typing import Any
 import yaml
 
 from fireplanner.firecomponent import (
+    Hanger,
     Pipe,
     SteelConnection,
     SteelDims,
@@ -21,13 +22,18 @@ from fireplanner.firecomponent.fitting.fireconnection.reducer import Reducer
 from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
 from fireplanner.geometry.primitives.line import Line
 from fireplanner.networks.core_network import CoreNetwork
-from fireplanner.networks.junction_assembly import JunctionAssembly, PipeAssembly
+from fireplanner.networks.junction_assembly import (
+    HangerAssembly,
+    JunctionAssembly,
+    PipeAssembly,
+)
 from fireplanner.networks.junction_info import (
     EdgeInfo,
     JunctionInfo,
     ThreeWayJunctionInfo,
     TwoWayJunctionInfo,
 )
+from fireplanner.standards.hanger import find_min_number_of_hangers_for_pipe
 from fireplanner.standards.hazard import (
     FireHazard,
     find_min_steel_dim_for_sprinklers,
@@ -414,3 +420,32 @@ class ModelNetwork:
             )
             for edge in self._model_edges
         ]
+
+    def get_hangers_assembly(self) -> list[HangerAssembly]:
+        hangers: list[HangerAssembly] = []
+        for pipe_assembly in self.get_pipes_assembly():
+            pipe = pipe_assembly.pipe
+            if pipe is None:
+                continue
+            hanger = Hanger(
+                diameter=pipe.diameter,
+                material=pipe.material,
+                schedule=pipe.schedule,
+                specs=pipe.specs,
+                connection_type=pipe.connection_type,
+            )
+            hangers_count = max(
+                1,
+                find_min_number_of_hangers_for_pipe(
+                    pipe_diameter=pipe.diameter,
+                    pipe_length=pipe_assembly.edge_info.length,
+                ),
+            )
+            hangers.append(
+                HangerAssembly(
+                    hanger=hanger,
+                    pipe=pipe_assembly,
+                    hangers_count=hangers_count,
+                )
+            )
+        return hangers

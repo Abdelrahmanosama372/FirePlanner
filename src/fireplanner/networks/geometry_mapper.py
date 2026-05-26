@@ -8,10 +8,12 @@ from fireplanner.firecomponent.base import FireComponent, SteelDims
 from fireplanner.firecomponent.fitting.fireconnection.elbow import Elbow
 from fireplanner.firecomponent.fitting.fireconnection.reducer import Reducer
 from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
+from fireplanner.firecomponent.fitting.hanger import Hanger
 from fireplanner.firecomponent.pipe import Pipe
 from fireplanner.geometry.components import (
     GeometricComponent,
     GeometricElbow,
+    GeometricHanger,
     GeometricPipe,
     GeometricReducer,
     GeometricTee,
@@ -49,5 +51,7 @@ class GeometryMapper:
             return GeometricTee(component)
         if component_type is Reducer:
             return GeometricReducer(component)
+        if component_type is Hanger:
+            return GeometricHanger(component)
 
         raise KeyError(f"No geometry mapping for {component_type}")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fireplanner.geometry.components import GeometricComponent
-from fireplanner.networks.junction_assembly import JunctionAssembly
+from fireplanner.networks.junction_assembly import HangerAssembly, JunctionAssembly
 from fireplanner.networks.junction_info import ThreeWayJunctionInfo
 from fireplanner.networks.placement.assembly import (
     AssemblyComponents,
@@ -43,5 +43,20 @@ class PlacementAssemblyBuilder:
             origin=junction_info.origin,
             run_pipes=run_pipes,
             branch_pipe=branch_pipe,
+            components=AssemblyComponents(items=geometric_components),
+        )
+
+    def build_from_hanger_assembly(
+        self,
+        hanger_assembly: HangerAssembly,
+        geometric_components: list[GeometricComponent],
+    ) -> PlacementAssembly:
+        pipe_assembly = hanger_assembly.pipe
+        line = pipe_assembly.edge_info.line
+        return PlacementAssembly(
+            junction_info=None,
+            origin=line.middle_point(),
+            run_pipes=[pipe_assembly],
+            branch_pipe=None,
             components=AssemblyComponents(items=geometric_components),
         )

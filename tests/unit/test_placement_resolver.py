@@ -28,6 +28,7 @@ from fireplanner.networks.junction_info import (
     TwoWayJunctionInfo,
 )
 from fireplanner.networks.placement import PlacementContext, PlacementResolver
+from fireplanner.networks.placement.assembly_builder import PlacementAssemblyBuilder
 from fireplanner.networks.placement.strategy import (
     SingleElbowPlacementStrategy,
     SingleReducerPlacementStrategy,
@@ -127,6 +128,10 @@ def _build_junction_assembly(
     )
 
 
+def _build_placement_assembly(junction_assembly: JunctionAssembly, components):
+    return PlacementAssemblyBuilder().build(junction_assembly, list(components))
+
+
 @pytest.mark.parametrize(
     "component, junction, edge_id_line_map, edge_pipe_dim_map, expected_strategy",
     [
@@ -202,7 +207,9 @@ def test_resolver_strategy_and_context(
         edge_pipe_dim_map=edge_pipe_dim_map,
     )
 
-    strategy = resolver.resolve(junction_assembly, [component])
+    strategy = resolver.resolve(
+        _build_placement_assembly(junction_assembly, [component])
+    )
 
     assert isinstance(strategy, expected_strategy)
 
@@ -275,7 +282,9 @@ def test_single_tee_strategy_matches_legacy_cases(
         edge_pipe_dim_map=edge_pipe_dim_map,
     )
 
-    strategy = resolver.resolve(junction_assembly, [geometric_tee])
+    strategy = resolver.resolve(
+        _build_placement_assembly(junction_assembly, [geometric_tee])
+    )
     assert isinstance(strategy, SingleTeePlacementStrategy)
     context = strategy.get_placement_context(geometric_tee)
 
@@ -355,7 +364,9 @@ def test_single_reducer_strategy_matches_legacy_cases(
         edge_pipe_dim_map=edge_pipe_dim_map,
     )
 
-    strategy = resolver.resolve(junction_assembly, [geometric_reducer])
+    strategy = resolver.resolve(
+        _build_placement_assembly(junction_assembly, [geometric_reducer])
+    )
     assert isinstance(strategy, SingleReducerPlacementStrategy)
     context = strategy.get_placement_context(geometric_reducer)
 
@@ -432,7 +443,9 @@ def test_single_elbow_strategy_matches_legacy_cases(
         edge_pipe_dim_map=edge_pipe_dim_map,
     )
 
-    strategy = resolver.resolve(junction_assembly, [geometric_elbow])
+    strategy = resolver.resolve(
+        _build_placement_assembly(junction_assembly, [geometric_elbow])
+    )
     assert isinstance(strategy, SingleElbowPlacementStrategy)
 
     context = strategy.get_placement_context(geometric_elbow)
@@ -545,7 +558,9 @@ def test_group_transform_resolve(
         edge_pipe_dim_map=edge_pipe_dim_map,
     )
 
-    strategy = resolver.resolve(junction_assembly, geometric_components)
+    strategy = resolver.resolve(
+        _build_placement_assembly(junction_assembly, geometric_components)
+    )
     assert isinstance(strategy, TeeReducerPlacementStrategy)
 
     for component, expected_transform in zip(geometric_components, expected_transforms):
@@ -624,7 +639,9 @@ def test_tee_with_elbow_placement(
         edge_pipe_dim_map=edge_pipe_dim_map,
     )
 
-    strategy = resolver.resolve(junction_assembly, geometric_components)
+    strategy = resolver.resolve(
+        _build_placement_assembly(junction_assembly, geometric_components)
+    )
     assert isinstance(strategy, TeeElbowRisePlacementStrategy)
 
     for component, expected_context in zip(geometric_components, expected_contexts):

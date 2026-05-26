@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from fireplanner.geometry.components import (
     GeometricComponent,
     GeometricElbow,
+    GeometricHanger,
     GeometricReducer,
     GeometricTee,
     GeometricWeldedBranch,
@@ -30,10 +31,13 @@ class AssemblyComponents:
     def weldedbranches(self) -> list[GeometricWeldedBranch]:
         return [item for item in self.items if isinstance(item, GeometricWeldedBranch)]
 
+    def hangers(self) -> list[GeometricHanger]:
+        return [item for item in self.items if isinstance(item, GeometricHanger)]
+
 
 @dataclass(frozen=True)
 class PlacementAssembly:
-    junction_info: JunctionInfo
+    junction_info: JunctionInfo | None
     origin: Point
     run_pipes: list[PipeAssembly] = field(default_factory=list)
     branch_pipe: PipeAssembly | None = None
