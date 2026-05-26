@@ -16,11 +16,11 @@ class TeeElbowRisePlacementStrategy(PlacementStrategy):
         placement_assembly: PlacementAssembly,
     ) -> dict[int, PlacementContext]:
         junction_info = placement_assembly.junction_info
-        elbow = placement_assembly.components.elbow()[0]
+        elbow = placement_assembly.components.elbows()[0]
         if len(placement_assembly.components.tees()) == 1:
             tee = placement_assembly.components.tees()[0]
         else:
-            tee = placement_assembly.components.weldedbranch()[0]
+            tee = placement_assembly.components.weldedbranches()[0]
 
         contexts: dict[int, PlacementContext] = {}
 

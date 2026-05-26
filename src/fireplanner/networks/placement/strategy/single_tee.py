@@ -33,7 +33,7 @@ class SingleTeePlacementStrategy(PlacementStrategy):
             )
 
         tees = placement_assembly.components.tees()
-        welded = placement_assembly.components.weldedbranch()
+        welded = placement_assembly.components.weldedbranches()
         tee_like_components = [*tees, *welded]
         if len(tee_like_components) != 1:
             raise ValueError(

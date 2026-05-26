@@ -33,7 +33,7 @@ class SingleElbowPlacementStrategy(PlacementStrategy):
         if pipe2_line.end == placement_assembly.origin:
             pipe2_line.swap_end_points()
 
-        elbow = placement_assembly.components.elbow()[0]
+        elbow = placement_assembly.components.elbows()[0]
 
         transform = Transform2D(origin=placement_assembly.origin, rotation=0.0)
         pipe1_dir = pipe1_line.direction()

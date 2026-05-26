@@ -52,12 +52,12 @@ class PlacementResolver:
             isinstance(component, (GeometricTee, GeometricWeldedBranch))
             for component in placement_assembly.components.items
         ):
-            if len(placement_assembly.components.elbow()) == 1:
+            if len(placement_assembly.components.elbows()) == 1:
                 return TeeReducerElbowPlacementStrategy(placement_assembly)
             else:
                 return TeeReducerPlacementStrategy(placement_assembly)
 
-        if len(placement_assembly.components.elbow()) == 1 and any(
+        if len(placement_assembly.components.elbows()) == 1 and any(
             isinstance(component, (GeometricTee, GeometricWeldedBranch))
             for component in placement_assembly.components.items
         ):

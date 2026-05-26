@@ -25,7 +25,7 @@ class TeeReducerElbowPlacementStrategy(PlacementStrategy):
     ) -> dict[int, PlacementContext]:
         junction_info = placement_assembly.junction_info
         junction_origin = junction_info.origin
-        elbow = placement_assembly.components.elbow()[0]
+        elbow = placement_assembly.components.elbows()[0]
 
         tee_reducers: list[GeometricComponent] = []
         tee_reducers.extend(placement_assembly.components.reducers())

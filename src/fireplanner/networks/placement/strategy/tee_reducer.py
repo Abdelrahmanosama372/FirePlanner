@@ -29,7 +29,7 @@ class TeeReducerPlacementStrategy(PlacementStrategy):
     ) -> dict[int, PlacementContext]:
         tee_like = [
             *placement_assembly.components.tees(),
-            *placement_assembly.components.weldedbranch(),
+            *placement_assembly.components.weldedbranches(),
         ]
         if len(tee_like) != 1:
             raise ValueError("Expected one tee component in tee+reducers strategy.")

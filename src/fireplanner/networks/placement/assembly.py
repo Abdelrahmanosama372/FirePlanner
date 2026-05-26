@@ -21,13 +21,13 @@ class AssemblyComponents:
     def reducers(self) -> list[GeometricReducer]:
         return [item for item in self.items if isinstance(item, GeometricReducer)]
 
-    def elbow(self) -> list[GeometricElbow]:
+    def elbows(self) -> list[GeometricElbow]:
         return [item for item in self.items if isinstance(item, GeometricElbow)]
 
     def tees(self) -> list[GeometricTee]:
         return [item for item in self.items if isinstance(item, GeometricTee)]
 
-    def weldedbranch(self) -> list[GeometricWeldedBranch]:
+    def weldedbranches(self) -> list[GeometricWeldedBranch]:
         return [item for item in self.items if isinstance(item, GeometricWeldedBranch)]
 
 
