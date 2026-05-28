@@ -9,6 +9,7 @@ from fireplanner.geometry.primitives import Arc, Circle, Line
 from fireplanner.geometry.primitives.line import LineType
 from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks.geometry_network import GeometryNetwork
+from fireplanner.resolvers import DraftingScene
 from fireplanner.units import LengthUnit
 
 from .utils import color_name_to_aci
@@ -48,7 +49,7 @@ class Writer:
         for pipe in geometry_network.get_geometric_pipes():
             for primitive in pipe.get_primitives_2d():
                 if (
-                    primitive.line_type == LineType.CenterLine
+                    self._is_auxiliary_line_type(primitive.line_type)
                     and not self._layer_config.centerlines_enabled
                 ):
                     continue
@@ -62,7 +63,7 @@ class Writer:
             for component in components:
                 for primitive in component.get_primitives_2d():
                     if (
-                        primitive.line_type == LineType.CenterLine
+                        self._is_auxiliary_line_type(primitive.line_type)
                         and not self._layer_config.centerlines_enabled
                     ):
                         continue
@@ -71,13 +72,25 @@ class Writer:
         for hanger in geometry_network.get_geometric_hangers():
             for primitive in hanger.get_primitives_2d():
                 if (
-                    primitive.line_type == LineType.CenterLine
+                    self._is_auxiliary_line_type(primitive.line_type)
                     and not self._layer_config.centerlines_enabled
                 ):
                     continue
                 created_entities.extend(self._write_primitive(primitive))
 
         logger.info("Wrote %d AutoCAD entity(ies).", len(created_entities))
+        return created_entities
+
+    def write_drafting_scene(self, drafting_scene: DraftingScene) -> list[Any]:
+        created_entities: list[Any] = []
+        for drawable in drafting_scene.drawables:
+            for primitive in drawable.primitives:
+                if (
+                    self._is_auxiliary_line_type(primitive.line_type)
+                    and not self._layer_config.centerlines_enabled
+                ):
+                    continue
+                created_entities.extend(self._write_primitive(primitive))
         return created_entities
 
     def _write_primitive(self, primitive: object) -> list[Any]:
@@ -141,10 +154,9 @@ class Writer:
         return []
 
     def _apply_layer(self, entity: Any, primitive: object) -> None:
-        is_centerline = (
-            isinstance(primitive, (Line, Arc, Circle))
-            and primitive.line_type == LineType.CenterLine
-        )
+        is_centerline = isinstance(
+            primitive, (Line, Arc, Circle)
+        ) and self._is_auxiliary_line_type(primitive.line_type)
 
         if is_centerline:
             if self._layer_config.centerline_layer_name:
@@ -155,6 +167,9 @@ class Writer:
 
         if self._layer_config.line_layer_name:
             self._set_attr(entity, "Layer", self._layer_config.line_layer_name)
+
+    def _is_auxiliary_line_type(self, line_type: LineType) -> bool:
+        return line_type in {LineType.CenterLine, LineType.Hidden}
 
     def _apply_color(self, entity: Any, color: str) -> None:
         color_index: int | None = color_name_to_aci(color)

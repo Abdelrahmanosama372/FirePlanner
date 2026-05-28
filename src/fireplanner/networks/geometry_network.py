@@ -20,6 +20,11 @@ from fireplanner.networks.model_network import ModelNetwork
 from fireplanner.networks.placement.assembly_builder import PlacementAssemblyBuilder
 from fireplanner.networks.placement.context import PlacementContext
 from fireplanner.networks.placement_resolver import PlacementResolver
+from fireplanner.resolvers import (
+    ResolvedAssemblies,
+    ResolvedAssembly,
+    ResolvedComponent,
+)
 
 
 @dataclass(frozen=True)
@@ -70,6 +75,22 @@ class GeometryNetwork:
         self, junction_id: int
     ) -> list[GeometricComponent]:
         return self._junction_id_to_component.get(junction_id, [])
+
+    def get_resolved_fire_connections_assemblies(self) -> ResolvedAssemblies:
+        assemblies: list[ResolvedAssembly] = []
+        for components in self._junction_id_to_component.values():
+            resolved_components: list[ResolvedComponent] = []
+            for component in components:
+                if component.placement_context is None:
+                    raise ValueError("Geometric component has no placement context.")
+                resolved_components.append(
+                    ResolvedComponent(
+                        component=component,
+                        placement_context=component.placement_context,
+                    )
+                )
+            assemblies.append(ResolvedAssembly(components=resolved_components))
+        return ResolvedAssemblies(assemblies=assemblies)
 
     def get_geometric_pipes_with_edges_ids(self) -> dict[int, list[GeometricPipe]]:
         return dict(self._edge_id_to_pipe)

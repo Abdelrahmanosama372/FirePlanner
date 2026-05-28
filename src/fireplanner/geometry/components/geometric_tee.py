@@ -6,7 +6,7 @@ from fireplanner.firecomponent import Tee
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.standards import steel_dim_table, tee_center_dims
 
-from ..primitives import Line, LineType, Point
+from ..primitives import Line, LineType, Point, Primitive2D, Rectangle
 from .base import ViewType
 from .geometric_component import GeometricComponent
 
@@ -148,3 +148,26 @@ class GeometricTee(GeometricComponent):
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
         return self._local_centerlines()
+
+    @override
+    def local_occupancy_regions(self) -> list[Rectangle]:
+        R = self.run_center_to_end
+        B = self.branch_center_to_end
+        rw = steel_dim_table[self.run_diameter] / 2.0
+        bw = steel_dim_table[self.branch_diameter] / 2.0
+
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION:
+                regions = [
+                    Rectangle(point1=Point(x=-R, y=-rw), point2=Point(x=R, y=rw)),
+                    Rectangle(point1=Point(x=-bw, y=rw), point2=Point(x=bw, y=B)),
+                ]
+
+            case ViewType.PLAN:
+                regions = [
+                    Rectangle(point1=Point(x=-R, y=-rw), point2=Point(x=R, y=rw)),
+                ]
+
+            case ViewType.SIDE:
+                raise NotImplementedError
+        return regions

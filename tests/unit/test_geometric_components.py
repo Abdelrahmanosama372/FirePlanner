@@ -13,9 +13,11 @@ from fireplanner.firecomponent.base import (
 from fireplanner.firecomponent.fitting.fireconnection.elbow import Elbow
 from fireplanner.firecomponent.fitting.fireconnection.reducer import Reducer
 from fireplanner.firecomponent.fitting.fireconnection.tee import Tee
+from fireplanner.firecomponent.fitting.hanger import Hanger
 from fireplanner.firecomponent.pipe import Pipe
 from fireplanner.geometry.components import (
     GeometricElbow,
+    GeometricHanger,
     GeometricPipe,
     GeometricReducer,
     GeometricTee,
@@ -28,6 +30,7 @@ from fireplanner.geometry.primitives import (
     LineType,
     Point,
     Primitive2D,
+    Rectangle,
     Transform2D,
 )
 from fireplanner.networks.placement.context import PlacementContext
@@ -95,6 +98,18 @@ def geometric_reducer():
         connection_type=SteelConnection.Grooved,
     )
     return GeometricReducer(reducer)
+
+
+@pytest.fixture
+def geometric_hanger():
+    hanger = Hanger(
+        diameter=SteelDims.DIM_1_INCHES,
+        material=SteelMaterial.ERW,
+        schedule=SteelSchedule.SCD40,
+        specs=SteelSpecs.ASTM,
+        connection_type=SteelConnection.Grooved,
+    )
+    return GeometricHanger(hanger)
 
 
 @pytest.mark.parametrize(
@@ -259,3 +274,50 @@ def test_geometric_welded_branch_build_primitives_2d(
     assert len(primitives) == len(expected_primitives)
     assert {prim for prim in primitives} == expected_primitives
     geometric_welded_branch.transform = transform
+
+
+@pytest.mark.parametrize(
+    "component_fixture_name",
+    [
+        "geometric_pipe",
+        "geometric_elbow",
+        "geometric_reducer",
+        "geometric_tee",
+        "geometric_welded_branch",
+        "geometric_hanger",
+    ],
+)
+def test_geometric_component_local_occupancy_regions_returns_rectangles(
+    request, component_fixture_name: str
+):
+    component = request.getfixturevalue(component_fixture_name)
+    component.placement_context = PlacementContext(
+        transform=Transform2D(origin=Point(x=0, y=0), rotation=0),
+        view_type=ViewType.ELEVATION,
+    )
+    if isinstance(component, GeometricPipe):
+        component.start = Point(x=0, y=0)
+        component.end = Point(x=100, y=0)
+    regions = component.local_occupancy_regions()
+
+    assert len(regions) >= 1
+    assert all(isinstance(region, Rectangle) for region in regions)
+
+
+def test_geometric_component_occupied_regions_applies_transform(geometric_pipe):
+    geometric_pipe.start = Point(x=0, y=0)
+    geometric_pipe.end = Point(x=100, y=0)
+    geometric_pipe.placement_context = PlacementContext(
+        transform=Transform2D(origin=Point(x=10, y=20), rotation=0),
+        view_type=ViewType.ELEVATION,
+    )
+
+    local_region = geometric_pipe.local_occupancy_regions()[0]
+    world_region = geometric_pipe.occupied_regions()[0]
+
+    assert world_region.point1 == local_region.point1.transform_2d(
+        geometric_pipe.placement_context.transform
+    )
+    assert world_region.point2 == local_region.point2.transform_2d(
+        geometric_pipe.placement_context.transform
+    )

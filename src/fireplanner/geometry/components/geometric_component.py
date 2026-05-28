@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
     from fireplanner.networks.placement import PlacementContext
 
-from ..primitives import Line, Point, Primitive2D, Primitive3D
+from ..primitives import Line, Point, Primitive2D, Primitive3D, Rectangle
 from .base import ViewType
 
 T = TypeVar("T", bound="GeometricComponent")
@@ -58,6 +58,20 @@ class GeometricComponent(ABC):
     @abstractmethod
     def _local_layout_skeleton(self) -> list[Primitive2D]:
         """Analytical layout primitives defined in local/origin space."""
+
+    @abstractmethod
+    def local_occupancy_regions(self) -> list[Rectangle]:
+        """Axis-aligned occupancy rectangles in local/origin space."""
+
+    def occupied_regions(self) -> list[Rectangle]:
+        if self._placement_context is None:
+            raise ValueError(
+                "Couldn't build occupied regions, the Placement Context is None"
+            )
+        return [
+            rectangle.transform_2d(self._placement_context.transform)
+            for rectangle in self.local_occupancy_regions()
+        ]
 
     def centerlines(self) -> list[Line]:
         if self.transform is None:

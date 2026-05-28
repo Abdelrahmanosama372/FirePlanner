@@ -30,6 +30,7 @@ class LineType(StrEnum):
 
     Normal = "Normal"
     CenterLine = "CenterLine"
+    Hidden = "Hidden"
 
 
 @dataclass(init=False)

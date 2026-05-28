@@ -5,7 +5,14 @@ from typing import override
 
 from fireplanner.firecomponent import Pipe
 from fireplanner.firecomponent.base import SteelDims
-from fireplanner.geometry.primitives import Circle, Line, LineType, Point, Primitive2D
+from fireplanner.geometry.primitives import (
+    Circle,
+    Line,
+    LineType,
+    Point,
+    Primitive2D,
+    Rectangle,
+)
 from fireplanner.standards.steel_dim import steel_dim_table
 
 from .base import ViewType
@@ -91,3 +98,20 @@ class GeometricPipe(GeometricComponent):
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
         return self._local_centerlines()
+
+    @override
+    def local_occupancy_regions(self) -> list[Rectangle]:
+        if not (self._start and self._end):
+            raise ValueError("Cannot build local pipe occupancy without start and end.")
+        r = steel_dim_table[self._diameter] / 2.0
+        length = self.length
+
+        regions = []
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION | ViewType.PLAN:
+                regions = [
+                    Rectangle(point1=Point(x=0.0, y=-r), point2=Point(x=length, y=r))
+                ]
+            case ViewType.SIDE:
+                regions = [Rectangle(point1=Point(x=-r, y=-r), point2=Point(x=r, y=r))]
+        return regions

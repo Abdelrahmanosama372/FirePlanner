@@ -18,6 +18,11 @@ from fireplanner.networks import (
     ModelNetworkConfig,
     PlacementResolver,
 )
+from fireplanner.resolvers import (
+    DraftingOcclusionResolver,
+    DraftingScene,
+    DrawablePrimitive,
+)
 from fireplanner.units import LengthUnit, LengthUnitConverter
 
 from .reader import BOQConfig, Reader
@@ -96,10 +101,20 @@ class Pipeline:
             drawing_unit=self._reader.read_drawing_length_unit(),
         )
         written_entities_per_network: list[list[Any]] = []
+        drafting_occlusion_resolver = DraftingOcclusionResolver()
         for result in self.build():
-            written_entities_per_network.append(
-                writer.write_geometry_network(result.geometry_network)
+            fire_connections_scene = drafting_occlusion_resolver.resolve(
+                result.geometry_network.get_resolved_fire_connections_assemblies()
             )
+            drawables = list(fire_connections_scene.drawables)
+            for pipe in result.geometry_network.get_geometric_pipes():
+                drawables.append(DrawablePrimitive(primitives=pipe.get_primitives_2d()))
+            for hanger in result.geometry_network.get_geometric_hangers():
+                drawables.append(
+                    DrawablePrimitive(primitives=hanger.get_primitives_2d())
+                )
+            scene = DraftingScene(drawables=drawables)
+            written_entities_per_network.append(writer.write_drafting_scene(scene))
         logger.info(
             "Pipeline draw completed for %d network(s).",
             len(written_entities_per_network),

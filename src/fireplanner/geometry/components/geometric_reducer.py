@@ -6,7 +6,7 @@ from fireplanner.firecomponent import Reducer
 from fireplanner.geometry.primitives.circle import Circle
 from fireplanner.standards import reducer_end_to_end_table, steel_dim_table
 
-from ..primitives import Line, LineType, Point, Primitive2D
+from ..primitives import Line, LineType, Point, Primitive2D, Rectangle
 from .base import ViewType
 from .geometric_component import GeometricComponent
 
@@ -111,3 +111,27 @@ class GeometricReducer(GeometricComponent):
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
         return self._local_centerlines()
+
+    @override
+    def local_occupancy_regions(self) -> list[Rectangle]:
+        L = self._end_to_end
+        r_large = steel_dim_table[self._large_diameter] / 2.0
+
+        regions = []
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION | ViewType.PLAN:
+                regions = [
+                    Rectangle(
+                        point1=Point(x=-L / 2.0, y=-r_large),
+                        point2=Point(x=L / 2.0, y=r_large),
+                    )
+                ]
+            case ViewType.SIDE:
+                regions = [
+                    Rectangle(
+                        point1=Point(x=-r_large, y=-r_large),
+                        point2=Point(x=r_large, y=r_large),
+                    )
+                ]
+
+        return regions

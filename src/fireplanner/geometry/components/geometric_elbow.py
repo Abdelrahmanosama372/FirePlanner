@@ -7,7 +7,7 @@ from fireplanner.firecomponent import Elbow
 from fireplanner.standards import elbow_90_lr_center_to_end
 from fireplanner.standards.steel_dim import steel_dim_table
 
-from ..primitives import Arc, Circle, Line, LineType, Point, Primitive2D
+from ..primitives import Arc, Circle, Line, LineType, Point, Primitive2D, Rectangle
 from .base import ViewType
 from .geometric_component import GeometricComponent
 
@@ -180,3 +180,28 @@ class GeometricElbow(GeometricComponent):
                 primitives = self._local_centerlines()
 
         return primitives
+
+    @override
+    def local_occupancy_regions(self) -> list[Rectangle]:
+        r = steel_dim_table[self._diameter] / 2.0
+        regions = []
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION:
+                regions = [
+                    Rectangle(
+                        point1=Point(x=0, y=0),
+                        point2=Point(
+                            x=self._center_to_end + r, y=self._center_to_end + r
+                        ),
+                    )
+                ]
+
+            case ViewType.PLAN | ViewType.SIDE:
+                regions = [
+                    Rectangle(
+                        point1=Point(x=-r, y=-r),
+                        point2=Point(x=r, y=self._center_to_end),
+                    )
+                ]
+
+        return regions

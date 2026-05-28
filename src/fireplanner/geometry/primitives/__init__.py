@@ -6,4 +6,5 @@ from .block import Block
 from .circle import Circle
 from .line import Line, LineType
 from .point import Point
+from .rectangle import Rectangle
 from .transform import Transform2D

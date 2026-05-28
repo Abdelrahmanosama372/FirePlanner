@@ -9,7 +9,7 @@ from fireplanner.standards import (
     steel_dim_table,
 )
 
-from ..primitives import Arc, Circle, Line, LineType, Point, Primitive2D
+from ..primitives import Arc, Circle, Line, LineType, Point, Primitive2D, Rectangle
 from .base import ViewType
 from .geometric_component import GeometricComponent
 
@@ -93,3 +93,27 @@ class GeometricWeldedBranch(GeometricComponent):
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
         return self._local_centerlines()
+
+    @override
+    def local_occupancy_regions(self) -> list[Rectangle]:
+        run_radius = steel_dim_table[self._run_diameter] / 2
+        branch_radius = steel_dim_table[self._branch_diameter] / 2
+
+        regions = []
+        match self.placement_context.view_type:
+            case ViewType.ELEVATION | ViewType.SIDE:
+                regions = [
+                    Rectangle(
+                        point1=Point(x=-branch_radius, y=-self._penetration_depth),
+                        point2=Point(x=branch_radius, y=run_radius),
+                    )
+                ]
+
+            case ViewType.PLAN:
+                regions = [
+                    Rectangle(
+                        point1=Point(x=-branch_radius, y=-branch_radius),
+                        point2=Point(x=branch_radius, y=branch_radius),
+                    )
+                ]
+        return regions

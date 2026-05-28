@@ -3,7 +3,13 @@ from __future__ import annotations
 from typing import override
 
 from fireplanner.firecomponent import Hanger
-from fireplanner.geometry.primitives import Line, LineType, Point, Primitive2D
+from fireplanner.geometry.primitives import (
+    Line,
+    LineType,
+    Point,
+    Primitive2D,
+    Rectangle,
+)
 
 from .base import ViewType
 from .geometric_component import GeometricComponent
@@ -42,3 +48,15 @@ class GeometricHanger(GeometricComponent):
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
         return []
+
+    @override
+    def local_occupancy_regions(self) -> list[Rectangle]:
+        # simple occupany region to be updated later
+        width = 60.0
+        stem = 80.0
+        return [
+            Rectangle(
+                point1=Point(x=-width / 2, y=0),
+                point2=Point(x=width / 2, y=stem),
+            )
+        ]
