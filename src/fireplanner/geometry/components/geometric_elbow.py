@@ -188,7 +188,7 @@ class GeometricElbow(GeometricComponent):
         match self.placement_context.view_type:
             case ViewType.ELEVATION:
                 regions = [
-                    Rectangle(
+                    Rectangle.from_bounds(
                         point1=Point(x=0, y=0),
                         point2=Point(
                             x=self._center_to_end + r, y=self._center_to_end + r
@@ -198,7 +198,7 @@ class GeometricElbow(GeometricComponent):
 
             case ViewType.PLAN | ViewType.SIDE:
                 regions = [
-                    Rectangle(
+                    Rectangle.from_bounds(
                         point1=Point(x=-r, y=-r),
                         point2=Point(x=r, y=self._center_to_end),
                     )

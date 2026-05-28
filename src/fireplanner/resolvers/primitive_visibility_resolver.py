@@ -268,11 +268,7 @@ class PrimitiveVisibilityResolver:
         return arc.center.distance(arc.start)
 
     def _rect_bounds(self, rect: Rectangle) -> tuple[float, float, float, float]:
-        xmin = min(rect.point1.x, rect.point2.x)
-        xmax = max(rect.point1.x, rect.point2.x)
-        ymin = min(rect.point1.y, rect.point2.y)
-        ymax = max(rect.point1.y, rect.point2.y)
-        return xmin, xmax, ymin, ymax
+        return rect.bounds()
 
     def _point_in_rect(self, point: Point, rect: Rectangle) -> bool:
         xmin, xmax, ymin, ymax = self._rect_bounds(rect)

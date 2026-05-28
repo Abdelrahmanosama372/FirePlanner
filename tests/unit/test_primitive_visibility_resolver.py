@@ -7,7 +7,7 @@ from fireplanner.resolvers import PrimitiveVisibilityResolver
 
 def test_visibility_resolver_line_crossing_rectangle():
     resolver = PrimitiveVisibilityResolver()
-    rect = Rectangle(point1=Point(x=0, y=0), point2=Point(x=10, y=10))
+    rect = Rectangle.from_bounds(point1=Point(x=0, y=0), point2=Point(x=10, y=10))
     line = Line(start=Point(x=-5, y=5), end=Point(x=15, y=5))
 
     partition = resolver.resolve(rect, line)
@@ -23,7 +23,7 @@ def test_visibility_resolver_line_crossing_rectangle():
 
 def test_visibility_resolver_line_outside_rectangle():
     resolver = PrimitiveVisibilityResolver()
-    rect = Rectangle(point1=Point(x=0, y=0), point2=Point(x=10, y=10))
+    rect = Rectangle.from_bounds(point1=Point(x=0, y=0), point2=Point(x=10, y=10))
     line = Line(start=Point(x=-5, y=-5), end=Point(x=-1, y=-1))
 
     partition = resolver.resolve(rect, line)
@@ -35,7 +35,7 @@ def test_visibility_resolver_line_outside_rectangle():
 
 def test_visibility_resolver_circle_fully_inside_rectangle():
     resolver = PrimitiveVisibilityResolver()
-    rect = Rectangle(point1=Point(x=0, y=0), point2=Point(x=10, y=10))
+    rect = Rectangle.from_bounds(point1=Point(x=0, y=0), point2=Point(x=10, y=10))
     circle = Circle(center=Point(x=5, y=5), radius=2)
 
     partition = resolver.resolve(rect, circle)
@@ -48,7 +48,7 @@ def test_visibility_resolver_circle_fully_inside_rectangle():
 
 def test_visibility_resolver_arc_fully_outside_rectangle():
     resolver = PrimitiveVisibilityResolver()
-    rect = Rectangle(point1=Point(x=0, y=0), point2=Point(x=2, y=2))
+    rect = Rectangle.from_bounds(point1=Point(x=0, y=0), point2=Point(x=2, y=2))
     arc = Arc(start=Point(x=10, y=0), center=Point(x=0, y=0), angle=pi / 4)
 
     partition = resolver.resolve(rect, arc)

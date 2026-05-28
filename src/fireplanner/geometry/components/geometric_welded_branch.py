@@ -103,7 +103,7 @@ class GeometricWeldedBranch(GeometricComponent):
         match self.placement_context.view_type:
             case ViewType.ELEVATION | ViewType.SIDE:
                 regions = [
-                    Rectangle(
+                    Rectangle.from_bounds(
                         point1=Point(x=-branch_radius, y=-self._penetration_depth),
                         point2=Point(x=branch_radius, y=run_radius),
                     )
@@ -111,7 +111,7 @@ class GeometricWeldedBranch(GeometricComponent):
 
             case ViewType.PLAN:
                 regions = [
-                    Rectangle(
+                    Rectangle.from_bounds(
                         point1=Point(x=-branch_radius, y=-branch_radius),
                         point2=Point(x=branch_radius, y=branch_radius),
                     )

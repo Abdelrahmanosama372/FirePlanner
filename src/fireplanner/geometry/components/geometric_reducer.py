@@ -121,14 +121,14 @@ class GeometricReducer(GeometricComponent):
         match self.placement_context.view_type:
             case ViewType.ELEVATION | ViewType.PLAN:
                 regions = [
-                    Rectangle(
+                    Rectangle.from_bounds(
                         point1=Point(x=-L / 2.0, y=-r_large),
                         point2=Point(x=L / 2.0, y=r_large),
                     )
                 ]
             case ViewType.SIDE:
                 regions = [
-                    Rectangle(
+                    Rectangle.from_bounds(
                         point1=Point(x=-r_large, y=-r_large),
                         point2=Point(x=r_large, y=r_large),
                     )

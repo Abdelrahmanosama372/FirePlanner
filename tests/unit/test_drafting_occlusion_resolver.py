@@ -33,11 +33,15 @@ class _FakeComponent:
 def test_drafting_occlusion_resolver_hides_lower_component_segments():
     top = _FakeComponent(
         _primitives=[Line(start=Point(x=0, y=5), end=Point(x=10, y=5))],
-        _regions=[Rectangle(point1=Point(x=0, y=0), point2=Point(x=10, y=10))],
+        _regions=[
+            Rectangle.from_bounds(point1=Point(x=0, y=0), point2=Point(x=10, y=10))
+        ],
     )
     lower = _FakeComponent(
         _primitives=[Line(start=Point(x=-5, y=5), end=Point(x=15, y=5))],
-        _regions=[Rectangle(point1=Point(x=-5, y=0), point2=Point(x=15, y=10))],
+        _regions=[
+            Rectangle.from_bounds(point1=Point(x=-5, y=0), point2=Point(x=15, y=10))
+        ],
     )
 
     assemblies = ResolvedAssemblies(
@@ -81,19 +85,27 @@ def test_drafting_occlusion_resolver_hides_lower_component_segments():
 def test_drafting_occlusion_resolver_resolves_each_assembly_independently():
     top_a = _FakeComponent(
         _primitives=[Line(start=Point(x=0, y=0), end=Point(x=10, y=0))],
-        _regions=[Rectangle(point1=Point(x=0, y=0), point2=Point(x=10, y=10))],
+        _regions=[
+            Rectangle.from_bounds(point1=Point(x=0, y=0), point2=Point(x=10, y=10))
+        ],
     )
     low_a = _FakeComponent(
         _primitives=[Line(start=Point(x=-5, y=5), end=Point(x=15, y=5))],
-        _regions=[Rectangle(point1=Point(x=-5, y=0), point2=Point(x=15, y=10))],
+        _regions=[
+            Rectangle.from_bounds(point1=Point(x=-5, y=0), point2=Point(x=15, y=10))
+        ],
     )
     top_b = _FakeComponent(
         _primitives=[Line(start=Point(x=100, y=0), end=Point(x=110, y=0))],
-        _regions=[Rectangle(point1=Point(x=100, y=0), point2=Point(x=110, y=10))],
+        _regions=[
+            Rectangle.from_bounds(point1=Point(x=100, y=0), point2=Point(x=110, y=10))
+        ],
     )
     low_b = _FakeComponent(
         _primitives=[Line(start=Point(x=95, y=5), end=Point(x=115, y=5))],
-        _regions=[Rectangle(point1=Point(x=95, y=0), point2=Point(x=115, y=10))],
+        _regions=[
+            Rectangle.from_bounds(point1=Point(x=95, y=0), point2=Point(x=115, y=10))
+        ],
     )
 
     assemblies = ResolvedAssemblies(

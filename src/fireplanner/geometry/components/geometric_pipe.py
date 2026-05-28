@@ -110,8 +110,16 @@ class GeometricPipe(GeometricComponent):
         match self.placement_context.view_type:
             case ViewType.ELEVATION | ViewType.PLAN:
                 regions = [
-                    Rectangle(point1=Point(x=0.0, y=-r), point2=Point(x=length, y=r))
+                    Rectangle.from_bounds(
+                        point1=Point(x=0.0, y=-r),
+                        point2=Point(x=length, y=r),
+                    )
                 ]
             case ViewType.SIDE:
-                regions = [Rectangle(point1=Point(x=-r, y=-r), point2=Point(x=r, y=r))]
+                regions = [
+                    Rectangle.from_bounds(
+                        point1=Point(x=-r, y=-r),
+                        point2=Point(x=r, y=r),
+                    )
+                ]
         return regions

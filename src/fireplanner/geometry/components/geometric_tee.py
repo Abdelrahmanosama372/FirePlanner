@@ -159,13 +159,19 @@ class GeometricTee(GeometricComponent):
         match self.placement_context.view_type:
             case ViewType.ELEVATION:
                 regions = [
-                    Rectangle(point1=Point(x=-R, y=-rw), point2=Point(x=R, y=rw)),
-                    Rectangle(point1=Point(x=-bw, y=rw), point2=Point(x=bw, y=B)),
+                    Rectangle.from_bounds(
+                        point1=Point(x=-R, y=-rw), point2=Point(x=R, y=rw)
+                    ),
+                    Rectangle.from_bounds(
+                        point1=Point(x=-bw, y=rw), point2=Point(x=bw, y=B)
+                    ),
                 ]
 
             case ViewType.PLAN:
                 regions = [
-                    Rectangle(point1=Point(x=-R, y=-rw), point2=Point(x=R, y=rw)),
+                    Rectangle.from_bounds(
+                        point1=Point(x=-R, y=-rw), point2=Point(x=R, y=rw)
+                    ),
                 ]
 
             case ViewType.SIDE:
