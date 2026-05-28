@@ -4,10 +4,15 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from fireplanner.boq.calculators.akmon_calculator import AkmonCalculator
 from fireplanner.boq.calculators.connection_calculator import ConnectionCalculator
+from fireplanner.boq.calculators.hanger_calculator import HangerCalculator
+from fireplanner.boq.calculators.nut_calculator import NutCalculator
 from fireplanner.boq.calculators.paint_calculator import PaintCalculator
 from fireplanner.boq.calculators.pipe_calculator import PipeCalculator
-from fireplanner.boq.models import BOQReport
+from fireplanner.boq.calculators.stud_calculator import StudCalculator
+from fireplanner.boq.calculators.washer_calculator import WasherCalculator
+from fireplanner.boq.models import BOQReport, HangerFittingBOQ
 from fireplanner.boq.output.console import BOQConsolePrinter
 from fireplanner.networks import (
     CoreNetwork,
@@ -154,11 +159,36 @@ class Pipeline:
 
         pipe_boq = PipeCalculator.compute(pipes_lengths)
         connection_boq = ConnectionCalculator.compute(connections)
+        hanger_assemblies = result.model_network.get_hangers_assembly()
+        hanger_boq = HangerCalculator.compute(hanger_assemblies)
+        stud_boq = StudCalculator.compute(
+            hanger_assemblies=hanger_assemblies,
+            full_ceiling_elevation=boq_config.full_ceiling_elevation,
+        )
+        akmon_boq = AkmonCalculator.compute(stud_boq)
+        nut_boq = NutCalculator.compute(stud_boq)
+        washer_boq = WasherCalculator.compute(stud_boq)
+        hanger_fittings_counts = dict(akmon_boq.counts_by_spec)
+        for fitting_boq in (nut_boq, washer_boq):
+            for spec, count in fitting_boq.counts_by_spec.items():
+                hanger_fittings_counts[spec] = (
+                    hanger_fittings_counts.get(spec, 0) + count
+                )
         paint_boq = PaintCalculator.compute(
             pipe_boq=pipe_boq,
             paint_config=boq_config.paint,
         )
-        return BOQReport(pipes=pipe_boq, connections=connection_boq, paint=paint_boq)
+        return BOQReport(
+            pipes=pipe_boq,
+            connections=connection_boq,
+            hangers=hanger_boq,
+            studs=stud_boq,
+            hanger_fittings=HangerFittingBOQ(
+                counts_by_spec=hanger_fittings_counts,
+                unit=akmon_boq.unit,
+            ),
+            paint=paint_boq,
+        )
 
     def _emit_boq_report(self, report: BOQReport, config: BOQConfig) -> None:
         if config.console.enabled:

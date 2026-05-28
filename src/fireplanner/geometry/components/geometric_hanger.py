@@ -33,7 +33,7 @@ class GeometricHanger(GeometricComponent):
         match self.placement_context.view_type:
             case ViewType.PLAN:
                 return [
-                    Circle(center=Point(x=0, y=0), radius=rod_size),
+                    Circle(center=Point(x=0, y=0), radius=rod_size / 2),
                     Rectangle.from_bounds(
                         Point(x=-width / 2, y=-length / 2),
                         Point(x=width / 2, y=length / 2),

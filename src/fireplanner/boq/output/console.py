@@ -4,10 +4,16 @@ from fireplanner.boq.models import BOQReport
 from fireplanner.boq.output.formatting import (
     connection_headers,
     connection_sections,
+    hanger_fitting_headers,
+    hanger_fitting_rows,
+    hanger_headers,
+    hanger_rows,
     paint_headers,
     paint_rows,
     pipe_headers,
     pipe_rows,
+    stud_headers,
+    stud_rows,
 )
 
 
@@ -17,6 +23,12 @@ class BOQConsolePrinter:
         BOQConsolePrinter._print_pipes(report)
         print()
         BOQConsolePrinter._print_connections(report)
+        print()
+        BOQConsolePrinter._print_hangers(report)
+        print()
+        BOQConsolePrinter._print_studs(report)
+        print()
+        BOQConsolePrinter._print_hanger_fittings(report)
         print()
         BOQConsolePrinter._print_paint(report)
 
@@ -40,6 +52,26 @@ class BOQConsolePrinter:
     def _print_paint(report: BOQReport) -> None:
         print("PAINT")
         BOQConsolePrinter._print_table(paint_headers(), paint_rows(report))
+
+    @staticmethod
+    def _print_hangers(report: BOQReport) -> None:
+        print("HANGERS")
+        BOQConsolePrinter._print_table(hanger_headers(), hanger_rows(report))
+        print(f"Unit: {report.hangers.unit.value}")
+
+    @staticmethod
+    def _print_studs(report: BOQReport) -> None:
+        print("STUDS")
+        BOQConsolePrinter._print_table(stud_headers(), stud_rows(report))
+        print(f"Unit: {report.studs.unit.value}")
+
+    @staticmethod
+    def _print_hanger_fittings(report: BOQReport) -> None:
+        print("HANGER FITTINGS")
+        BOQConsolePrinter._print_table(
+            hanger_fitting_headers(), hanger_fitting_rows(report)
+        )
+        print(f"Unit: {report.hanger_fittings.unit.value}")
 
     @staticmethod
     def _print_table(headers: tuple[str, ...], rows: list[tuple[str, ...]]) -> None:

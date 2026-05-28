@@ -56,6 +56,7 @@ class BOQConsoleOutputConfig:
 class BOQConfig:
     excel: BOQExcelOutputConfig = BOQExcelOutputConfig()
     console: BOQConsoleOutputConfig = BOQConsoleOutputConfig()
+    full_ceiling_elevation: float = 0.0
     paint: PaintConfig = PaintConfig(
         thickness=140,
         scrap_precentage=0.4,
@@ -261,6 +262,7 @@ class Reader:
             console=BOQConsoleOutputConfig(
                 enabled=bool(console_data.get("enabled", False))
             ),
+            full_ceiling_elevation=float(boq_data.get("full_ceiling_elevation", 0.0)),
             paint=PaintConfig(
                 thickness=int(paint_data.get("thickness", 140)),
                 scrap_precentage=float(paint_data.get("scrap_precentage", 0.4)),

@@ -80,6 +80,41 @@ class ConnectionBOQ:
 
 
 @dataclass(frozen=True)
+class HangerSpec:
+    pipe_diameter: SteelDims
+
+
+@dataclass(frozen=True)
+class HangerBOQ:
+    counts_by_spec: dict[HangerSpec, int]
+    unit: Unit
+
+
+@dataclass(frozen=True)
+class StudSpec:
+    diameter: float
+
+
+@dataclass(frozen=True)
+class StudBOQ:
+    lengths_by_spec: dict[StudSpec, float]
+    counts_by_spec: dict[StudSpec, int]
+    unit: Unit
+
+
+@dataclass(frozen=True)
+class HangerFittingSpec:
+    item: str
+    diameter: float
+
+
+@dataclass(frozen=True)
+class HangerFittingBOQ:
+    counts_by_spec: dict[HangerFittingSpec, int]
+    unit: Unit
+
+
+@dataclass(frozen=True)
 class PaintBOQ:
     primer: float
     lacque: float
@@ -91,6 +126,9 @@ class PaintBOQ:
 class BOQReport:
     pipes: PipeBOQ
     connections: ConnectionBOQ
+    hangers: HangerBOQ
+    studs: StudBOQ
+    hanger_fittings: HangerFittingBOQ
     paint: PaintBOQ
 
 

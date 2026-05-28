@@ -115,6 +115,48 @@ def paint_rows(report: BOQReport) -> list[tuple[str, ...]]:
     ]
 
 
+def hanger_headers() -> tuple[str, ...]:
+    return ("Count", "Pipe Diameter")
+
+
+def hanger_rows(report: BOQReport) -> list[tuple[str, ...]]:
+    items = sorted(
+        report.hangers.counts_by_spec.items(),
+        key=lambda item: item[0].pipe_diameter.value,
+    )
+    return [(str(count), str(spec.pipe_diameter.value)) for spec, count in items]
+
+
+def stud_headers() -> tuple[str, ...]:
+    return ("Stud Diameter", "Count", "Total Length")
+
+
+def stud_rows(report: BOQReport) -> list[tuple[str, ...]]:
+    specs = sorted(report.studs.lengths_by_spec.keys(), key=lambda spec: spec.diameter)
+    rows: list[tuple[str, ...]] = []
+    for spec in specs:
+        rows.append(
+            (
+                f"{spec.diameter:.3f}",
+                str(report.studs.counts_by_spec.get(spec, 0)),
+                f"{report.studs.lengths_by_spec[spec]:.3f}",
+            )
+        )
+    return rows
+
+
+def hanger_fitting_headers() -> tuple[str, ...]:
+    return ("Item", "Diameter", "Count")
+
+
+def hanger_fitting_rows(report: BOQReport) -> list[tuple[str, ...]]:
+    items = sorted(
+        report.hanger_fittings.counts_by_spec.items(),
+        key=lambda item: (item[0].item, item[0].diameter),
+    )
+    return [(spec.item, f"{spec.diameter:.3f}", str(count)) for spec, count in items]
+
+
 def connection_sort_key(key: ConnectionKey) -> tuple[float, float, str, str, str, str]:
     if isinstance(key, TeeKey):
         return (

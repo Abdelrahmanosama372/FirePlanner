@@ -154,6 +154,7 @@ def test_reader_builds_boq_config_from_yaml_string():
         CONFIG_YAML
         + """
 boq:
+  full_ceiling_elevation: 5200
   output:
     excel:
       enabled: true
@@ -173,6 +174,7 @@ boq:
     assert config.excel.enabled is True
     assert config.excel.path == "test_boq.xlsx"
     assert config.console.enabled is False
+    assert config.full_ceiling_elevation == 5200
     assert config.paint.thickness == 180
     assert config.paint.scrap_precentage == 0.2
     assert config.paint.volume_solids_precentage == 0.8

@@ -10,10 +10,16 @@ from fireplanner.boq.models import BOQReport
 from fireplanner.boq.output.formatting import (
     connection_headers,
     connection_sections,
+    hanger_fitting_headers,
+    hanger_fitting_rows,
+    hanger_headers,
+    hanger_rows,
     paint_headers,
     paint_rows,
     pipe_headers,
     pipe_rows,
+    stud_headers,
+    stud_rows,
 )
 
 
@@ -39,6 +45,29 @@ class BOQExcelExporter:
             row = BOQExcelExporter._write_table(sheet, row, connection_headers(), rows)
             row += 1
         row = BOQExcelExporter._write_unit(sheet, row, report.connections.unit.value)
+        row += 1
+
+        row = BOQExcelExporter._write_section_title(sheet, row, "HANGERS")
+        row = BOQExcelExporter._write_table(
+            sheet, row, hanger_headers(), hanger_rows(report)
+        )
+        row = BOQExcelExporter._write_unit(sheet, row, report.hangers.unit.value)
+        row += 1
+
+        row = BOQExcelExporter._write_section_title(sheet, row, "STUDS")
+        row = BOQExcelExporter._write_table(
+            sheet, row, stud_headers(), stud_rows(report)
+        )
+        row = BOQExcelExporter._write_unit(sheet, row, report.studs.unit.value)
+        row += 1
+
+        row = BOQExcelExporter._write_section_title(sheet, row, "HANGER FITTINGS")
+        row = BOQExcelExporter._write_table(
+            sheet, row, hanger_fitting_headers(), hanger_fitting_rows(report)
+        )
+        row = BOQExcelExporter._write_unit(
+            sheet, row, report.hanger_fittings.unit.value
+        )
         row += 1
 
         row = BOQExcelExporter._write_section_title(sheet, row, "PAINT")
