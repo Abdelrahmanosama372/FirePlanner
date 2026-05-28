@@ -10,3 +10,4 @@ from fireplanner.geometry.primitives.transform import Transform2D
 class PlacementContext:
     transform: Transform2D
     view_type: ViewType
+    z_index: int = 1

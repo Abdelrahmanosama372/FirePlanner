@@ -34,11 +34,21 @@ class TeeElbowPlacementStrategy(PlacementStrategy):
         )
         elbow_view = ViewType.PLAN
 
+        run_elevation = placement_assembly.run_pipes[0].edge_info.elevation
+        branch_elevation = placement_assembly.branch_pipe.edge_info.elevation
+
+        tee_z_index = 1
+        elbow_z_index = 1
+        if run_elevation > branch_elevation:
+            tee_z_index = 2
+        elif branch_elevation > run_elevation:
+            elbow_z_index = 2
+
         contexts[id(tee)] = PlacementContext(
-            transform=tee_transform, view_type=tee_view
+            transform=tee_transform, view_type=tee_view, z_index=tee_z_index
         )
         contexts[id(elbow)] = PlacementContext(
-            transform=elbow_transform, view_type=elbow_view
+            transform=elbow_transform, view_type=elbow_view, z_index=elbow_z_index
         )
 
         return contexts
