@@ -14,7 +14,7 @@ from fireplanner.networks.placement.strategy import (
     SingleElbowPlacementStrategy,
     SingleReducerPlacementStrategy,
     SingleTeePlacementStrategy,
-    TeeElbowRisePlacementStrategy,
+    TeeElbowPlacementStrategy,
     TeeReducerElbowPlacementStrategy,
     TeeReducerPlacementStrategy,
 )
@@ -57,7 +57,7 @@ class PlacementResolver:
             isinstance(component, (GeometricTee, GeometricWeldedBranch))
             for component in placement_assembly.components.items
         ):
-            return TeeElbowRisePlacementStrategy(placement_assembly)
+            return TeeElbowPlacementStrategy(placement_assembly)
 
         raise ValueError(
             "No placement strategy found for provided geometric components"

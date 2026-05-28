@@ -33,7 +33,7 @@ from fireplanner.networks.placement.strategy import (
     SingleElbowPlacementStrategy,
     SingleReducerPlacementStrategy,
     SingleTeePlacementStrategy,
-    TeeElbowRisePlacementStrategy,
+    TeeElbowPlacementStrategy,
     TeeReducerPlacementStrategy,
 )
 
@@ -642,7 +642,7 @@ def test_tee_with_elbow_placement(
     strategy = resolver.resolve(
         _build_placement_assembly(junction_assembly, geometric_components)
     )
-    assert isinstance(strategy, TeeElbowRisePlacementStrategy)
+    assert isinstance(strategy, TeeElbowPlacementStrategy)
 
     for component, expected_context in zip(geometric_components, expected_contexts):
         context = strategy.get_placement_context(component)
