@@ -291,9 +291,12 @@ def test_geometric_component_local_occupancy_regions_returns_rectangles(
     request, component_fixture_name: str
 ):
     component = request.getfixturevalue(component_fixture_name)
+    view_type = ViewType.ELEVATION
+    if isinstance(component, GeometricHanger):
+        view_type = ViewType.PLAN
     component.placement_context = PlacementContext(
         transform=Transform2D(origin=Point(x=0, y=0), rotation=0),
-        view_type=ViewType.ELEVATION,
+        view_type=view_type,
     )
     if isinstance(component, GeometricPipe):
         component.start = Point(x=0, y=0)

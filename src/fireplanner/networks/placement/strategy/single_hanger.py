@@ -30,6 +30,6 @@ class HangerPlacementStrategy(PlacementStrategy):
             hanger_origin = pipe_line.point_from_start(offset_from_start)
             contexts[id(hanger)] = PlacementContext(
                 transform=Transform2D(origin=hanger_origin, rotation=direction),
-                view_type=ViewType.ELEVATION,
+                view_type=ViewType.PLAN,
             )
         return contexts

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from math import atan2, sqrt
 from typing import Any
 
-from fireplanner.geometry.primitives import Arc, Circle, Line
+from fireplanner.geometry.primitives import Arc, Circle, Line, Point, Rectangle
 from fireplanner.geometry.primitives.line import LineType
 from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks.geometry_network import GeometryNetwork
@@ -150,6 +150,34 @@ class Writer:
             )
             self._apply_layer(entity, primitive)
             return [entity]
+
+        if isinstance(primitive, Rectangle):
+            p1 = primitive.point1
+            p2 = primitive.point2
+            x_min = min(p1.x, p2.x)
+            x_max = max(p1.x, p2.x)
+            y_min = min(p1.y, p2.y)
+            y_max = max(p1.y, p2.y)
+            corners = [
+                Point(x=x_min, y=y_min),
+                Point(x=x_max, y=y_min),
+                Point(x=x_max, y=y_max),
+                Point(x=x_min, y=y_max),
+            ]
+            entities: list[Any] = []
+            for start, end in zip(corners, corners[1:] + corners[:1]):
+                rect_line = GeometryUnitConverter.line_to_unit(
+                    Line(start=start, end=end, line_type=primitive.line_type),
+                    from_unit=LengthUnit.MILLIMETER,
+                    to_unit=self._drawing_unit,
+                )
+                entity = self._acad.model.AddLine(
+                    APoint(rect_line.start.to_list3d()),
+                    APoint(rect_line.end.to_list3d()),
+                )
+                self._apply_layer(entity, rect_line)
+                entities.append(entity)
+            return entities
 
         return []
 

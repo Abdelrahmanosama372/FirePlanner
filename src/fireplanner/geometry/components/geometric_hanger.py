@@ -4,12 +4,14 @@ from typing import override
 
 from fireplanner.firecomponent import Hanger
 from fireplanner.geometry.primitives import (
+    Circle,
     Line,
     LineType,
     Point,
     Primitive2D,
     Rectangle,
 )
+from fireplanner.standards.hanger import hanger_dimensions
 
 from .base import ViewType
 from .geometric_component import GeometricComponent
@@ -22,17 +24,30 @@ class GeometricHanger(GeometricComponent):
 
     @override
     def _local_primitives_2d(self) -> list[Primitive2D]:
-        # simple hanger symbol around local origin
-        # will be updated later
-        width = 60.0
-        stem = 80.0
+        hanger_props = hanger_dimensions[self._diameter]
+        rod_size = hanger_props.rod_size
+        width = hanger_props.width
+        length = hanger_props.length
+        cb_length = hanger_props.cross_bolt_length
+        cb_raduis = hanger_props.cross_bolt_diameter / 2
         match self.placement_context.view_type:
-            case ViewType.ELEVATION | ViewType.PLAN:
+            case ViewType.PLAN:
                 return [
-                    Line(start=Point(x=-width / 2, y=0), end=Point(x=width / 2, y=0)),
-                    Line(start=Point(x=0, y=0), end=Point(x=0, y=stem)),
+                    Circle(center=Point(x=0, y=0), radius=rod_size),
+                    Rectangle(
+                        Point(x=-width / 2, y=-length / 2),
+                        Point(x=width / 2, y=length / 2),
+                    ),
+                    Rectangle(
+                        Point(x=-cb_raduis, y=length / 2),
+                        Point(x=cb_raduis, y=cb_length / 2),
+                    ),
+                    Rectangle(
+                        Point(x=-cb_raduis, y=-length / 2),
+                        Point(x=cb_raduis, y=-cb_length / 2),
+                    ),
                 ]
-            case ViewType.SIDE:
+            case ViewType.ELEVATION | ViewType.SIDE:
                 raise NotImplementedError
 
     @override
@@ -51,12 +66,20 @@ class GeometricHanger(GeometricComponent):
 
     @override
     def local_occupancy_regions(self) -> list[Rectangle]:
-        # simple occupany region to be updated later
-        width = 60.0
-        stem = 80.0
-        return [
-            Rectangle(
-                point1=Point(x=-width / 2, y=0),
-                point2=Point(x=width / 2, y=stem),
-            )
-        ]
+        hanger_props = hanger_dimensions[self._diameter]
+        width = hanger_props.width
+        cb_length = hanger_props.cross_bolt_length
+
+        regions = []
+        match self.placement_context.view_type:
+            case ViewType.PLAN:
+                regions = [
+                    Rectangle(
+                        Point(x=-width / 2, y=-cb_length / 2),
+                        Point(x=width / 2, y=cb_length / 2),
+                    ),
+                ]
+            case ViewType.ELEVATION | ViewType.SIDE:
+                raise NotImplementedError
+
+        return regions
