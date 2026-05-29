@@ -1,8 +1,20 @@
 from dataclasses import dataclass
-from math import radians
+from math import isclose, radians
 
+from fireplanner.firecomponent import (
+    Elbow,
+    SteelConnection,
+    SteelDims,
+    SteelMaterial,
+    SteelSchedule,
+    SteelSpecs,
+    Tee,
+)
+from fireplanner.geometry.components import GeometricElbow, GeometricTee
 from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives import (
+    Arc,
+    Circle,
     Line,
     LineType,
     Point,
@@ -169,3 +181,96 @@ def test_drafting_occlusion_resolver_resolves_each_assembly_independently():
         for drawable in scene.drawables
     ]
     assert hidden_counts.count(1) == 2
+
+
+def _build_rotated_tee_elbow_scene(tee_z_index: int, elbow_z_index: int):
+    tee = GeometricTee(
+        Tee(
+            run_diameter=SteelDims.DIM_1_INCHES,
+            branch_diameter=SteelDims.DIM_1_INCHES,
+            material=SteelMaterial.ERW,
+            schedule=SteelSchedule.SCD40,
+            specs=SteelSpecs.ASTM,
+            connection_type=SteelConnection.Grooved,
+        )
+    )
+    elbow = GeometricElbow(
+        Elbow(
+            diameter=SteelDims.DIM_1_INCHES,
+            angle=90.0,
+            material=SteelMaterial.ERW,
+            schedule=SteelSchedule.SCD40,
+            specs=SteelSpecs.ASTM,
+            connection_type=SteelConnection.Grooved,
+        )
+    )
+
+    rotated_transform = Transform2D(origin=Point(x=0, y=0), rotation=radians(45))
+    tee.placement_context = PlacementContext(
+        transform=rotated_transform,
+        view_type=ViewType.PLAN,
+        z_index=tee_z_index,
+    )
+    elbow.placement_context = PlacementContext(
+        transform=rotated_transform,
+        view_type=ViewType.PLAN,
+        z_index=elbow_z_index,
+    )
+
+    return DraftingOcclusionResolver().resolve(
+        ResolvedAssemblies(
+            assemblies=[
+                ResolvedAssembly(
+                    components=[
+                        ResolvedComponent(
+                            component=tee, placement_context=tee.placement_context
+                        ),
+                        ResolvedComponent(
+                            component=elbow,
+                            placement_context=elbow.placement_context,
+                        ),
+                    ]
+                )
+            ]
+        )
+    )
+
+
+def test_drafting_occlusion_rotated_tee_above_elbow():
+    scene = _build_rotated_tee_elbow_scene(tee_z_index=2, elbow_z_index=1)
+    assert len(scene.drawables) == 2
+
+    tee_drawable, elbow_drawable = scene.drawables
+    tee_hidden = [p for p in tee_drawable.primitives if p.line_type == LineType.Hidden]
+    assert len(tee_hidden) == 0
+
+    elbow_hidden = [
+        p for p in elbow_drawable.primitives if p.line_type == LineType.Hidden
+    ]
+    elbow_visible = [
+        p for p in elbow_drawable.primitives if p.line_type != LineType.Hidden
+    ]
+    assert len(elbow_hidden) == 5
+    assert len(elbow_visible) == 4
+    assert len([p for p in elbow_hidden if isinstance(p, Circle)]) == 1
+    assert len([p for p in elbow_hidden if isinstance(p, Line)]) == 4
+
+
+def test_drafting_occlusion_rotated_elbow_above_tee():
+    scene = _build_rotated_tee_elbow_scene(tee_z_index=1, elbow_z_index=2)
+    assert len(scene.drawables) == 2
+
+    tee_drawable, elbow_drawable = scene.drawables
+    tee_hidden = [p for p in tee_drawable.primitives if p.line_type == LineType.Hidden]
+    tee_visible = [p for p in tee_drawable.primitives if p.line_type != LineType.Hidden]
+    assert len(tee_hidden) == 4
+    assert len(tee_visible) == 8
+
+    elbow_hidden = [
+        p for p in elbow_drawable.primitives if p.line_type == LineType.Hidden
+    ]
+    elbow_visible = [
+        p for p in elbow_drawable.primitives if p.line_type != LineType.Hidden
+    ]
+    assert len(elbow_hidden) == 0
+    assert len(elbow_visible) == 6

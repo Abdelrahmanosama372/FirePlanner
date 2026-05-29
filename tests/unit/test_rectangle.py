@@ -1,3 +1,5 @@
+from math import isclose
+
 from fireplanner.geometry.primitives import LineType, Point, PrimitiveStyle, Rectangle
 from fireplanner.geometry.primitives.transform import Transform2D
 
@@ -94,3 +96,30 @@ def test_rectangle_intersection_handles_unordered_points():
     assert intersection is not None
     assert intersection.point1 == Point(x=6, y=6)
     assert intersection.point3 == Point(x=8, y=8)
+
+
+def test_tee_and_elbow_plan_occupancy_intersection_with_rotation():
+    tee_region = Rectangle(
+        point1=Point(x=-15.061374439273465, y=-38.67874093090415),
+        point2=Point(x=38.67874093090415, y=15.06137443927346),
+        point3=Point(x=15.061374439273465, y=38.67874093090415),
+        point4=Point(x=-38.67874093090415, y=-15.06137443927346),
+    )
+    elbow_region = Rectangle(
+        point1=Point(x=-1.7763568394002505e-15, y=-23.617366491630683),
+        point2=Point(x=23.617366491630683, y=-1.7763568394002505e-15),
+        point3=Point(x=-15.06137443927346, y=38.67874093090415),
+        point4=Point(x=-38.67874093090415, y=15.061374439273465),
+    )
+
+    intersection = tee_region.intersection(elbow_region)
+
+    assert intersection is not None
+    assert isclose(intersection.point1.x, 3.552713678800501e-15, rel_tol=1e-9)
+    assert isclose(intersection.point1.y, -23.617366491630683, rel_tol=1e-9)
+    assert isclose(intersection.point2.x, 23.617366491630683, rel_tol=1e-9)
+    assert isclose(intersection.point2.y, -7.105427357601002e-15, rel_tol=1e-9)
+    assert isclose(intersection.point3.x, 0.0, rel_tol=1e-9)
+    assert isclose(intersection.point3.y, 23.617366491630683, rel_tol=1e-9)
+    assert isclose(intersection.point4.x, -23.617366491630687, rel_tol=1e-9)
+    assert isclose(intersection.point4.y, 0.0, rel_tol=1e-9)

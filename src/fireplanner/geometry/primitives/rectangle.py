@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import atan2
 from typing import Any, override
 
 from .base import Primitive2D, PrimitiveStyle
@@ -82,22 +83,95 @@ class Rectangle(Primitive2D):
         return min(xs), max(xs), min(ys), max(ys)
 
     def intersection(self, other: "Rectangle") -> "Rectangle | None":
-        self_min_x, self_max_x, self_min_y, self_max_y = self.bounds()
-        other_min_x, other_max_x, other_min_y, other_max_y = other.bounds()
+        epsilon = 1e-6
 
-        intersection_min_x = max(self_min_x, other_min_x)
-        intersection_max_x = min(self_max_x, other_max_x)
-        intersection_min_y = max(self_min_y, other_min_y)
-        intersection_max_y = min(self_max_y, other_max_y)
+        def cross(a: Point, b: Point, c: Point) -> float:
+            return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
 
-        if intersection_min_x > intersection_max_x:
+        def point_on_left_of_edge(
+            point: Point, edge_start: Point, edge_end: Point
+        ) -> bool:
+            return cross(edge_start, edge_end, point) >= -epsilon
+
+        def line_intersection(
+            p1: Point, p2: Point, q1: Point, q2: Point
+        ) -> Point | None:
+            r_x = p2.x - p1.x
+            r_y = p2.y - p1.y
+            s_x = q2.x - q1.x
+            s_y = q2.y - q1.y
+            denominator = r_x * s_y - r_y * s_x
+            if abs(denominator) <= epsilon:
+                return None
+            t = ((q1.x - p1.x) * s_y - (q1.y - p1.y) * s_x) / denominator
+            return Point(x=p1.x + t * r_x, y=p1.y + t * r_y)
+
+        def deduplicate(points: list[Point]) -> list[Point]:
+            unique: list[Point] = []
+            for point in points:
+                if any(existing.distance(point) <= epsilon for existing in unique):
+                    continue
+                unique.append(point)
+            return unique
+
+        def sort_ccw(points: list[Point]) -> list[Point]:
+            center_x = sum(point.x for point in points) / len(points)
+            center_y = sum(point.y for point in points) / len(points)
+            return sorted(
+                points,
+                key=lambda point: atan2(point.y - center_y, point.x - center_x),
+            )
+
+        # Sutherland-Hodgman clipping: clip self by other's edges.
+        subject = [self.point1, self.point2, self.point3, self.point4]
+        clipper = [other.point1, other.point2, other.point3, other.point4]
+
+        output = subject
+        for edge_start, edge_end in zip(clipper, clipper[1:] + clipper[:1]):
+            if not output:
+                return None
+            input_points = output
+            output = []
+            previous = input_points[-1]
+            for current in input_points:
+                current_inside = point_on_left_of_edge(current, edge_start, edge_end)
+                previous_inside = point_on_left_of_edge(previous, edge_start, edge_end)
+                if current_inside:
+                    if not previous_inside:
+                        intersection_point = line_intersection(
+                            previous, current, edge_start, edge_end
+                        )
+                        if intersection_point is not None:
+                            output.append(intersection_point)
+                    output.append(current)
+                elif previous_inside:
+                    intersection_point = line_intersection(
+                        previous, current, edge_start, edge_end
+                    )
+                    if intersection_point is not None:
+                        output.append(intersection_point)
+                previous = current
+
+        output = deduplicate(output)
+        if len(output) < 3:
             return None
-        if intersection_min_y > intersection_max_y:
-            return None
 
+        output = sort_ccw(output)
+        if len(output) == 4:
+            return Rectangle(
+                point1=output[0],
+                point2=output[1],
+                point3=output[2],
+                point4=output[3],
+                line_type=self.line_type,
+            )
+
+        # Fallback for degenerate/non-rectangular overlap.
+        x_values = [point.x for point in output]
+        y_values = [point.y for point in output]
         return Rectangle.from_bounds(
-            point1=Point(x=intersection_min_x, y=intersection_min_y),
-            point2=Point(x=intersection_max_x, y=intersection_max_y),
+            point1=Point(x=min(x_values), y=min(y_values)),
+            point2=Point(x=max(x_values), y=max(y_values)),
             line_type=self.line_type,
         )
 
