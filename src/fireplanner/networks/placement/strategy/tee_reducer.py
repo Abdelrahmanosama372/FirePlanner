@@ -13,6 +13,7 @@ from fireplanner.networks.placement.assembly import (
     PlacementAssembly,
 )
 from fireplanner.networks.placement.context import PlacementContext
+from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy.base import PlacementStrategy
 from fireplanner.networks.placement.strategy.single_reducer import (
     SingleReducerPlacementStrategy,
@@ -26,6 +27,7 @@ class TeeReducerPlacementStrategy(PlacementStrategy):
     def _build(
         self,
         placement_assembly: PlacementAssembly,
+        placement_rules: PlacementRules,
     ) -> dict[int, PlacementContext]:
         tee_like = [
             *placement_assembly.components.tees(),
@@ -36,13 +38,16 @@ class TeeReducerPlacementStrategy(PlacementStrategy):
 
         tee = tee_like[0]
         contexts = dict(
-            SingleTeePlacementStrategy(placement_assembly)._build(placement_assembly)
+            SingleTeePlacementStrategy(
+                placement_assembly,
+                placement_rules,
+            )._build(placement_assembly, placement_rules)
         )
 
         if isinstance(tee, GeometricWeldedBranch):
-            reducers_offset = 100
+            reducers_offset = placement_rules.reducer_offset
         else:
-            reducers_offset = tee.run_center_to_end + 100
+            reducers_offset = tee.run_center_to_end + placement_rules.reducer_offset
 
         reducers = placement_assembly.components.reducers()
 
@@ -73,8 +78,17 @@ class TeeReducerPlacementStrategy(PlacementStrategy):
             contexts.update(
                 SingleReducerPlacementStrategy(
                     reducer_assembly,
-                    reducer_offset=reducers_offset,
-                )._build(reducer_assembly)
+                    replace(
+                        placement_rules,
+                        reducer_offset=reducers_offset,
+                    ),
+                )._build(
+                    reducer_assembly,
+                    replace(
+                        placement_rules,
+                        reducer_offset=reducers_offset,
+                    ),
+                )
             )
 
         return contexts

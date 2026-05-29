@@ -7,20 +7,16 @@ from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.context import PlacementContext
+from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy.base import PlacementStrategy
 from fireplanner.networks.utils import wrap_to_pi
 
 
 class SingleElbowPlacementStrategy(PlacementStrategy):
-    def __init__(
-        self,
-        placement_assembly: PlacementAssembly,
-    ) -> None:
-        super().__init__(placement_assembly)
-
     def _build(
         self,
         placement_assembly: PlacementAssembly,
+        placement_rules: PlacementRules,
     ) -> dict[int, PlacementContext]:
 
         # currently, it handles only 90 degrees elbows

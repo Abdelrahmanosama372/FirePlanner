@@ -8,21 +8,15 @@ from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.context import PlacementContext
+from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy.base import PlacementStrategy
 
 
 class SingleReducerPlacementStrategy(PlacementStrategy):
-    def __init__(
-        self,
-        placement_assembly: PlacementAssembly,
-        reducer_offset: float = 250,
-    ) -> None:
-        self._reducer_offset = reducer_offset
-        super().__init__(placement_assembly)
-
     def _build(
         self,
         placement_assembly: PlacementAssembly,
+        placement_rules: PlacementRules,
     ) -> dict[int, PlacementContext]:
         junction_info = placement_assembly.junction_info
         edge_id_line_map = {
@@ -62,7 +56,7 @@ class SingleReducerPlacementStrategy(PlacementStrategy):
             small_edge_line.swap_end_points()
 
         transform = Transform2D(
-            origin=small_edge_line.point_from_end(self._reducer_offset),
+            origin=small_edge_line.point_from_end(placement_rules.reducer_offset),
             rotation=small_edge_line.direction(),
         )
         return {

@@ -13,6 +13,7 @@ from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction_info import JunctionInfo, ThreeWayJunctionInfo
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.context import PlacementContext
+from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy.base import PlacementStrategy
 from fireplanner.networks.utils import find_collinear_edge_ids, wrap_to_pi
 
@@ -21,6 +22,7 @@ class SingleTeePlacementStrategy(PlacementStrategy):
     def _build(
         self,
         placement_assembly: PlacementAssembly,
+        placement_rules: PlacementRules,
     ) -> dict[int, PlacementContext]:
         junction_info: JunctionInfo = placement_assembly.junction_info
         edge_id_line_map: dict[int, Line] = {

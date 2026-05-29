@@ -301,7 +301,7 @@ def test_single_tee_strategy_matches_legacy_cases(
                 1: Line(start=Point(x=-100, y=0), end=Point(x=0, y=0), id=1),
                 2: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=2),
             },
-            Transform2D(Point(x=-250.0, y=0.0), radians(0)),
+            Transform2D(Point(x=-150.0, y=0.0), radians(0)),
         ),
         (
             # reversed main lines
@@ -309,7 +309,7 @@ def test_single_tee_strategy_matches_legacy_cases(
                 1: Line(end=Point(x=-100, y=0), start=Point(x=0, y=0), id=1),
                 2: Line(end=Point(x=0, y=0), start=Point(x=100, y=0), id=2),
             },
-            Transform2D(Point(x=-250.0, y=0.0), radians(0)),
+            Transform2D(Point(x=-150.0, y=0.0), radians(0)),
         ),
         (
             # reversed lines order by reversing ids
@@ -317,7 +317,7 @@ def test_single_tee_strategy_matches_legacy_cases(
                 2: Line(start=Point(x=-100, y=0), end=Point(x=0, y=0), id=1),
                 1: Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=2),
             },
-            Transform2D(Point(x=250.0, y=0.0), radians(180)),
+            Transform2D(Point(x=150.0, y=0.0), radians(180)),
         ),
         (
             # 2nd quadrant main line
@@ -326,7 +326,7 @@ def test_single_tee_strategy_matches_legacy_cases(
                 2: Line(start=Point(x=0, y=0), end=Point(x=100, y=-100), id=2),
             },
             Transform2D(
-                Point(x=-176.7766952966369, y=176.77669529663686), radians(-45)
+                Point(x=-106.06601717798213, y=106.06601717798212), radians(-45)
             ),
         ),
         (
@@ -336,7 +336,7 @@ def test_single_tee_strategy_matches_legacy_cases(
                 1: Line(start=Point(x=0, y=0), end=Point(x=100, y=-100), id=2),
             },
             Transform2D(
-                Point(x=176.77669529663686, y=-176.7766952966369), radians(135)
+                Point(x=106.06601717798212, y=-106.06601717798213), radians(135)
             ),
         ),
     ],
@@ -473,7 +473,7 @@ def test_single_elbow_strategy_matches_legacy_cases(
             },
             [
                 Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=138, y=0), radians(180)),
+                Transform2D(Point(x=188, y=0), radians(180)),
             ],
         ),
         (
@@ -490,7 +490,7 @@ def test_single_elbow_strategy_matches_legacy_cases(
             },
             [
                 Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=-138, y=0), radians(0)),
+                Transform2D(Point(x=-188, y=0), radians(0)),
             ],
         ),
         (
@@ -511,8 +511,8 @@ def test_single_elbow_strategy_matches_legacy_cases(
             },
             [
                 Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=138, y=0), radians(180)),
-                Transform2D(Point(x=-138, y=0), radians(0)),
+                Transform2D(Point(x=188, y=0), radians(180)),
+                Transform2D(Point(x=-188, y=0), radians(0)),
             ],
         ),
         (
@@ -533,8 +533,8 @@ def test_single_elbow_strategy_matches_legacy_cases(
             },
             [
                 Transform2D(Point(x=0, y=0), radians(0)),
-                Transform2D(Point(x=-138, y=0), radians(0)),
-                Transform2D(Point(x=138, y=0), radians(180)),
+                Transform2D(Point(x=-188, y=0), radians(0)),
+                Transform2D(Point(x=188, y=0), radians(180)),
             ],
         ),
     ],

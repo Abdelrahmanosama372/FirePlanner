@@ -120,6 +120,7 @@ class Reader:
     def read_geometry_network_config(self) -> GeometryNetworkConfig:
         geometry_data = self._mapping(self._raw_data.get("geometry"))
         welded_connection_data = self._mapping(geometry_data.get("welded_connection"))
+        placement_data = self._mapping(geometry_data.get("placement"))
         min_main_pipe_diameter = SteelDims(
             float(welded_connection_data.get("min_main_pipe_diameter", "2"))
         )
@@ -128,6 +129,7 @@ class Reader:
                 welded_connection_data.get("enabled", False)
             ),
             welded_connection_min_main_pipe_diameter=min_main_pipe_diameter,
+            reducer_offset=float(placement_data.get("reducer_offset", 150.0)),
         )
         logger.info(
             "Geometry network config parsed (welded_connection=%s, welded_min_main=%s).",

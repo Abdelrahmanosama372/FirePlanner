@@ -6,6 +6,7 @@ from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.context import PlacementContext
+from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy.base import PlacementStrategy
 
 
@@ -13,6 +14,7 @@ class TeeElbowPlacementStrategy(PlacementStrategy):
     def _build(
         self,
         placement_assembly: PlacementAssembly,
+        placement_rules: PlacementRules,
     ) -> dict[int, PlacementContext]:
         junction_info = placement_assembly.junction_info
         elbow = placement_assembly.components.elbows()[0]

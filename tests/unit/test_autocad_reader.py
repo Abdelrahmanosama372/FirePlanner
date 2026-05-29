@@ -51,6 +51,8 @@ autocad:
             line_weight: 0.05
 
 geometry:
+  placement:
+    reducer_offset: 175
   welded_connection:
     enabled: true
     min_main_pipe_diameter: "2"
@@ -133,6 +135,7 @@ def test_reader_builds_geometry_network_config_from_yaml_string():
 
     assert config.welded_connection_enabled is True
     assert config.welded_connection_min_main_pipe_diameter == SteelDims.DIM_2_INCHES
+    assert config.reducer_offset == 175
 
 
 def test_reader_builds_output_layer_config_from_yaml_string():

@@ -21,6 +21,8 @@ processing:
   compute_pipe_dimensions: true
 
 geometry:
+  placement:
+    reducer_offset: 150
   welded_connection:
     enabled: true
     min_main_pipe_diameter: "2"
@@ -56,6 +58,7 @@ autocad:
             color: "gray"
             line_weight: 0.05
 boq:
+  full_ceiling_elevation: 4500
   output:
     excel:
       enabled: true

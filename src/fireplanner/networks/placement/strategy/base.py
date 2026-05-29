@@ -5,16 +5,22 @@ from abc import ABC, abstractmethod
 from fireplanner.geometry.components import GeometricComponent
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.context import PlacementContext
+from fireplanner.networks.placement.rules import PlacementRules
 
 
 class PlacementStrategy(ABC):
-    def __init__(self, placement_assembly: PlacementAssembly) -> None:
-        self._contexts = self._build(placement_assembly)
+    def __init__(
+        self,
+        placement_assembly: PlacementAssembly,
+        placement_rules: PlacementRules,
+    ) -> None:
+        self._contexts = self._build(placement_assembly, placement_rules)
 
     @abstractmethod
     def _build(
         self,
         placement_assembly: PlacementAssembly,
+        placement_rules: PlacementRules,
     ) -> dict[int, PlacementContext]:
         raise NotImplementedError
 

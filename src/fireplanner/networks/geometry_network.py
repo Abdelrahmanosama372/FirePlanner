@@ -19,6 +19,7 @@ from fireplanner.networks.geometry_mapper import GeometryMapper, GeometryMapperC
 from fireplanner.networks.model_network import ModelNetwork
 from fireplanner.networks.placement.assembly_builder import PlacementAssemblyBuilder
 from fireplanner.networks.placement.context import PlacementContext
+from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement_resolver import PlacementResolver
 from fireplanner.resolvers import (
     ResolvedAssemblies,
@@ -31,6 +32,7 @@ from fireplanner.resolvers import (
 class GeometryNetworkConfig:
     welded_connection_enabled: bool = False
     welded_connection_min_main_pipe_diameter: SteelDims = SteelDims.DIM_2_INCHES
+    reducer_offset: float = 150.0
 
 
 class GeometryNetwork:
@@ -119,10 +121,14 @@ class GeometryNetwork:
             transformed_geometric_components: list[GeometricComponent] = []
             if geometric_components:
                 placement_assembly = self._placement_assembly_builder.build(
-                    assembly, geometric_components
+                    assembly,
+                    geometric_components,
                 )
                 strategy = self._placement_resolver.resolve(
                     placement_assembly=placement_assembly,
+                    placement_rules=PlacementRules(
+                        reducer_offset=self._config.reducer_offset
+                    ),
                 )
                 for component in geometric_components:
                     context = strategy.get_placement_context(component)
@@ -250,11 +256,15 @@ class GeometryNetwork:
                 hangers_for_pipe.append(geometric_hanger)
             placement_assembly = (
                 self._placement_assembly_builder.build_from_hanger_assembly(
-                    hanger_assembly,
-                    hangers_for_pipe,
+                    hanger_assembly, hangers_for_pipe
                 )
             )
-            strategy = self._placement_resolver.resolve(placement_assembly)
+            strategy = self._placement_resolver.resolve(
+                placement_assembly,
+                placement_rules=PlacementRules(
+                    reducer_offset=self._config.reducer_offset
+                ),
+            )
             for geometric_hanger in hangers_for_pipe:
                 geometric_hanger.placement_context = strategy.get_placement_context(
                     geometric_hanger

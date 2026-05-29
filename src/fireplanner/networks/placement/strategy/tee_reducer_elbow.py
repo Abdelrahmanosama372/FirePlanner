@@ -12,6 +12,7 @@ from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.context import PlacementContext
+from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy.base import PlacementStrategy
 from fireplanner.networks.placement.strategy.tee_reducer import (
     TeeReducerPlacementStrategy,
@@ -22,6 +23,7 @@ class TeeReducerElbowPlacementStrategy(PlacementStrategy):
     def _build(
         self,
         placement_assembly: PlacementAssembly,
+        placement_rules: PlacementRules,
     ) -> dict[int, PlacementContext]:
         junction_info = placement_assembly.junction_info
         junction_origin = junction_info.origin
@@ -32,8 +34,9 @@ class TeeReducerElbowPlacementStrategy(PlacementStrategy):
         tee_reducers.extend(placement_assembly.components.tees())
 
         contexts: dict[int, PlacementContext] = TeeReducerPlacementStrategy(
-            placement_assembly
-        )._build(placement_assembly)
+            placement_assembly,
+            placement_rules,
+        )._build(placement_assembly, placement_rules)
 
         tee = next(
             comp

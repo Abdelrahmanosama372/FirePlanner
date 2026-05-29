@@ -555,19 +555,19 @@ def test_geometry_network_construction():
     } == {
         1: [
             ("GeometricTee", mm(27.094), mm(19.2562), pi / 2.0),
-            ("GeometricReducer", mm(27.094), mm(19.4322), -pi / 2.0),
+            ("GeometricReducer", mm(27.094), 19482.2, -pi / 2.0),
         ],
         2: [
             ("GeometricTee", mm(27.094), mm(22.1564), pi / 2.0),
-            ("GeometricReducer", mm(27.094), 22320.4, -pi / 2.0),
+            ("GeometricReducer", mm(27.094), 22370.4, -pi / 2.0),
         ],
         3: [("GeometricElbow", 27037.0, 24999.4, 2 * pi)],
-        5: [("GeometricReducer", 23588.6, mm(25.0564), 0.0)],
-        6: [("GeometricReducer", 20658.6, mm(25.0564), 0.0)],
-        9: [("GeometricReducer", 23588.6, mm(22.1564), 0.0)],
-        10: [("GeometricReducer", 20658.6, mm(22.1564), 0.0)],
-        13: [("GeometricReducer", 23588.6, mm(19.2562), 0.0)],
-        14: [("GeometricReducer", 20658.6, mm(19.2562), 0.0)],
+        5: [("GeometricReducer", 23688.6, mm(25.0564), 0.0)],
+        6: [("GeometricReducer", 20758.6, mm(25.0564), 0.0)],
+        9: [("GeometricReducer", 23688.6, mm(22.1564), 0.0)],
+        10: [("GeometricReducer", 20758.6, mm(22.1564), 0.0)],
+        13: [("GeometricReducer", 23688.6, mm(19.2562), 0.0)],
+        14: [("GeometricReducer", 20758.6, mm(19.2562), 0.0)],
     }
     assert {
         edge_id: [
@@ -586,12 +586,12 @@ def test_geometry_network_construction():
             ("GeometricPipe", mm(27.094), mm(18.819), mm(27.094), mm(19.1802)),
         ],
         2: [
-            ("GeometricPipe", mm(27.094), mm(19.3322), mm(27.094), mm(19.38775)),
-            ("GeometricPipe", mm(27.094), 19476.65, mm(27.094), mm(22.0924)),
+            ("GeometricPipe", mm(27.094), mm(19.3322), mm(27.094), 19437.75),
+            ("GeometricPipe", mm(27.094), 19526.65, mm(27.094), mm(22.0924)),
         ],
         3: [
-            ("GeometricPipe", mm(27.094), 22220.4, 27094.0, 22282.300000000003),
-            ("GeometricPipe", mm(27.094), mm(22.3585), mm(27.094), mm(24.9994)),
+            ("GeometricPipe", mm(27.094), 22220.4, 27094.0, 22332.300000000003),
+            ("GeometricPipe", mm(27.094), 22408.5, mm(27.094), mm(24.9994)),
         ],
         4: [
             ("GeometricPipe", mm(27.027), mm(19.2562), mm(26.7686), mm(19.2562)),
@@ -600,12 +600,18 @@ def test_geometry_network_construction():
             ("GeometricPipe", mm(26.7686), mm(19.2562), mm(23.8386), mm(19.2562)),
         ],
         6: [
-            ("GeometricPipe", mm(23.8386), mm(19.2562), mm(23.62035), mm(19.2562)),
-            ("GeometricPipe", 23556.85, mm(19.2562), mm(20.9086), mm(19.2562)),
+            ("GeometricPipe", mm(23.8386), mm(19.2562), mm(23.72035), mm(19.2562)),
+            ("GeometricPipe", 23656.85, mm(19.2562), mm(20.9086), mm(19.2562)),
         ],
         7: [
-            ("GeometricPipe", mm(20.9086), mm(19.2562), mm(20.684), mm(19.2562)),
-            ("GeometricPipe", mm(20.6332), mm(19.2562), mm(17.9786), mm(19.2562)),
+            ("GeometricPipe", mm(20.9086), mm(19.2562), 20784.0, mm(19.2562)),
+            (
+                "GeometricPipe",
+                20733.199999999997,
+                mm(19.2562),
+                mm(17.9786),
+                mm(19.2562),
+            ),
         ],
         8: [
             ("GeometricPipe", mm(17.9786), mm(19.2562), mm(15.0486), mm(19.2562)),
@@ -617,12 +623,18 @@ def test_geometry_network_construction():
             ("GeometricPipe", mm(26.7686), mm(22.1564), mm(23.8386), mm(22.1564)),
         ],
         11: [
-            ("GeometricPipe", mm(23.8386), mm(22.1564), mm(23.62035), mm(22.1564)),
-            ("GeometricPipe", 23556.85, mm(22.1564), mm(20.9086), mm(22.1564)),
+            ("GeometricPipe", mm(23.8386), mm(22.1564), mm(23.72035), mm(22.1564)),
+            ("GeometricPipe", 23656.85, mm(22.1564), mm(20.9086), mm(22.1564)),
         ],
         12: [
-            ("GeometricPipe", mm(20.9086), mm(22.1564), mm(20.684), mm(22.1564)),
-            ("GeometricPipe", mm(20.6332), mm(22.1564), mm(17.9786), mm(22.1564)),
+            ("GeometricPipe", mm(20.9086), mm(22.1564), 20784.0, mm(22.1564)),
+            (
+                "GeometricPipe",
+                20733.199999999997,
+                mm(22.1564),
+                mm(17.9786),
+                mm(22.1564),
+            ),
         ],
         13: [
             ("GeometricPipe", mm(17.9786), mm(22.1564), mm(15.0486), mm(22.1564)),
@@ -634,12 +646,18 @@ def test_geometry_network_construction():
             ("GeometricPipe", mm(26.7686), mm(25.0564), mm(23.8386), mm(25.0564)),
         ],
         16: [
-            ("GeometricPipe", mm(23.8386), mm(25.0564), mm(23.62035), mm(25.0564)),
-            ("GeometricPipe", 23556.85, mm(25.0564), mm(20.9086), mm(25.0564)),
+            ("GeometricPipe", mm(23.8386), mm(25.0564), mm(23.72035), mm(25.0564)),
+            ("GeometricPipe", 23656.85, mm(25.0564), mm(20.9086), mm(25.0564)),
         ],
         17: [
-            ("GeometricPipe", mm(20.9086), mm(25.0564), mm(20.684), mm(25.0564)),
-            ("GeometricPipe", mm(20.6332), mm(25.0564), mm(17.9786), mm(25.0564)),
+            ("GeometricPipe", mm(20.9086), mm(25.0564), 20784.0, mm(25.0564)),
+            (
+                "GeometricPipe",
+                20733.199999999997,
+                mm(25.0564),
+                mm(17.9786),
+                mm(25.0564),
+            ),
         ],
         18: [
             ("GeometricPipe", mm(17.9786), mm(25.0564), mm(15.0486), mm(25.0564)),
