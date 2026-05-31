@@ -15,7 +15,7 @@ from fireplanner.boq.calculators.stud_calculator import StudCalculator
 from fireplanner.boq.calculators.washer_calculator import WasherCalculator
 from fireplanner.boq.models import BOQReport, HangerFittingBOQ
 from fireplanner.boq.output.console import BOQConsolePrinter
-from fireplanner.geometry.primitives import Point
+from fireplanner.geometry.primitives import Point, PrimitiveStyle
 from fireplanner.networks import (
     CoreNetwork,
     CoreNetworkConfig,
@@ -139,9 +139,15 @@ class Pipeline:
             #         DrawablePrimitive(primitives=pipe.get_primitives_2d())
             #     )
             for hanger in result.geometry_network.get_geometric_hangers():
-                drawables.append(
-                    DrawablePrimitive(primitives=hanger.get_primitives_2d())
-                )
+                hanger_primitives = hanger.get_primitives_2d()
+                if layer_config.hanger_layer_name:
+                    for primitive in hanger_primitives:
+                        style = primitive.style or PrimitiveStyle()
+                        style.layer = layer_config.hanger_layer_name
+                        if layer_config.hanger_color and style.color is None:
+                            style.color = layer_config.hanger_color
+                        primitive.style = style
+                drawables.append(DrawablePrimitive(primitives=hanger_primitives))
             scene = DraftingScene(drawables=drawables)
             created_entities = writer.write_drafting_scene(scene)
             created_entities.extend(

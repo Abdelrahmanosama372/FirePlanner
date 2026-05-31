@@ -168,6 +168,32 @@ boq:
     assert calls["console"] == 1
 
 
+def test_pipeline_applies_hanger_multiplier_from_config():
+    yaml_with_multiplier = CONFIG_YAML.replace("multiplier: 1.5", "multiplier: 2.0")
+    acad = FakeAcad(
+        lines=[
+            FakeLineEntity(
+                start=(0.0, 0.0, 0.0),
+                end=(10.0, 0.0, 0.0),
+                layer="line-network",
+                color=1,
+                handle="A",
+            ),
+        ],
+        blocks=[
+            FakeBlockEntity(
+                name="SPR",
+                insertion_point=(10.0, 0.0, 0.0),
+                handle="10",
+            ),
+        ],
+    )
+    result = Pipeline(yaml_with_multiplier, acad).build()[0]
+    assemblies = result.model_network.get_hangers_assembly()
+    assert len(assemblies) == 1
+    assert assemblies[0].hangers_count == 6
+
+
 class _CaptureWriter:
     def __init__(self) -> None:
         self.text_calls: list[dict] = []

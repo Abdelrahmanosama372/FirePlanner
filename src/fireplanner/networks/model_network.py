@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from math import ceil
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from typing import Any
@@ -52,6 +53,7 @@ class ModelNetworkConfig:
         default_factory=dict
     )
     default_connection_type: SteelConnection = SteelConnection.Grooved
+    hanger_multiplier: float = 1.0
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ModelNetworkConfig:
@@ -76,6 +78,7 @@ class ModelNetworkConfig:
             default_connection_type=SteelConnection(
                 data.get("default_connection_type", SteelConnection.Grooved)
             ),
+            hanger_multiplier=float(data.get("hanger_multiplier", 1.0)),
         )
 
     @classmethod
@@ -440,6 +443,10 @@ class ModelNetwork:
                     pipe_diameter=pipe.diameter,
                     pipe_length=pipe_assembly.edge_info.length,
                 ),
+            )
+            hangers_count = max(
+                1,
+                ceil(hangers_count * self.config.hanger_multiplier),
             )
             hangers.append(
                 HangerAssembly(

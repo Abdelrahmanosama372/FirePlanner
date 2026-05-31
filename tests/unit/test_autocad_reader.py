@@ -23,6 +23,8 @@ firefighting:
 
 processing:
   compute_pipe_dimensions: true
+  hangers:
+    multiplier: 1.5
 
 autocad:
   input:
@@ -73,6 +75,11 @@ autocad:
           unit: "m"
         pipe_dimension:
           enabled: true
+    hangers:
+      layer:
+        name: "ff-hangers"
+        properties:
+          color: "yellow"
 
 geometry:
   placement:
@@ -150,6 +157,7 @@ def test_reader_builds_model_network_config_from_yaml_string():
     assert config.get_connection_type_for_diameter(SteelDims.DIM_1_5_INCHES) == (
         SteelConnection.Grooved
     )
+    assert config.hanger_multiplier == 1.5
 
 
 def test_reader_builds_geometry_network_config_from_yaml_string():
@@ -173,6 +181,8 @@ def test_reader_builds_output_layer_config_from_yaml_string():
     assert config.centerline_layer_name == "ff-sprinklers-thin"
     assert config.centerline_color == "gray"
     assert config.centerline_weight == 0.05
+    assert config.hanger_layer_name == "ff-hangers"
+    assert config.hanger_color == "yellow"
     assert config.centerlines_enabled is True
 
 

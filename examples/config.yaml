@@ -19,6 +19,8 @@ preproessing:
 
 processing:
   compute_pipe_dimensions: true
+  hangers:
+    multiplier: 1.0
 
 geometry:
   placement:
@@ -60,7 +62,10 @@ autocad:
     dimensions:
       enabled: true
       unit: "m"
+      layer:
+        name: "ff-dimensions"
       offset_mm: 500
+      min_length_mm: 1000
       style:
         name: "FIRE_DIM"
     annotations:
@@ -77,6 +82,11 @@ autocad:
           unit: "m"
         pipe_dimension:
           enabled: true
+    hangers:
+      layer:
+        name: "ff-hangers"
+        properties:
+          color: "yellow"
 boq:
   full_ceiling_elevation: 4500
   output:

@@ -86,6 +86,7 @@ class Reader:
         connection_type_data = self._mapping(
             steel_data.get("connnection_type") or steel_data.get("connection_type")
         )
+        hangers_processing_data = self._mapping(processing_data.get("hangers"))
 
         config = ModelNetworkConfig.from_dict(
             {
@@ -112,6 +113,9 @@ class Reader:
                     for diameter, connection_type in connection_type_data.items()
                 },
                 "default_connection_type": SteelConnection.Grooved.value,
+                "hanger_multiplier": float(
+                    hangers_processing_data.get("multiplier", 1.0)
+                ),
             }
         )
         logger.info("Model network config parsed successfully.")
@@ -219,6 +223,11 @@ class Reader:
                 self._mapping(self._raw_data.get("autocad")).get("output")
             ).get("network")
         )
+        hanger_output_data = self._mapping(
+            self._mapping(
+                self._mapping(self._raw_data.get("autocad")).get("output")
+            ).get("hangers")
+        )
         layer_data = self._mapping(output_data.get("layers"))
         line_layer_data = self._mapping(layer_data.get("line"))
         line_properties = self._mapping(line_layer_data.get("properties"))
@@ -226,6 +235,8 @@ class Reader:
         centerline_layer_data = self._mapping(layer_data.get("centerline"))
         centerline_properties = self._mapping(centerline_layer_data.get("properties"))
         centerlines_enabled = bool(centerline_layer_data.get("enabled", False))
+        hanger_layer_data = self._mapping(hanger_output_data.get("layer"))
+        hanger_properties = self._mapping(hanger_layer_data.get("properties"))
         config = LayerConfig(
             line_layer_name=str(line_layer_data.get("name", "")),
             line_color=(
@@ -247,6 +258,12 @@ class Reader:
             centerline_weight=(
                 float(centerline_properties["line_weight"])
                 if "line_weight" in centerline_properties
+                else None
+            ),
+            hanger_layer_name=str(hanger_layer_data.get("name", "")),
+            hanger_color=(
+                str(hanger_properties.get("color"))
+                if "color" in hanger_properties
                 else None
             ),
             centerlines_enabled=centerlines_enabled,

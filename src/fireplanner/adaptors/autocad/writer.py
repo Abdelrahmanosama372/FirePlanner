@@ -21,11 +21,13 @@ logger = logging.getLogger(__name__)
 class LayerConfig:
     line_layer_name: str
     centerline_layer_name: str = ""
+    hanger_layer_name: str = ""
     centerlines_enabled: bool = False
     line_color: str | None = None
     line_weight: float | None = None
     centerline_color: str | None = None
     centerline_weight: float | None = None
+    hanger_color: str | None = None
 
 
 @dataclass(frozen=True)
@@ -223,6 +225,11 @@ class Writer:
         return []
 
     def _apply_layer(self, entity: Any, primitive: object) -> None:
+        primitive_style = getattr(primitive, "style", None)
+        if primitive_style is not None and primitive_style.layer:
+            self._set_attr(entity, "Layer", primitive_style.layer)
+            return
+
         is_centerline = isinstance(
             primitive, (Line, Arc, Circle)
         ) and self._is_auxiliary_line_type(primitive.line_type)
