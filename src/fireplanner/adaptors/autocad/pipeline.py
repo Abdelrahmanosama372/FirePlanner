@@ -27,6 +27,7 @@ from fireplanner.resolvers import (
     DraftingOcclusionResolver,
     DraftingScene,
     DrawablePrimitive,
+    PipePrimitiveOcclusionResolver,
 )
 from fireplanner.units import LengthUnit, LengthUnitConverter
 
@@ -107,13 +108,33 @@ class Pipeline:
         )
         written_entities_per_network: list[list[Any]] = []
         drafting_occlusion_resolver = DraftingOcclusionResolver()
+        pipe_primitive_occlusion_resolver = PipePrimitiveOcclusionResolver()
         for result in self.build():
             fire_connections_scene = drafting_occlusion_resolver.resolve(
                 result.geometry_network.get_resolved_fire_connections_assemblies()
             )
             drawables = list(fire_connections_scene.drawables)
-            for pipe in result.geometry_network.get_geometric_pipes():
-                drawables.append(DrawablePrimitive(primitives=pipe.get_primitives_2d()))
+            for (
+                edge_id,
+                pipes,
+            ) in result.geometry_network.get_geometric_pipes_with_edges_ids().items():
+                edge_connections = (
+                    result.geometry_network.get_geometric_fire_connections_on_edge(
+                        edge_id
+                    )
+                )
+                for pipe in pipes:
+                    drawables.append(
+                        pipe_primitive_occlusion_resolver.resolve(
+                            pipe=pipe,
+                            occluding_components=edge_connections,
+                        )
+                    )
+            # Legacy direct pipe drawing kept for later removal:
+            # for pipe in result.geometry_network.get_geometric_pipes():
+            #     drawables.append(
+            #         DrawablePrimitive(primitives=pipe.get_primitives_2d())
+            #     )
             for hanger in result.geometry_network.get_geometric_hangers():
                 drawables.append(
                     DrawablePrimitive(primitives=hanger.get_primitives_2d())
