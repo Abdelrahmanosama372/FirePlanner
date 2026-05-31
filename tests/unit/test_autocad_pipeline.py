@@ -1,7 +1,20 @@
+from math import isclose
+
 from fireplanner.adaptors.autocad.pipeline import Pipeline
+from fireplanner.adaptors.autocad.writer import (
+    AnnotationLayerConfig,
+    AnnotationsConfig,
+    CopLabelConfig,
+    DimensionsConfig,
+    DimensionStyleConfig,
+    OutputAnnotationConfig,
+    PipeDimensionLabelConfig,
+    PipeLabelsConfig,
+)
 from fireplanner.geometry.components import GeometricPipe
 from fireplanner.geometry.primitives import Point
 from fireplanner.networks import CoreNetwork, GeometryNetwork, ModelNetwork
+from fireplanner.units import LengthUnit
 from tests.unit.test_autocad_reader import (
     CONFIG_YAML,
     FakeAcad,
@@ -153,3 +166,122 @@ boq:
     results = Pipeline(yaml_with_boq, acad).build()
     assert len(results) == 1
     assert calls["console"] == 1
+
+
+class _CaptureWriter:
+    def __init__(self) -> None:
+        self.text_calls: list[dict] = []
+        self.dim_calls: list[dict] = []
+        self.style_checked: str | None = None
+
+    def ensure_dimension_style_exists(self, style_name: str) -> None:
+        self.style_checked = style_name
+
+    def write_text_annotation(
+        self,
+        text: str,
+        position_mm: Point,
+        rotation_rad: float,
+        layer_name: str,
+        text_height_mm: float,
+    ):
+        self.text_calls.append(
+            {
+                "text": text,
+                "position": position_mm,
+                "rotation": rotation_rad,
+                "layer": layer_name,
+                "height": text_height_mm,
+            }
+        )
+        return object()
+
+    def write_aligned_dimension(
+        self,
+        start_mm: Point,
+        end_mm: Point,
+        offset_point_mm: Point,
+        style_name: str,
+    ):
+        self.dim_calls.append(
+            {
+                "start": start_mm,
+                "end": end_mm,
+                "offset": offset_point_mm,
+                "style": style_name,
+            }
+        )
+        return object()
+
+
+def test_pipeline_output_annotations_follow_edge_center_and_direction():
+    acad = FakeAcad(
+        lines=[
+            FakeLineEntity(
+                start=(0.0, 0.0, 3000.0),
+                end=(10.0, 10.0, 3000.0),
+                layer="line-network",
+                color=1,
+                handle="A",
+            ),
+        ],
+        blocks=[
+            FakeBlockEntity(
+                name="SPR",
+                insertion_point=(10.0, 10.0, 3000.0),
+                handle="10",
+            ),
+        ],
+    )
+    pipeline = Pipeline(CONFIG_YAML, acad)
+    result = pipeline.build()[0]
+    writer = _CaptureWriter()
+    config = OutputAnnotationConfig(
+        dimensions=DimensionsConfig(
+            enabled=True,
+            unit=LengthUnit.METER,
+            style=DimensionStyleConfig(name="FIRE_DIM"),
+            offset_mm=500.0,
+        ),
+        annotations=AnnotationsConfig(
+            layer=AnnotationLayerConfig(name="ff-annotations"),
+            pipe_labels=PipeLabelsConfig(
+                cop=CopLabelConfig(enabled=True, unit=LengthUnit.METER),
+                pipe_dimension=PipeDimensionLabelConfig(enabled=True),
+                diameter_offset_mm=200.0,
+                cop_offset_mm=350.0,
+            ),
+            text_height=125.0,
+        ),
+    )
+
+    created = pipeline._write_output_annotations_and_dimensions(
+        writer=writer, result=result, config=config
+    )
+    assert len(created) == 3
+    assert writer.style_checked == "FIRE_DIM"
+    assert len(writer.text_calls) == 2
+    assert len(writer.dim_calls) == 1
+
+    edge_line = result.core_network.get_lines_with_edge_ids()[1]
+    direction = edge_line.direction()
+    nx = __import__("math").sin(direction)
+    ny = -__import__("math").cos(direction)
+    mid_x = (edge_line.start.x + edge_line.end.x) / 2.0
+    mid_y = (edge_line.start.y + edge_line.end.y) / 2.0
+
+    dia = writer.text_calls[0]
+    cop = writer.text_calls[1]
+    assert dia["text"].startswith("⌀")
+    assert cop["text"].startswith("COP ")
+    assert isclose(dia["rotation"], direction, rel_tol=1e-9)
+    assert isclose(cop["rotation"], direction, rel_tol=1e-9)
+    assert isclose(dia["position"].x, mid_x - nx * 200.0, rel_tol=1e-9)
+    assert isclose(dia["position"].y, mid_y - ny * 200.0, rel_tol=1e-9)
+    assert isclose(cop["position"].x, mid_x - nx * 350.0, rel_tol=1e-9)
+    assert isclose(cop["position"].y, mid_y - ny * 350.0, rel_tol=1e-9)
+
+    dim = writer.dim_calls[0]
+    assert dim["style"] == "FIRE_DIM"
+    assert isclose(dim["offset"].x, mid_x + nx * 500.0, rel_tol=1e-9)
+    assert isclose(dim["offset"].y, mid_y + ny * 500.0, rel_tol=1e-9)

@@ -8,6 +8,7 @@ from fireplanner.firecomponent import (
 )
 from fireplanner.networks import CoreNetworkConfig
 from fireplanner.standards.hazard import FireHazard
+from fireplanner.units import LengthUnit
 
 CONFIG_YAML = """
 firefighting:
@@ -49,6 +50,26 @@ autocad:
           properties:
             color: "gray"
             line_weight: 0.05
+    dimensions:
+      enabled: true
+      unit: "m"
+      offset_mm: 500
+      style:
+        name: "FIRE_DIM"
+    annotations:
+      text_height: 125
+      layer:
+        name: "ff-annotations"
+        properties:
+          color: "white"
+      pipe_labels:
+        diameter_offset_mm: 200
+        cop_offset_mm: 350
+        cop:
+          enabled: true
+          unit: "m"
+        pipe_dimension:
+          enabled: true
 
 geometry:
   placement:
@@ -181,6 +202,25 @@ boq:
     assert config.paint.thickness == 180
     assert config.paint.scrap_precentage == 0.2
     assert config.paint.volume_solids_precentage == 0.8
+
+
+def test_reader_builds_output_annotation_config_from_yaml_string():
+    reader = Reader(CONFIG_YAML)
+
+    config = reader.read_output_annotation_config()
+
+    assert config.dimensions.enabled is True
+    assert config.dimensions.unit == LengthUnit.METER
+    assert config.dimensions.offset_mm == 500.0
+    assert config.dimensions.style.name == "FIRE_DIM"
+    assert config.annotations.layer.name == "ff-annotations"
+    assert config.annotations.layer.color == "white"
+    assert config.annotations.text_height == 125.0
+    assert config.annotations.pipe_labels.diameter_offset_mm == 200.0
+    assert config.annotations.pipe_labels.cop_offset_mm == 350.0
+    assert config.annotations.pipe_labels.cop.enabled is True
+    assert config.annotations.pipe_labels.cop.unit == LengthUnit.METER
+    assert config.annotations.pipe_labels.pipe_dimension.enabled is True
 
 
 def test_reader_builds_core_network_config_from_autocad_entities():

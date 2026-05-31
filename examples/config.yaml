@@ -57,6 +57,26 @@ autocad:
           properties:
             color: "gray"
             line_weight: 0.05
+    dimensions:
+      enabled: true
+      unit: "m"
+      offset_mm: 500
+      style:
+        name: "FIRE_DIM"
+    annotations:
+      text_height: 125
+      layer:
+        name: "ff-annotations"
+        properties:
+          color: "white"
+      pipe_labels:
+        diameter_offset_mm: 200
+        cop_offset_mm: 350
+        cop:
+          enabled: true
+          unit: "m"
+        pipe_dimension:
+          enabled: true
 boq:
   full_ceiling_elevation: 4500
   output:

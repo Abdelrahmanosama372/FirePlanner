@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from math import cos, sin
 from typing import TYPE_CHECKING, Any
 
 from fireplanner.boq.calculators.akmon_calculator import AkmonCalculator
@@ -14,6 +15,7 @@ from fireplanner.boq.calculators.stud_calculator import StudCalculator
 from fireplanner.boq.calculators.washer_calculator import WasherCalculator
 from fireplanner.boq.models import BOQReport, HangerFittingBOQ
 from fireplanner.boq.output.console import BOQConsolePrinter
+from fireplanner.geometry.primitives import Point
 from fireplanner.networks import (
     CoreNetwork,
     CoreNetworkConfig,
@@ -32,7 +34,7 @@ from fireplanner.resolvers import (
 from fireplanner.units import LengthUnit, LengthUnitConverter
 
 from .reader import BOQConfig, Reader
-from .writer import Writer
+from .writer import OutputAnnotationConfig, Writer
 
 if TYPE_CHECKING:
     from pyautocad import Autocad
@@ -101,6 +103,7 @@ class Pipeline:
     def draw(self) -> list[list[Any]]:
         logger.info("Pipeline draw started.")
         layer_config = self._reader.read_output_layer_config()
+        output_annotation_config = self._reader.read_output_annotation_config()
         writer = Writer(
             acad=self._acad,
             layer_config=layer_config,
@@ -140,12 +143,101 @@ class Pipeline:
                     DrawablePrimitive(primitives=hanger.get_primitives_2d())
                 )
             scene = DraftingScene(drawables=drawables)
-            written_entities_per_network.append(writer.write_drafting_scene(scene))
+            created_entities = writer.write_drafting_scene(scene)
+            created_entities.extend(
+                self._write_output_annotations_and_dimensions(
+                    writer=writer,
+                    result=result,
+                    config=output_annotation_config,
+                )
+            )
+            written_entities_per_network.append(created_entities)
         logger.info(
             "Pipeline draw completed for %d network(s).",
             len(written_entities_per_network),
         )
         return written_entities_per_network
+
+    def _write_output_annotations_and_dimensions(
+        self,
+        writer: Writer,
+        result: NetworkPipelineResult,
+        config: OutputAnnotationConfig,
+    ) -> list[Any]:
+        created: list[Any] = []
+        lines_by_edge = result.core_network.get_lines_with_edge_ids()
+        pipes_by_edge = result.model_network.get_pipes_with_edges_ids()
+
+        if config.dimensions.enabled:
+            if not config.dimensions.style.name:
+                raise ValueError("autocad.output.dimensions.style.name is required.")
+            writer.ensure_dimension_style_exists(config.dimensions.style.name)
+
+        for edge_id, line in lines_by_edge.items():
+            if edge_id not in pipes_by_edge:
+                continue
+            pipe = pipes_by_edge[edge_id]
+            direction = line.direction()
+            nx = sin(direction)
+            ny = -cos(direction)
+
+            mid_x = (line.start.x + line.end.x) / 2.0
+            mid_y = (line.start.y + line.end.y) / 2.0
+
+            if config.annotations.pipe_labels.pipe_dimension.enabled:
+                dia_mm = float(pipe.diameter.value) * 25.0
+                dia_text = f"⌀{dia_mm:g}"
+                dia_pos = Point(
+                    x=mid_x - nx * config.annotations.pipe_labels.diameter_offset_mm,
+                    y=mid_y - ny * config.annotations.pipe_labels.diameter_offset_mm,
+                )
+                created.append(
+                    writer.write_text_annotation(
+                        text=dia_text,
+                        position_mm=dia_pos,
+                        rotation_rad=direction,
+                        layer_name=config.annotations.layer.name,
+                        text_height_mm=config.annotations.text_height,
+                    )
+                )
+
+            if config.annotations.pipe_labels.cop.enabled:
+                elevation_val = LengthUnitConverter.convert(
+                    line.start.z,
+                    from_unit=LengthUnit.MILLIMETER,
+                    to_unit=config.annotations.pipe_labels.cop.unit,
+                )
+                cop_text = f"COP {elevation_val:g} {config.annotations.pipe_labels.cop.unit.value}"
+                cop_pos = Point(
+                    x=mid_x - nx * config.annotations.pipe_labels.cop_offset_mm,
+                    y=mid_y - ny * config.annotations.pipe_labels.cop_offset_mm,
+                )
+                created.append(
+                    writer.write_text_annotation(
+                        text=cop_text,
+                        position_mm=cop_pos,
+                        rotation_rad=direction,
+                        layer_name=config.annotations.layer.name,
+                        text_height_mm=config.annotations.text_height,
+                    )
+                )
+
+            if config.dimensions.enabled:
+                dim_offset = config.dimensions.offset_mm
+                dim_point = Point(
+                    x=mid_x + nx * dim_offset,
+                    y=mid_y + ny * dim_offset,
+                )
+                created.append(
+                    writer.write_aligned_dimension(
+                        start_mm=line.start,
+                        end_mm=line.end,
+                        offset_point_mm=dim_point,
+                        style_name=config.dimensions.style.name,
+                    )
+                )
+
+        return created
 
     def _run_boq_pipeline(self, results: list[NetworkPipelineResult]) -> None:
         boq_config = self._reader.read_boq_config()

@@ -27,7 +27,17 @@ from fireplanner.networks import (
 from fireplanner.standards.hazard import FireHazard
 from fireplanner.units import LengthUnit
 
-from .writer import LayerConfig
+from .writer import (
+    AnnotationLayerConfig,
+    AnnotationsConfig,
+    CopLabelConfig,
+    DimensionsConfig,
+    DimensionStyleConfig,
+    LayerConfig,
+    OutputAnnotationConfig,
+    PipeDimensionLabelConfig,
+    PipeLabelsConfig,
+)
 
 if TYPE_CHECKING:
     from pyautocad import Autocad
@@ -278,6 +288,59 @@ class Reader:
             config.excel.enabled,
             config.console.enabled,
             config.excel.path,
+        )
+        return config
+
+    def read_output_annotation_config(self) -> OutputAnnotationConfig:
+        output_data = self._mapping(
+            self._mapping(self._mapping(self._raw_data.get("autocad")).get("output"))
+        )
+        dimensions_data = self._mapping(output_data.get("dimensions"))
+        dim_style_data = self._mapping(dimensions_data.get("style"))
+        annotations_data = self._mapping(output_data.get("annotations"))
+        annotations_layer_data = self._mapping(annotations_data.get("layer"))
+        annotations_layer_props = self._mapping(
+            annotations_layer_data.get("properties")
+        )
+        pipe_labels_data = self._mapping(annotations_data.get("pipe_labels"))
+        cop_data = self._mapping(pipe_labels_data.get("cop"))
+        pipe_dimension_data = self._mapping(pipe_labels_data.get("pipe_dimension"))
+
+        config = OutputAnnotationConfig(
+            dimensions=DimensionsConfig(
+                enabled=bool(dimensions_data.get("enabled", False)),
+                unit=self._parse_length_unit(
+                    dimensions_data.get("unit", LengthUnit.METER)
+                ),
+                style=DimensionStyleConfig(name=str(dim_style_data.get("name", ""))),
+                offset_mm=float(dimensions_data.get("offset_mm", 500.0)),
+            ),
+            annotations=AnnotationsConfig(
+                layer=AnnotationLayerConfig(
+                    name=str(annotations_layer_data.get("name", "")),
+                    color=(
+                        str(annotations_layer_props.get("color"))
+                        if "color" in annotations_layer_props
+                        else None
+                    ),
+                ),
+                pipe_labels=PipeLabelsConfig(
+                    cop=CopLabelConfig(
+                        enabled=bool(cop_data.get("enabled", False)),
+                        unit=self._parse_length_unit(
+                            cop_data.get("unit", LengthUnit.METER)
+                        ),
+                    ),
+                    pipe_dimension=PipeDimensionLabelConfig(
+                        enabled=bool(pipe_dimension_data.get("enabled", False))
+                    ),
+                    diameter_offset_mm=float(
+                        pipe_labels_data.get("diameter_offset_mm", 200.0)
+                    ),
+                    cop_offset_mm=float(pipe_labels_data.get("cop_offset_mm", 350.0)),
+                ),
+                text_height=float(annotations_data.get("text_height", 125.0)),
+            ),
         )
         return config
 

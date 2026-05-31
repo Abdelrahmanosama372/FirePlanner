@@ -10,7 +10,7 @@ from fireplanner.geometry.primitives.line import LineType
 from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks.geometry_network import GeometryNetwork
 from fireplanner.resolvers import DraftingScene
-from fireplanner.units import LengthUnit
+from fireplanner.units import LengthUnit, LengthUnitConverter
 
 from .utils import color_name_to_aci
 
@@ -26,6 +26,57 @@ class LayerConfig:
     line_weight: float | None = None
     centerline_color: str | None = None
     centerline_weight: float | None = None
+
+
+@dataclass(frozen=True)
+class DimensionStyleConfig:
+    name: str
+
+
+@dataclass(frozen=True)
+class DimensionsConfig:
+    enabled: bool = False
+    unit: LengthUnit = LengthUnit.METER
+    style: DimensionStyleConfig = DimensionStyleConfig(name="STANDARD")
+    offset_mm: float = 500.0
+
+
+@dataclass(frozen=True)
+class AnnotationLayerConfig:
+    name: str = ""
+    color: str | None = None
+
+
+@dataclass(frozen=True)
+class CopLabelConfig:
+    enabled: bool = False
+    unit: LengthUnit = LengthUnit.METER
+
+
+@dataclass(frozen=True)
+class PipeDimensionLabelConfig:
+    enabled: bool = False
+
+
+@dataclass(frozen=True)
+class PipeLabelsConfig:
+    cop: CopLabelConfig = CopLabelConfig()
+    pipe_dimension: PipeDimensionLabelConfig = PipeDimensionLabelConfig()
+    diameter_offset_mm: float = 200.0
+    cop_offset_mm: float = 350.0
+
+
+@dataclass(frozen=True)
+class AnnotationsConfig:
+    layer: AnnotationLayerConfig = AnnotationLayerConfig()
+    pipe_labels: PipeLabelsConfig = PipeLabelsConfig()
+    text_height: float = 125.0
+
+
+@dataclass(frozen=True)
+class OutputAnnotationConfig:
+    dimensions: DimensionsConfig = DimensionsConfig()
+    annotations: AnnotationsConfig = AnnotationsConfig()
 
 
 class Writer:
@@ -201,3 +252,85 @@ class Writer:
             if hasattr(obj, candidate):
                 setattr(obj, candidate, value)
                 return
+
+    def ensure_dimension_style_exists(self, style_name: str) -> None:
+        doc = getattr(self._acad, "doc", None)
+        if doc is None or not hasattr(doc, "DimStyles"):
+            raise ValueError("Unable to access AutoCAD dimension styles collection.")
+        dim_styles = doc.DimStyles
+        for style in dim_styles:
+            if getattr(style, "Name", "") == style_name:
+                return
+        raise ValueError(
+            f"AutoCAD dimension style '{style_name}' does not exist. Please create it first."
+        )
+
+    def write_text_annotation(
+        self,
+        text: str,
+        position_mm: Any,
+        rotation_rad: float,
+        layer_name: str,
+        text_height_mm: float,
+    ) -> Any:
+        try:
+            from pyautocad import APoint
+        except ImportError as exc:
+            raise ImportError(
+                "pyautocad must be installed to write text annotations."
+            ) from exc
+
+        position = GeometryUnitConverter.point_to_unit(
+            point=position_mm,
+            from_unit=LengthUnit.MILLIMETER,
+            to_unit=self._drawing_unit,
+        )
+        text_height = LengthUnitConverter.convert(
+            text_height_mm,
+            from_unit=LengthUnit.MILLIMETER,
+            to_unit=self._drawing_unit,
+        )
+        entity = self._acad.model.AddText(
+            text, APoint(position.to_list3d()), text_height
+        )
+        self._set_attr(entity, "Rotation", rotation_rad)
+        if layer_name:
+            self._set_attr(entity, "Layer", layer_name)
+        return entity
+
+    def write_aligned_dimension(
+        self,
+        start_mm: Any,
+        end_mm: Any,
+        offset_point_mm: Any,
+        style_name: str,
+    ) -> Any:
+        try:
+            from pyautocad import APoint
+        except ImportError as exc:
+            raise ImportError(
+                "pyautocad must be installed to write dimensions."
+            ) from exc
+
+        start = GeometryUnitConverter.point_to_unit(
+            point=start_mm,
+            from_unit=LengthUnit.MILLIMETER,
+            to_unit=self._drawing_unit,
+        )
+        end = GeometryUnitConverter.point_to_unit(
+            point=end_mm,
+            from_unit=LengthUnit.MILLIMETER,
+            to_unit=self._drawing_unit,
+        )
+        offset = GeometryUnitConverter.point_to_unit(
+            point=offset_point_mm,
+            from_unit=LengthUnit.MILLIMETER,
+            to_unit=self._drawing_unit,
+        )
+        entity = self._acad.model.AddDimAligned(
+            APoint(start.to_list3d()),
+            APoint(end.to_list3d()),
+            APoint(offset.to_list3d()),
+        )
+        self._set_attr(entity, "StyleName", style_name)
+        return entity
