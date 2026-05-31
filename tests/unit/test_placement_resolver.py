@@ -34,6 +34,7 @@ from fireplanner.networks.placement.strategy import (
     SingleReducerPlacementStrategy,
     SingleTeePlacementStrategy,
     TeeElbowPlacementStrategy,
+    TeeReducerElbowPlacementStrategy,
     TeeReducerPlacementStrategy,
 )
 
@@ -694,6 +695,58 @@ def test_tee_with_elbow_placement_z_index_orders_by_elevation():
     strategy = resolver.resolve(
         _build_placement_assembly(junction_assembly, geometric_components)
     )
+    tee_context = strategy.get_placement_context(geometric_tee)
+    elbow_context = strategy.get_placement_context(geometric_elbow)
+
+    assert tee_context.z_index == 2
+    assert elbow_context.z_index == 1
+
+
+def test_tee_reducer_elbow_placement_z_index_orders_by_elevation():
+    geometric_tee = geometric_tee_builder()
+    geometric_reducer = geometric_reducer_builder()
+    geometric_elbow = geometric_elbow_builder()
+    geometric_components = [geometric_tee, geometric_reducer, geometric_elbow]
+    junction = Junction(
+        id=1,
+        origin=Point(x=0, y=0, z=0),
+        junction_type=JunctionType.THREE_WAY,
+        connected_edges_ids=[1, 2, 3],
+    )
+    edge_id_line_map = {
+        1: Line(
+            start=Point(x=0, y=0, z=10),
+            end=Point(x=100, y=0, z=10),
+            id=1,
+        ),
+        2: Line(
+            start=Point(x=0, y=0, z=10),
+            end=Point(x=-100, y=0, z=10),
+            id=2,
+        ),
+        3: Line(
+            start=Point(x=0, y=0, z=0),
+            end=Point(x=0, y=100, z=0),
+            id=3,
+        ),
+    }
+    edge_pipe_dim_map = {
+        1: SteelDims.DIM_1_INCHES,
+        2: SteelDims.DIM_0_75_INCHES,
+        3: SteelDims.DIM_1_INCHES,
+    }
+    resolver = PlacementResolver()
+    junction_assembly = _build_junction_assembly(
+        junction=junction,
+        edge_id_line_map=edge_id_line_map,
+        edge_pipe_dim_map=edge_pipe_dim_map,
+    )
+
+    strategy = resolver.resolve(
+        _build_placement_assembly(junction_assembly, geometric_components)
+    )
+    assert isinstance(strategy, TeeReducerElbowPlacementStrategy)
+
     tee_context = strategy.get_placement_context(geometric_tee)
     elbow_context = strategy.get_placement_context(geometric_elbow)
 
