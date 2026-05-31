@@ -38,7 +38,9 @@ class DimensionsConfig:
     enabled: bool = False
     unit: LengthUnit = LengthUnit.METER
     style: DimensionStyleConfig = DimensionStyleConfig(name="STANDARD")
+    layer_name: str = ""
     offset_mm: float = 500.0
+    min_length_mm: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -304,6 +306,7 @@ class Writer:
         end_mm: Any,
         offset_point_mm: Any,
         style_name: str,
+        layer_name: str = "",
     ) -> Any:
         try:
             from pyautocad import APoint
@@ -333,4 +336,6 @@ class Writer:
             APoint(offset.to_list3d()),
         )
         self._set_attr(entity, "StyleName", style_name)
+        if layer_name:
+            self._set_attr(entity, "Layer", layer_name)
         return entity

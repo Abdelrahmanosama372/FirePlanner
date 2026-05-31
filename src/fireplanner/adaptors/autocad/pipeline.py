@@ -165,28 +165,26 @@ class Pipeline:
         config: OutputAnnotationConfig,
     ) -> list[Any]:
         created: list[Any] = []
-        lines_by_edge = result.core_network.get_lines_with_edge_ids()
-        pipes_by_edge = result.model_network.get_pipes_with_edges_ids()
 
         if config.dimensions.enabled:
             if not config.dimensions.style.name:
                 raise ValueError("autocad.output.dimensions.style.name is required.")
             writer.ensure_dimension_style_exists(config.dimensions.style.name)
 
-        for edge_id, line in lines_by_edge.items():
-            if edge_id not in pipes_by_edge:
+        for pipe_assembly in result.model_network.get_pipes_assembly():
+            line = pipe_assembly.edge_info.line
+            pipe = pipe_assembly.pipe
+            if pipe is None:
                 continue
-            pipe = pipes_by_edge[edge_id]
             direction = line.direction()
-            nx = sin(direction)
-            ny = -cos(direction)
+            nx, ny = self._downward_normal(direction)
 
             mid_x = (line.start.x + line.end.x) / 2.0
             mid_y = (line.start.y + line.end.y) / 2.0
 
             if config.annotations.pipe_labels.pipe_dimension.enabled:
                 dia_mm = float(pipe.diameter.value) * 25.0
-                dia_text = f"⌀{dia_mm:g}"
+                dia_text = f"%%c{dia_mm:g}"
                 dia_pos = Point(
                     x=mid_x - nx * config.annotations.pipe_labels.diameter_offset_mm,
                     y=mid_y - ny * config.annotations.pipe_labels.diameter_offset_mm,
@@ -203,7 +201,7 @@ class Pipeline:
 
             if config.annotations.pipe_labels.cop.enabled:
                 elevation_val = LengthUnitConverter.convert(
-                    line.start.z,
+                    pipe_assembly.edge_info.elevation,
                     from_unit=LengthUnit.MILLIMETER,
                     to_unit=config.annotations.pipe_labels.cop.unit,
                 )
@@ -223,6 +221,8 @@ class Pipeline:
                 )
 
             if config.dimensions.enabled:
+                if line.length() < config.dimensions.min_length_mm:
+                    continue
                 dim_offset = config.dimensions.offset_mm
                 dim_point = Point(
                     x=mid_x + nx * dim_offset,
@@ -234,10 +234,20 @@ class Pipeline:
                         end_mm=line.end,
                         offset_point_mm=dim_point,
                         style_name=config.dimensions.style.name,
+                        layer_name=config.dimensions.layer_name,
                     )
                 )
 
         return created
+
+    def _downward_normal(self, direction: float) -> tuple[float, float]:
+        nx = sin(direction)
+        ny = -cos(direction)
+        # Force dimension side to always point downward in WCS.
+        if ny > 0:
+            nx = -nx
+            ny = -ny
+        return nx, ny
 
     def _run_boq_pipeline(self, results: list[NetworkPipelineResult]) -> None:
         boq_config = self._reader.read_boq_config()

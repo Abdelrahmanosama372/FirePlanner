@@ -202,6 +202,7 @@ class _CaptureWriter:
         end_mm: Point,
         offset_point_mm: Point,
         style_name: str,
+        layer_name: str = "",
     ):
         self.dim_calls.append(
             {
@@ -209,6 +210,7 @@ class _CaptureWriter:
                 "end": end_mm,
                 "offset": offset_point_mm,
                 "style": style_name,
+                "layer": layer_name,
             }
         )
         return object()
@@ -241,6 +243,7 @@ def test_pipeline_output_annotations_follow_edge_center_and_direction():
             enabled=True,
             unit=LengthUnit.METER,
             style=DimensionStyleConfig(name="FIRE_DIM"),
+            layer_name="ff-dimensions",
             offset_mm=500.0,
         ),
         annotations=AnnotationsConfig(
@@ -272,8 +275,8 @@ def test_pipeline_output_annotations_follow_edge_center_and_direction():
 
     dia = writer.text_calls[0]
     cop = writer.text_calls[1]
-    assert dia["text"].startswith("⌀")
-    assert cop["text"].startswith("COP ")
+    expected_cop = f"COP {result.model_network.get_pipes_assembly()[0].edge_info.elevation / 1000:g} m"
+    assert cop["text"] == expected_cop
     assert isclose(dia["rotation"], direction, rel_tol=1e-9)
     assert isclose(cop["rotation"], direction, rel_tol=1e-9)
     assert isclose(dia["position"].x, mid_x - nx * 200.0, rel_tol=1e-9)
@@ -283,5 +286,112 @@ def test_pipeline_output_annotations_follow_edge_center_and_direction():
 
     dim = writer.dim_calls[0]
     assert dim["style"] == "FIRE_DIM"
+    assert dim["layer"] == "ff-dimensions"
     assert isclose(dim["offset"].x, mid_x + nx * 500.0, rel_tol=1e-9)
     assert isclose(dim["offset"].y, mid_y + ny * 500.0, rel_tol=1e-9)
+
+
+def test_pipeline_dimensions_stay_below_for_reversed_edge_direction():
+    acad = FakeAcad(
+        lines=[
+            FakeLineEntity(
+                start=(10.0, 10.0, 3000.0),
+                end=(0.0, 0.0, 3000.0),
+                layer="line-network",
+                color=1,
+                handle="A",
+            ),
+        ],
+        blocks=[
+            FakeBlockEntity(
+                name="SPR",
+                insertion_point=(0.0, 0.0, 3000.0),
+                handle="10",
+            ),
+        ],
+    )
+    pipeline = Pipeline(CONFIG_YAML, acad)
+    result = pipeline.build()[0]
+    writer = _CaptureWriter()
+    config = OutputAnnotationConfig(
+        dimensions=DimensionsConfig(
+            enabled=True,
+            unit=LengthUnit.METER,
+            style=DimensionStyleConfig(name="FIRE_DIM"),
+            layer_name="ff-dimensions",
+            offset_mm=500.0,
+        ),
+        annotations=AnnotationsConfig(
+            layer=AnnotationLayerConfig(name="ff-annotations"),
+            pipe_labels=PipeLabelsConfig(
+                cop=CopLabelConfig(enabled=True, unit=LengthUnit.METER),
+                pipe_dimension=PipeDimensionLabelConfig(enabled=True),
+                diameter_offset_mm=200.0,
+                cop_offset_mm=350.0,
+            ),
+            text_height=125.0,
+        ),
+    )
+
+    pipeline._write_output_annotations_and_dimensions(
+        writer=writer, result=result, config=config
+    )
+    line = result.core_network.get_lines_with_edge_ids()[1]
+    mid_y = (line.start.y + line.end.y) / 2.0
+
+    assert len(writer.dim_calls) == 1
+    assert writer.dim_calls[0]["offset"].y < mid_y
+    assert len(writer.text_calls) == 2
+    for text_call in writer.text_calls:
+        assert text_call["position"].y > mid_y
+
+
+def test_pipeline_skips_dimensions_for_short_edges_by_threshold():
+    acad = FakeAcad(
+        lines=[
+            FakeLineEntity(
+                start=(0.0, 0.0, 3000.0),
+                end=(10.0, 0.0, 3000.0),
+                layer="line-network",
+                color=1,
+                handle="A",
+            ),
+        ],
+        blocks=[
+            FakeBlockEntity(
+                name="SPR",
+                insertion_point=(10.0, 0.0, 3000.0),
+                handle="10",
+            ),
+        ],
+    )
+    pipeline = Pipeline(CONFIG_YAML, acad)
+    result = pipeline.build()[0]
+    writer = _CaptureWriter()
+    config = OutputAnnotationConfig(
+        dimensions=DimensionsConfig(
+            enabled=True,
+            unit=LengthUnit.METER,
+            style=DimensionStyleConfig(name="FIRE_DIM"),
+            layer_name="ff-dimensions",
+            offset_mm=500.0,
+            min_length_mm=20000.0,
+        ),
+        annotations=AnnotationsConfig(
+            layer=AnnotationLayerConfig(name="ff-annotations"),
+            pipe_labels=PipeLabelsConfig(
+                cop=CopLabelConfig(enabled=True, unit=LengthUnit.METER),
+                pipe_dimension=PipeDimensionLabelConfig(enabled=True),
+                diameter_offset_mm=200.0,
+                cop_offset_mm=350.0,
+            ),
+            text_height=125.0,
+        ),
+    )
+
+    created = pipeline._write_output_annotations_and_dimensions(
+        writer=writer, result=result, config=config
+    )
+    assert len(writer.dim_calls) == 0
+    assert len(writer.text_calls) == 2
+    assert len(created) == 2

@@ -296,6 +296,7 @@ class Reader:
             self._mapping(self._mapping(self._raw_data.get("autocad")).get("output"))
         )
         dimensions_data = self._mapping(output_data.get("dimensions"))
+        dimensions_layer_data = self._mapping(dimensions_data.get("layer"))
         dim_style_data = self._mapping(dimensions_data.get("style"))
         annotations_data = self._mapping(output_data.get("annotations"))
         annotations_layer_data = self._mapping(annotations_data.get("layer"))
@@ -313,7 +314,9 @@ class Reader:
                     dimensions_data.get("unit", LengthUnit.METER)
                 ),
                 style=DimensionStyleConfig(name=str(dim_style_data.get("name", ""))),
+                layer_name=str(dimensions_layer_data.get("name", "")),
                 offset_mm=float(dimensions_data.get("offset_mm", 500.0)),
+                min_length_mm=float(dimensions_data.get("min_length_mm", 0.0)),
             ),
             annotations=AnnotationsConfig(
                 layer=AnnotationLayerConfig(

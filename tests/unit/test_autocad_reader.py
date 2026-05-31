@@ -53,7 +53,10 @@ autocad:
     dimensions:
       enabled: true
       unit: "m"
+      layer:
+        name: "ff-dimensions"
       offset_mm: 500
+      min_length_mm: 1000
       style:
         name: "FIRE_DIM"
     annotations:
@@ -211,7 +214,9 @@ def test_reader_builds_output_annotation_config_from_yaml_string():
 
     assert config.dimensions.enabled is True
     assert config.dimensions.unit == LengthUnit.METER
+    assert config.dimensions.layer_name == "ff-dimensions"
     assert config.dimensions.offset_mm == 500.0
+    assert config.dimensions.min_length_mm == 1000.0
     assert config.dimensions.style.name == "FIRE_DIM"
     assert config.annotations.layer.name == "ff-annotations"
     assert config.annotations.layer.color == "white"
