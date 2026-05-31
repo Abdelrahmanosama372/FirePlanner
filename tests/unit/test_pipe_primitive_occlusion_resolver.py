@@ -23,6 +23,7 @@ from fireplanner.geometry.components import (
     GeometricPipe,
     GeometricReducer,
     GeometricTee,
+    GeometricWeldedBranch,
 )
 from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives import Line, Point, Rectangle, Transform2D
@@ -257,10 +258,10 @@ def test_pipe_primitive_occlusion_with_tee_tee_and_center_reducer_rotated_45(
                 147.007,
             ),
             (
-                38.679,
-                38.679,
-                147.007,
-                147.007,
+                26.870,
+                26.870,
+                158.816,
+                158.816,
             ),
             (
                 182.929,
@@ -269,10 +270,10 @@ def test_pipe_primitive_occlusion_with_tee_tee_and_center_reducer_rotated_45(
                 338.492,
             ),
             (
-                206.546,
-                206.546,
-                314.875,
-                314.875,
+                194.737,
+                194.737,
+                326.683,
+                326.683,
             ),
             (
                 206.546,
@@ -314,5 +315,130 @@ def test_pipe_primitive_occlusion_with_elbow_plan(geometric_pipe, geometric_elbo
             (0.000, -36.515, 500.000, -36.515),
             (0.000, 0.000, 483.300, 0.000),
             (0.000, 36.515, 483.300, 36.515),
+        ],
+    )
+
+
+def test_pipe_primitive_occlusion_with_elbow_plan_and_welded_same_position_keeps_output(
+    geometric_pipe, geometric_elbow
+):
+    resolver = PipePrimitiveOcclusionResolver()
+    geometric_pipe.diameter = SteelDims.DIM_2_5_INCHES
+    geometric_pipe.start = Point(x=0.0, y=0.0)
+    geometric_pipe.end = Point(x=500.0, y=0.0)
+    geometric_pipe.placement_context = PlacementContext(
+        transform=Transform2D(origin=Point(x=0.0, y=0.0), rotation=0.0),
+        view_type=ViewType.ELEVATION,
+    )
+
+    elbow = deepcopy(geometric_elbow)
+    elbow.placement_context = PlacementContext(
+        transform=Transform2D(origin=Point(x=500.0, y=0.0), rotation=0.0),
+        view_type=ViewType.PLAN,
+    )
+
+    welded = GeometricWeldedBranch(
+        Tee(
+            run_diameter=SteelDims.DIM_1_INCHES,
+            branch_diameter=SteelDims.DIM_1_INCHES,
+            material=SteelMaterial.ERW,
+            schedule=SteelSchedule.SCD40,
+            specs=SteelSpecs.ASTM,
+            connection_type=SteelConnection.Welded,
+        )
+    )
+    welded.placement_context = PlacementContext(
+        transform=Transform2D(origin=Point(x=500.0, y=0.0), rotation=0.0),
+        view_type=ViewType.PLAN,
+    )
+
+    elbow_only_drawable = resolver.resolve(
+        pipe=geometric_pipe,
+        occluding_components=[elbow],
+    )
+    elbow_welded_drawable = resolver.resolve(
+        pipe=geometric_pipe,
+        occluding_components=[elbow, welded],
+    )
+
+    elbow_only_lines = [
+        primitive
+        for primitive in elbow_only_drawable.primitives
+        if isinstance(primitive, Line)
+    ]
+    elbow_welded_lines = [
+        primitive
+        for primitive in elbow_welded_drawable.primitives
+        if isinstance(primitive, Line)
+    ]
+
+    assert _line_tuples(elbow_welded_lines) == _line_tuples(elbow_only_lines)
+
+
+def test_pipe_primitive_occlusion_with_elbow_plan_and_welded_rotated_45(
+    geometric_pipe, geometric_elbow
+):
+    resolver = PipePrimitiveOcclusionResolver()
+    theta = radians(45.0)
+    c = cos(theta)
+    s = sin(theta)
+    geometric_pipe.diameter = SteelDims.DIM_2_5_INCHES
+    geometric_pipe.start = Point(x=0.0, y=0.0)
+    geometric_pipe.end = Point(x=500.0 * c, y=500.0 * s)
+    geometric_pipe.placement_context = PlacementContext(
+        transform=Transform2D(origin=Point(x=0.0, y=0.0), rotation=theta),
+        view_type=ViewType.ELEVATION,
+    )
+
+    elbow = deepcopy(geometric_elbow)
+    elbow.placement_context = PlacementContext(
+        transform=Transform2D(origin=Point(x=500.0 * c, y=500.0 * s), rotation=theta),
+        view_type=ViewType.PLAN,
+    )
+
+    welded = GeometricWeldedBranch(
+        Tee(
+            run_diameter=SteelDims.DIM_1_INCHES,
+            branch_diameter=SteelDims.DIM_1_INCHES,
+            material=SteelMaterial.ERW,
+            schedule=SteelSchedule.SCD40,
+            specs=SteelSpecs.ASTM,
+            connection_type=SteelConnection.Welded,
+        )
+    )
+    welded.placement_context = PlacementContext(
+        transform=Transform2D(origin=Point(x=500.0 * c, y=500.0 * s), rotation=theta),
+        view_type=ViewType.PLAN,
+    )
+
+    drawable = resolver.resolve(
+        pipe=geometric_pipe,
+        occluding_components=[elbow, welded],
+    )
+    lines = [
+        primitive for primitive in drawable.primitives if isinstance(primitive, Line)
+    ]
+
+    _assert_line_tuples_close(
+        _line_tuples(lines),
+        [
+            (
+                0.000 * c + 36.515 * s,
+                0.000 * s - 36.515 * c,
+                500.000 * c + 36.515 * s,
+                500.000 * s - 36.515 * c,
+            ),
+            (
+                0.000 * c,
+                0.000 * s,
+                483.300 * c,
+                483.300 * s,
+            ),
+            (
+                0.000 * c - 36.515 * s,
+                0.000 * s + 36.515 * c,
+                483.300 * c - 36.515 * s,
+                483.300 * s + 36.515 * c,
+            ),
         ],
     )

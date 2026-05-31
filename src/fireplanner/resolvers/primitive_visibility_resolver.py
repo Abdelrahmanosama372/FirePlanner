@@ -123,28 +123,50 @@ class PrimitiveVisibilityResolver:
         return PrimitivePartition(visible=visible, hidden=hidden)
 
     def _clip_line_to_rect(self, line: Line, rect: Rectangle) -> Line | None:
-        xmin, xmax, ymin, ymax = self._rect_bounds(rect)
-        x0, y0 = line.start.x, line.start.y
-        x1, y1 = line.end.x, line.end.y
-        dx, dy = x1 - x0, y1 - y0
-        p = [-dx, dx, -dy, dy]
-        q = [x0 - xmin, xmax - x0, y0 - ymin, ymax - y0]
-        u1, u2 = 0.0, 1.0
-        for pi_, qi_ in zip(p, q):
-            if isclose(pi_, 0.0, abs_tol=EPS):
-                if qi_ < 0:
-                    return None
+        points: list[tuple[float, Point]] = []
+
+        def _line_param(point: Point) -> float:
+            dx = line.end.x - line.start.x
+            dy = line.end.y - line.start.y
+            if abs(dx) >= abs(dy):
+                if abs(dx) <= EPS:
+                    return 0.0
+                return (point.x - line.start.x) / dx
+            if abs(dy) <= EPS:
+                return 0.0
+            return (point.y - line.start.y) / dy
+
+        if self._point_in_rect(line.start, rect):
+            points.append((0.0, line.start))
+        if self._point_in_rect(line.end, rect):
+            points.append((1.0, line.end))
+
+        for edge_start, edge_end in self._rect_edges(rect):
+            hit, intersection = line.intersects_line_2D(
+                Line(start=edge_start, end=edge_end)
+            )
+            if not hit or intersection is None:
                 continue
-            t = qi_ / pi_
-            if pi_ < 0:
-                u1 = max(u1, t)
-            else:
-                u2 = min(u2, t)
-            if u1 > u2:
-                return None
+            t = _line_param(intersection)
+            if -EPS <= t <= 1.0 + EPS:
+                points.append((max(0.0, min(1.0, t)), intersection))
+
+        if len(points) < 2:
+            return None
+
+        points = sorted(points, key=lambda item: item[0])
+        unique: list[tuple[float, Point]] = []
+        for t, point in points:
+            if unique and abs(unique[-1][0] - t) <= 1e-7:
+                continue
+            unique.append((t, point))
+
+        if len(unique) < 2:
+            return None
+
         return Line(
-            start=Point(x=x0 + u1 * dx, y=y0 + u1 * dy),
-            end=Point(x=x0 + u2 * dx, y=y0 + u2 * dy),
+            start=unique[0][1],
+            end=unique[-1][1],
             line_type=line.line_type,
         )
 
@@ -206,7 +228,6 @@ class PrimitiveVisibilityResolver:
         center: Point,
         radius: float,
     ) -> list[Point]:
-        xmin, xmax, ymin, ymax = self._rect_bounds(rect)
         points: list[Point] = []
 
         def add(px: float, py: float):
@@ -214,29 +235,23 @@ class PrimitiveVisibilityResolver:
             if not any(existing == p for existing in points):
                 points.append(p)
 
-        for x in (xmin, xmax):
-            d = radius * radius - (x - center.x) ** 2
-            if d < -EPS:
-                continue
-            d = max(0.0, d)
-            y_a = center.y + sqrt(d)
-            y_b = center.y - sqrt(d)
-            if ymin - EPS <= y_a <= ymax + EPS:
-                add(x, y_a)
-            if ymin - EPS <= y_b <= ymax + EPS:
-                add(x, y_b)
+        for edge_start, edge_end in self._rect_edges(rect):
+            dx = edge_end.x - edge_start.x
+            dy = edge_end.y - edge_start.y
+            fx = edge_start.x - center.x
+            fy = edge_start.y - center.y
 
-        for y in (ymin, ymax):
-            d = radius * radius - (y - center.y) ** 2
-            if d < -EPS:
+            a = dx * dx + dy * dy
+            b = 2 * (fx * dx + fy * dy)
+            c = fx * fx + fy * fy - radius * radius
+            disc = b * b - 4 * a * c
+            if disc < -EPS:
                 continue
-            d = max(0.0, d)
-            x_a = center.x + sqrt(d)
-            x_b = center.x - sqrt(d)
-            if xmin - EPS <= x_a <= xmax + EPS:
-                add(x_a, y)
-            if xmin - EPS <= x_b <= xmax + EPS:
-                add(x_b, y)
+            disc = max(0.0, disc)
+            sqrt_disc = sqrt(disc)
+            for t in ((-b - sqrt_disc) / (2 * a), (-b + sqrt_disc) / (2 * a)):
+                if -EPS <= t <= 1.0 + EPS:
+                    add(edge_start.x + t * dx, edge_start.y + t * dy)
 
         return points
 
@@ -270,11 +285,20 @@ class PrimitiveVisibilityResolver:
     def _rect_bounds(self, rect: Rectangle) -> tuple[float, float, float, float]:
         return rect.bounds()
 
+    def _rect_edges(self, rect: Rectangle) -> list[tuple[Point, Point]]:
+        points = [rect.point1, rect.point2, rect.point3, rect.point4]
+        return list(zip(points, points[1:] + points[:1]))
+
     def _point_in_rect(self, point: Point, rect: Rectangle) -> bool:
-        xmin, xmax, ymin, ymax = self._rect_bounds(rect)
-        return (
-            xmin - EPS <= point.x <= xmax + EPS and ymin - EPS <= point.y <= ymax + EPS
-        )
+        edges = self._rect_edges(rect)
+        crosses = [
+            (end.x - start.x) * (point.y - start.y)
+            - (end.y - start.y) * (point.x - start.x)
+            for start, end in edges
+        ]
+        non_negative = all(cross >= -EPS for cross in crosses)
+        non_positive = all(cross <= EPS for cross in crosses)
+        return non_negative or non_positive
 
     def _merge_intervals(
         self,
