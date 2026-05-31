@@ -177,7 +177,8 @@ class GeometricElbow(GeometricComponent):
                 ]
 
             case ViewType.PLAN | ViewType.SIDE:
-                primitives = self._local_centerlines()
+                # no need to have layout as it is put over pipe
+                primitives = []
 
         return primitives
 

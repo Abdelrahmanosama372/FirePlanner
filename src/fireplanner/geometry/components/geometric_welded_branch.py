@@ -92,7 +92,8 @@ class GeometricWeldedBranch(GeometricComponent):
 
     @override
     def _local_layout_skeleton(self) -> list[Primitive2D]:
-        return self._local_centerlines()
+        # no need to have layout as it is put over other pipe
+        return []
 
     @override
     def local_occupancy_regions(self) -> list[Rectangle]:
