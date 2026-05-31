@@ -1,7 +1,29 @@
 import pytest
 
 from fireplanner.firecomponent import Elbow, Reducer, SteelDims, Tee
-from fireplanner.networks import CoreNetwork, ModelNetwork
+from fireplanner.geometry.primitives import Line, Point
+from fireplanner.networks import CoreNetwork, ModelNetwork, ModelNetworkConfig
+from fireplanner.networks.junction_info import (
+    EdgeInfo,
+    ThreeWayJunctionInfo,
+    TwoWayJunctionInfo,
+)
+
+
+class _FakeCoreNetwork:
+    def __init__(
+        self,
+        edges_info: list[EdgeInfo],
+        junctions_info: list[TwoWayJunctionInfo | ThreeWayJunctionInfo],
+    ) -> None:
+        self._edges_info = edges_info
+        self._junctions_info = junctions_info
+
+    def get_edges_info(self) -> list[EdgeInfo]:
+        return list(self._edges_info)
+
+    def get_junctions_info(self) -> list[TwoWayJunctionInfo | ThreeWayJunctionInfo]:
+        return list(self._junctions_info)
 
 
 @pytest.fixture
@@ -99,3 +121,110 @@ def test_create_fire_connection_for_three_way_junction(
 
     for connection, expected_type in zip(connections, expected_types):
         assert isinstance(connection, expected_type)
+
+
+def test_short_transition_edge_collapses_on_inline_two_way_chain():
+    edges_info = [
+        EdgeInfo(
+            edge_id=1,
+            line=Line(start=Point(x=0, y=0), end=Point(x=1000, y=0), id=1),
+            length=1000.0,
+            sprinkler_count=2,
+        ),
+        EdgeInfo(
+            edge_id=2,
+            line=Line(start=Point(x=1000, y=0), end=Point(x=1300, y=0), id=2),
+            length=300.0,
+            sprinkler_count=3,
+        ),
+        EdgeInfo(
+            edge_id=3,
+            line=Line(start=Point(x=1300, y=0), end=Point(x=2300, y=0), id=3),
+            length=1000.0,
+            sprinkler_count=5,
+        ),
+    ]
+    junctions_info = [
+        TwoWayJunctionInfo(
+            junction_id=1,
+            origin=Point(x=1000, y=0),
+            edges=[edges_info[0], edges_info[1]],
+            angle=0.0,
+        ),
+        TwoWayJunctionInfo(
+            junction_id=2,
+            origin=Point(x=1300, y=0),
+            edges=[edges_info[1], edges_info[2]],
+            angle=0.0,
+        ),
+    ]
+
+    network = ModelNetwork(
+        _FakeCoreNetwork(edges_info, junctions_info),
+        config=ModelNetworkConfig(
+            short_transition_edges_enabled=True,
+            short_transition_edges_max_length_mm=400.0,
+        ),
+    )
+
+    diameters = network.get_edge_id_to_pipe_diameter_map()
+    assert diameters[1] == SteelDims.DIM_1_INCHES
+    assert diameters[2] == SteelDims.DIM_1_5_INCHES
+    assert diameters[3] == SteelDims.DIM_1_5_INCHES
+
+
+def test_short_transition_edge_collapses_on_three_way_run_chain_not_branch():
+    edges_info = [
+        EdgeInfo(
+            edge_id=1,
+            line=Line(start=Point(x=0, y=0), end=Point(x=1000, y=0), id=1),
+            length=1000.0,
+            sprinkler_count=2,
+        ),
+        EdgeInfo(
+            edge_id=2,
+            line=Line(start=Point(x=1000, y=0), end=Point(x=1300, y=0), id=2),
+            length=300.0,
+            sprinkler_count=3,
+        ),
+        EdgeInfo(
+            edge_id=3,
+            line=Line(start=Point(x=1300, y=0), end=Point(x=2300, y=0), id=3),
+            length=1000.0,
+            sprinkler_count=5,
+        ),
+        EdgeInfo(
+            edge_id=4,
+            line=Line(start=Point(x=1300, y=0), end=Point(x=1300, y=1000), id=4),
+            length=1000.0,
+            sprinkler_count=1,
+        ),
+    ]
+    junctions_info = [
+        TwoWayJunctionInfo(
+            junction_id=1,
+            origin=Point(x=1000, y=0),
+            edges=[edges_info[0], edges_info[1]],
+            angle=0.0,
+        ),
+        ThreeWayJunctionInfo(
+            junction_id=2,
+            origin=Point(x=1300, y=0),
+            run=[edges_info[1], edges_info[2]],
+            branch=edges_info[3],
+        ),
+    ]
+
+    network = ModelNetwork(
+        _FakeCoreNetwork(edges_info, junctions_info),
+        config=ModelNetworkConfig(
+            short_transition_edges_enabled=True,
+            short_transition_edges_max_length_mm=400.0,
+        ),
+    )
+
+    diameters = network.get_edge_id_to_pipe_diameter_map()
+    assert diameters[1] == SteelDims.DIM_1_INCHES
+    assert diameters[2] == SteelDims.DIM_1_5_INCHES
+    assert diameters[3] == SteelDims.DIM_1_5_INCHES
+    assert diameters[4] == SteelDims.DIM_1_INCHES

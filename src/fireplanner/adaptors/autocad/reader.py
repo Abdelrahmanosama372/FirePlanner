@@ -87,6 +87,9 @@ class Reader:
             steel_data.get("connnection_type") or steel_data.get("connection_type")
         )
         hangers_processing_data = self._mapping(processing_data.get("hangers"))
+        short_transition_edges_data = self._mapping(
+            processing_data.get("short_transition_edges")
+        )
 
         config = ModelNetworkConfig.from_dict(
             {
@@ -115,6 +118,12 @@ class Reader:
                 "default_connection_type": SteelConnection.Grooved.value,
                 "hanger_multiplier": float(
                     hangers_processing_data.get("multiplier", 1.0)
+                ),
+                "short_transition_edges_enabled": bool(
+                    short_transition_edges_data.get("enabled", False)
+                ),
+                "short_transition_edges_max_length_mm": float(
+                    short_transition_edges_data.get("max_length_mm", 400.0)
                 ),
             }
         )

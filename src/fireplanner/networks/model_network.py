@@ -54,6 +54,8 @@ class ModelNetworkConfig:
     )
     default_connection_type: SteelConnection = SteelConnection.Grooved
     hanger_multiplier: float = 1.0
+    short_transition_edges_enabled: bool = False
+    short_transition_edges_max_length_mm: float = 400.0
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ModelNetworkConfig:
@@ -79,6 +81,12 @@ class ModelNetworkConfig:
                 data.get("default_connection_type", SteelConnection.Grooved)
             ),
             hanger_multiplier=float(data.get("hanger_multiplier", 1.0)),
+            short_transition_edges_enabled=bool(
+                data.get("short_transition_edges_enabled", False)
+            ),
+            short_transition_edges_max_length_mm=float(
+                data.get("short_transition_edges_max_length_mm", 400.0)
+            ),
         )
 
     @classmethod
@@ -127,6 +135,7 @@ class ModelNetwork:
 
     def _create_network(self, core_network: CoreNetwork) -> None:
         self._model_edges = self.construct_edges()
+        self._collapse_short_transition_edges()
         self._model_nodes = self.construct_nodes()
 
     @property
@@ -214,12 +223,89 @@ class ModelNetwork:
 
         return model_edges
 
-    def _create_pipe_for_edge_id(self, edge_info: EdgeInfo) -> Pipe:
+    def _collapse_short_transition_edges(self) -> None:
+        if not self.config.short_transition_edges_enabled:
+            return
 
+        edge_info_by_id = {
+            edge_info.edge_id: edge_info
+            for edge_info in self._core_network.get_edges_info()
+        }
+        inline_neighbors = self._build_inline_edge_neighbors()
+        updated_diameters: dict[int, SteelDims] = {}
+
+        for edge_id, current_diameter in self._edge_id_to_pipe_dimension.items():
+            edge_info = edge_info_by_id[edge_id]
+            if edge_info.length >= self.config.short_transition_edges_max_length_mm:
+                continue
+
+            neighbors = sorted(inline_neighbors.get(edge_id, set()))
+            if len(neighbors) != 2:
+                continue
+
+            first_diameter = self._edge_id_to_pipe_dimension[neighbors[0]]
+            second_diameter = self._edge_id_to_pipe_dimension[neighbors[1]]
+            if not self._is_strict_intermediate_diameter(
+                current=current_diameter,
+                first=first_diameter,
+                second=second_diameter,
+            ):
+                continue
+
+            updated_diameters[edge_id] = max(
+                (first_diameter, second_diameter),
+                key=lambda diameter: diameter.value,
+            )
+
+        if not updated_diameters:
+            return
+
+        self._edge_id_to_pipe_dimension.update(updated_diameters)
+        for model_edge in self._model_edges:
+            new_diameter = self._edge_id_to_pipe_dimension[model_edge.edge_id]
+            model_edge.pipe = self._create_pipe_for_diameter(new_diameter)
+
+    def _build_inline_edge_neighbors(self) -> dict[int, set[int]]:
+        neighbors: dict[int, set[int]] = {}
+        for junction_info in self._core_network.get_junctions_info():
+            inline_edges: list[EdgeInfo] = []
+            if isinstance(junction_info, TwoWayJunctionInfo):
+                inline_edges = list(junction_info.edges)
+            elif isinstance(junction_info, ThreeWayJunctionInfo):
+                inline_edges = list(junction_info.run)
+
+            if len(inline_edges) != 2:
+                continue
+
+            first_edge_id = inline_edges[0].edge_id
+            second_edge_id = inline_edges[1].edge_id
+            neighbors.setdefault(first_edge_id, set()).add(second_edge_id)
+            neighbors.setdefault(second_edge_id, set()).add(first_edge_id)
+
+        return neighbors
+
+    def _is_strict_intermediate_diameter(
+        self,
+        current: SteelDims,
+        first: SteelDims,
+        second: SteelDims,
+    ) -> bool:
+        current_value = current.value
+        first_value = first.value
+        second_value = second.value
+        return len({current_value, first_value, second_value}) == 3 and min(
+            first_value, second_value
+        ) < current_value < max(first_value, second_value)
+
+    def _create_pipe_for_edge_id(self, edge_info: EdgeInfo) -> Pipe:
         pipe_dimension = find_min_steel_dim_for_sprinklers(
             self.config.hazard,
             edge_info.sprinkler_count,
         )
+
+        return self._create_pipe_for_diameter(pipe_dimension)
+
+    def _create_pipe_for_diameter(self, pipe_dimension: SteelDims) -> Pipe:
 
         return Pipe(
             diameter=pipe_dimension,

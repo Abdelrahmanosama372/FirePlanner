@@ -21,6 +21,9 @@ processing:
   compute_pipe_dimensions: true
   hangers:
     multiplier: 1.0
+  short_transition_edges:
+    enabled: true
+    max_length_mm: 300
 
 geometry:
   placement:

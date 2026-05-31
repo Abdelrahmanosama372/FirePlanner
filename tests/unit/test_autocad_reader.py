@@ -25,6 +25,9 @@ processing:
   compute_pipe_dimensions: true
   hangers:
     multiplier: 1.5
+  short_transition_edges:
+    enabled: true
+    max_length_mm: 400
 
 autocad:
   input:
@@ -158,6 +161,8 @@ def test_reader_builds_model_network_config_from_yaml_string():
         SteelConnection.Grooved
     )
     assert config.hanger_multiplier == 1.5
+    assert config.short_transition_edges_enabled is True
+    assert config.short_transition_edges_max_length_mm == 400.0
 
 
 def test_reader_builds_geometry_network_config_from_yaml_string():
