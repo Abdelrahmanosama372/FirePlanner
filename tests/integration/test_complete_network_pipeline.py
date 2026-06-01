@@ -1,12 +1,15 @@
 from math import pi
 
 from fireplanner.firecomponent import (
+    Elbow,
     Pipe,
+    Reducer,
     SteelConnection,
     SteelDims,
     SteelMaterial,
     SteelSchedule,
     SteelSpecs,
+    Tee,
 )
 from fireplanner.geometry.primitives import Block, Line, Point
 from fireplanner.networks import (
@@ -663,3 +666,67 @@ def test_geometry_network_construction():
             ("GeometricPipe", mm(17.9786), mm(25.0564), mm(15.0486), mm(25.0564)),
         ],
     }
+
+
+def test_complete_network_collects_model_only_sprinkler_connections():
+    lines, blocks = build_test_network()
+    core_network = CoreNetwork(
+        config=CoreNetworkConfig(
+            lines=lines,
+            sprinkler_blocks=blocks,
+            sprinkler_block_data={"SPR": {"k_factor": 5.6, "temperature": 68}},
+            root_flow_route=FlowRoute.BRANCH,
+        )
+    )
+    model_network = ModelNetwork(core_network)
+
+    assert len(core_network.get_terminal_sprinkler_infos()) == 3
+    model_only_connections = model_network.get_boq_only_fire_connections()
+    assert len(model_only_connections) == 30
+
+    assert (
+        sum(isinstance(connection, Elbow) for connection in model_only_connections) == 3
+    )
+    assert (
+        sum(isinstance(connection, Reducer) for connection in model_only_connections)
+        == 15
+    )
+    sprinkler_tees = [
+        connection
+        for connection in model_only_connections
+        if isinstance(connection, Tee)
+    ]
+    assert len(sprinkler_tees) == 12
+    assert (
+        sum(
+            connection.run_diameter == SteelDims.DIM_1_INCHES
+            and connection.branch_diameter == SteelDims.DIM_1_INCHES
+            for connection in sprinkler_tees
+        )
+        == 3
+    )
+    assert (
+        sum(
+            connection.run_diameter == SteelDims.DIM_1_25_INCHES
+            and connection.branch_diameter == SteelDims.DIM_1_INCHES
+            for connection in sprinkler_tees
+        )
+        == 3
+    )
+    assert (
+        sum(
+            connection.run_diameter == SteelDims.DIM_1_5_INCHES
+            and connection.branch_diameter == SteelDims.DIM_1_INCHES
+            for connection in sprinkler_tees
+        )
+        == 6
+    )
+
+    sprinkler_reducers = [
+        connection
+        for connection in model_only_connections
+        if isinstance(connection, Reducer)
+        and connection.large_diameter == SteelDims.DIM_1_INCHES
+        and connection.small_diameter == SteelDims.DIM_0_5_INCHES
+    ]
+    assert len(sprinkler_reducers) == 15

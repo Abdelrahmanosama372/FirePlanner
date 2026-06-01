@@ -8,6 +8,7 @@ from .junction_info import (
     JunctionInfo,
     SprinklerInfo,
     SprinklerJunctionInfo,
+    TerminalSprinklerInfo,
     ThreeWayJunctionInfo,
     TwoWayJunctionInfo,
 )

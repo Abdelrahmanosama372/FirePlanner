@@ -36,6 +36,13 @@ class SprinklerJunctionInfo(TwoWayJunctionInfo):
 
 
 @dataclass(frozen=True)
+class TerminalSprinklerInfo:
+    origin: Point
+    edge: EdgeInfo
+    sprinkler_info: SprinklerInfo
+
+
+@dataclass(frozen=True)
 class ThreeWayJunctionInfo(JunctionInfo):
     run: list[EdgeInfo] = field(default_factory=list)
     branch: EdgeInfo | None = None

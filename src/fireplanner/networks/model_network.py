@@ -31,6 +31,8 @@ from fireplanner.networks.junction_assembly import (
 from fireplanner.networks.junction_info import (
     EdgeInfo,
     JunctionInfo,
+    SprinklerJunctionInfo,
+    TerminalSprinklerInfo,
     ThreeWayJunctionInfo,
     TwoWayJunctionInfo,
 )
@@ -131,12 +133,14 @@ class ModelNetwork:
         self._model_nodes: list[ModelNode] = []
         self._model_edges: list[ModelEdge] = []
         self._edge_id_to_pipe_dimension: dict[int, SteelDims] = {}
+        self._boq_only_fire_connections: list[FireConnection] = []
         self._create_network(core_network)
 
     def _create_network(self, core_network: CoreNetwork) -> None:
         self._model_edges = self.construct_edges()
         self._collapse_short_transition_edges()
         self._model_nodes = self.construct_nodes()
+        self._boq_only_fire_connections = self.construct_boq_only_fire_connections()
 
     @property
     def config(self) -> ModelNetworkConfig:
@@ -163,6 +167,9 @@ class ModelNetwork:
 
     def get_edge_id_to_pipe_diameter_map(self) -> dict[int, SteelDims]:
         return dict(self._edge_id_to_pipe_dimension)
+
+    def get_boq_only_fire_connections(self) -> list[FireConnection]:
+        return list(self._boq_only_fire_connections)
 
     def get_junctions_assembly(self) -> list[JunctionAssembly]:
         junction_info_by_id: dict[int, JunctionInfo] = {
@@ -396,6 +403,35 @@ class ModelNetwork:
 
         return nodes
 
+    def construct_boq_only_fire_connections(self) -> list[FireConnection]:
+        connections: list[FireConnection] = []
+        for junction_info in self._core_network.get_junctions_info():
+            if not isinstance(junction_info, SprinklerJunctionInfo):
+                continue
+            if junction_info.sprinkler_info is None:
+                continue
+            edge_dims = [
+                self._edge_id_to_pipe_dimension[edge_info.edge_id]
+                for edge_info in junction_info.edges
+            ]
+            connections.extend(
+                self._create_inline_sprinkler_connections(
+                    pipe1_dim=edge_dims[0],
+                    pipe2_dim=edge_dims[1],
+                    k_factor=junction_info.sprinkler_info.k_factor,
+                )
+            )
+
+        for sprinkler_info in self._core_network.get_terminal_sprinkler_infos():
+            edge_diameter = self._edge_id_to_pipe_dimension[sprinkler_info.edge.edge_id]
+            connections.extend(
+                self._create_terminal_sprinkler_connections(
+                    edge_diameter=edge_diameter,
+                    k_factor=sprinkler_info.sprinkler_info.k_factor,
+                )
+            )
+        return connections
+
     def _create_fire_connection_for_two_way_junction(
         self,
         pipe1_dim: SteelDims,
@@ -506,6 +542,92 @@ class ModelNetwork:
                 ]
             )
         return fire_connections
+
+    def _create_inline_sprinkler_connections(
+        self,
+        pipe1_dim: SteelDims,
+        pipe2_dim: SteelDims,
+        k_factor: float,
+    ) -> list[FireConnection]:
+        connections: list[FireConnection] = [
+            self._create_inline_sprinkler_branch_connection(
+                pipe1_dim=pipe1_dim,
+                pipe2_dim=pipe2_dim,
+            )
+        ]
+        reducer = self._create_sprinkler_reducer_for_k_factor(k_factor)
+        if reducer is not None:
+            connections.append(reducer)
+        return connections
+
+    def _create_inline_sprinkler_branch_connection(
+        self,
+        pipe1_dim: SteelDims,
+        pipe2_dim: SteelDims,
+    ) -> Tee:
+        run_diameter = max(
+            pipe1_dim,
+            pipe2_dim,
+            key=lambda diameter: diameter.value,
+        )
+        # Model-level welded branch is represented as Tee with welded connection type.
+        connection_type = self.config.get_connection_type_for_diameter(run_diameter)
+        return Tee(
+            run_diameter=run_diameter,
+            branch_diameter=SteelDims.DIM_1_INCHES,
+            material=self.config.material,
+            schedule=self.config.schedule,
+            specs=self.config.specs,
+            connection_type=connection_type,
+        )
+
+    def _create_terminal_sprinkler_connections(
+        self,
+        edge_diameter: SteelDims,
+        k_factor: float,
+    ) -> list[FireConnection]:
+        one_inch_connection_type = self.config.get_connection_type_for_diameter(
+            SteelDims.DIM_1_INCHES
+        )
+        connections: list[FireConnection] = [
+            Elbow(
+                diameter=SteelDims.DIM_1_INCHES,
+                angle=90.0,
+                material=self.config.material,
+                schedule=self.config.schedule,
+                specs=self.config.specs,
+                connection_type=one_inch_connection_type,
+            )
+        ]
+        reducer = self._create_sprinkler_reducer_for_k_factor(k_factor)
+        if reducer is not None:
+            connections.append(reducer)
+        return connections
+
+    def _create_sprinkler_reducer_for_k_factor(
+        self,
+        k_factor: float,
+    ) -> Reducer | None:
+        if abs(k_factor - 5.6) <= 1e-9:
+            small_diameter = SteelDims.DIM_0_5_INCHES
+        elif abs(k_factor - 8.0) <= 1e-9:
+            small_diameter = SteelDims.DIM_0_75_INCHES
+        elif abs(k_factor - 11.0) <= 1e-9:
+            return None
+        else:
+            raise ValueError(f"Unsupported sprinkler k-factor: {k_factor}")
+
+        one_inch_connection_type = self.config.get_connection_type_for_diameter(
+            SteelDims.DIM_1_INCHES
+        )
+        return Reducer(
+            diameter1=SteelDims.DIM_1_INCHES,
+            diameter2=small_diameter,
+            material=self.config.material,
+            schedule=self.config.schedule,
+            specs=self.config.specs,
+            connection_type=one_inch_connection_type,
+        )
 
     def get_pipes_assembly(self) -> list[PipeAssembly]:
         edge_id_info_map = {

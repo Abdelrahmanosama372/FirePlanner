@@ -285,6 +285,7 @@ class Pipeline:
             junction_connections
         ) in result.model_network.get_fire_connections_with_junctions_ids().values():
             connections.extend(junction_connections)
+        connections.extend(result.model_network.get_boq_only_fire_connections())
 
         pipe_boq = PipeCalculator.compute(pipes_lengths)
         connection_boq = ConnectionCalculator.compute(connections)

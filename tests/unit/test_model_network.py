@@ -1,10 +1,13 @@
 import pytest
 
-from fireplanner.firecomponent import Elbow, Reducer, SteelDims, Tee
+from fireplanner.firecomponent import Elbow, Reducer, SteelConnection, SteelDims, Tee
 from fireplanner.geometry.primitives import Line, Point, PrimitiveStyle
 from fireplanner.networks import CoreNetwork, ModelNetwork, ModelNetworkConfig
 from fireplanner.networks.junction_info import (
     EdgeInfo,
+    SprinklerInfo,
+    SprinklerJunctionInfo,
+    TerminalSprinklerInfo,
     ThreeWayJunctionInfo,
     TwoWayJunctionInfo,
 )
@@ -14,16 +17,25 @@ class _FakeCoreNetwork:
     def __init__(
         self,
         edges_info: list[EdgeInfo],
-        junctions_info: list[TwoWayJunctionInfo | ThreeWayJunctionInfo],
+        junctions_info: list[
+            TwoWayJunctionInfo | ThreeWayJunctionInfo | SprinklerJunctionInfo
+        ],
+        terminal_sprinkler_infos: list[TerminalSprinklerInfo] | None = None,
     ) -> None:
         self._edges_info = edges_info
         self._junctions_info = junctions_info
+        self._terminal_sprinkler_infos = terminal_sprinkler_infos or []
 
     def get_edges_info(self) -> list[EdgeInfo]:
         return list(self._edges_info)
 
-    def get_junctions_info(self) -> list[TwoWayJunctionInfo | ThreeWayJunctionInfo]:
+    def get_junctions_info(
+        self,
+    ) -> list[TwoWayJunctionInfo | ThreeWayJunctionInfo | SprinklerJunctionInfo]:
         return list(self._junctions_info)
+
+    def get_terminal_sprinkler_infos(self) -> list[TerminalSprinklerInfo]:
+        return list(self._terminal_sprinkler_infos)
 
 
 @pytest.fixture
@@ -254,3 +266,131 @@ def test_layer_name_to_pipe_diameter_overrides_sprinkler_based_sizing():
 
     diameters = network.get_edge_id_to_pipe_diameter_map()
     assert diameters[1] == SteelDims.DIM_1_INCHES
+
+
+def test_inline_sprinkler_adds_branch_connection_and_reducer_to_boq_only():
+    edges_info = [
+        EdgeInfo(
+            edge_id=1,
+            line=Line(start=Point(x=0, y=0), end=Point(x=500, y=0), id=1),
+            length=500.0,
+            sprinkler_count=2,
+        ),
+        EdgeInfo(
+            edge_id=2,
+            line=Line(start=Point(x=500, y=0), end=Point(x=1000, y=0), id=2),
+            length=500.0,
+            sprinkler_count=2,
+        ),
+    ]
+    junctions_info = [
+        SprinklerJunctionInfo(
+            junction_id=1,
+            origin=Point(x=500, y=0),
+            edges=edges_info,
+            angle=0.0,
+            sprinkler_info=SprinklerInfo(k_factor=5.6, temperature=68.0),
+        )
+    ]
+
+    network = ModelNetwork(_FakeCoreNetwork(edges_info, junctions_info))
+
+    assert network.get_fire_connections_with_junctions_ids() == {}
+
+    connections = network.get_boq_only_fire_connections()
+    assert len(connections) == 2
+    assert isinstance(connections[0], Tee)
+    assert connections[0].branch_diameter == SteelDims.DIM_1_INCHES
+    assert isinstance(connections[1], Reducer)
+    assert connections[1].large_diameter == SteelDims.DIM_1_INCHES
+    assert connections[1].small_diameter == SteelDims.DIM_0_5_INCHES
+
+
+def test_terminal_sprinkler_connections_are_boq_only():
+    edge_info = EdgeInfo(
+        edge_id=1,
+        line=Line(start=Point(x=0, y=0), end=Point(x=500, y=0), id=1),
+        length=500.0,
+        sprinkler_count=2,
+    )
+
+    network = ModelNetwork(
+        _FakeCoreNetwork(
+            [edge_info],
+            [],
+            terminal_sprinkler_infos=[
+                TerminalSprinklerInfo(
+                    origin=Point(x=500, y=0),
+                    edge=edge_info,
+                    sprinkler_info=SprinklerInfo(k_factor=8.0, temperature=68.0),
+                )
+            ],
+        )
+    )
+
+    assert network.get_fire_connections_with_junctions_ids() == {}
+    connections = network.get_boq_only_fire_connections()
+    assert len(connections) == 2
+    assert isinstance(connections[0], Elbow)
+    assert connections[0].diameter == SteelDims.DIM_1_INCHES
+    assert isinstance(connections[1], Reducer)
+    assert connections[1].large_diameter == SteelDims.DIM_1_INCHES
+    assert connections[1].small_diameter == SteelDims.DIM_0_75_INCHES
+    assert network.get_junctions_assembly() == []
+
+
+def test_terminal_sprinkler_with_k11_has_no_reducer():
+    edge_info = EdgeInfo(
+        edge_id=1,
+        line=Line(start=Point(x=0, y=0), end=Point(x=500, y=0), id=1),
+        length=500.0,
+        sprinkler_count=2,
+    )
+
+    network = ModelNetwork(
+        _FakeCoreNetwork(
+            [edge_info],
+            [],
+            terminal_sprinkler_infos=[
+                TerminalSprinklerInfo(
+                    origin=Point(x=500, y=0),
+                    edge=edge_info,
+                    sprinkler_info=SprinklerInfo(k_factor=11.0, temperature=68.0),
+                )
+            ],
+        )
+    )
+
+    connections = network.get_boq_only_fire_connections()
+    assert len(connections) == 1
+    assert isinstance(connections[0], Elbow)
+    assert connections[0].diameter == SteelDims.DIM_1_INCHES
+
+
+def test_inline_sprinkler_branch_connection_uses_run_connection_type():
+    network = ModelNetwork(
+        _FakeCoreNetwork([], []),
+        config=ModelNetworkConfig(
+            connection_type_by_diameter={
+                SteelDims.DIM_1_5_INCHES: SteelConnection.Threaded,
+                SteelDims.DIM_2_5_INCHES: SteelConnection.Welded,
+            }
+        ),
+    )
+
+    threaded_branch = network._create_inline_sprinkler_branch_connection(
+        pipe1_dim=SteelDims.DIM_1_5_INCHES,
+        pipe2_dim=SteelDims.DIM_1_5_INCHES,
+    )
+    welded_branch = network._create_inline_sprinkler_branch_connection(
+        pipe1_dim=SteelDims.DIM_2_5_INCHES,
+        pipe2_dim=SteelDims.DIM_2_5_INCHES,
+    )
+
+    assert threaded_branch.run_diameter == SteelDims.DIM_1_5_INCHES
+    assert threaded_branch.branch_diameter == SteelDims.DIM_1_INCHES
+    assert threaded_branch.connection_type == SteelConnection.Threaded
+
+    assert welded_branch.run_diameter == SteelDims.DIM_2_5_INCHES
+    assert welded_branch.branch_diameter == SteelDims.DIM_1_INCHES
+    assert welded_branch.connection_type == SteelConnection.Welded

@@ -6,7 +6,7 @@ from typing import Any
 
 from ..geometry.primitives import Block, Line, Point
 from .junction import Junction, JunctionType
-from .junction_info import EdgeInfo, JunctionInfo
+from .junction_info import EdgeInfo, JunctionInfo, TerminalSprinklerInfo
 from .topology_interpreter import TopologyInterpreter
 
 
@@ -437,6 +437,50 @@ class CoreNetwork:
             topology_interpreter.interpret_junction(junction)
             for junction in junctions.values()
         ]
+
+    def get_terminal_sprinkler_infos(self) -> list[TerminalSprinklerInfo]:
+        if self.root is None:
+            return []
+
+        edge_info_by_id = {
+            edge_info.edge_id: edge_info for edge_info in self.get_edges_info()
+        }
+        sprinkler_block_data = self._config.sprinkler_block_data
+        terminal_infos: list[TerminalSprinklerInfo] = []
+
+        def _collect(core_node: CoreNode) -> None:
+            if not core_node.connected_nodes:
+                sprinkle = next(
+                    (
+                        block
+                        for block in self.sprinkles
+                        if block.center == core_node.edge.end
+                    ),
+                    None,
+                )
+                if sprinkle is not None and sprinkle.name in sprinkler_block_data:
+                    metadata = sprinkler_block_data[sprinkle.name]
+                    if "k_factor" in metadata and "temperature" in metadata:
+                        terminal_infos.append(
+                            TerminalSprinklerInfo(
+                                origin=sprinkle.center,
+                                edge=edge_info_by_id[core_node.edge.id],
+                                sprinkler_info=self._build_sprinkler_info(metadata),
+                            )
+                        )
+            for connected_node in core_node.connected_nodes:
+                _collect(connected_node)
+
+        _collect(self.root)
+        return terminal_infos
+
+    def _build_sprinkler_info(self, metadata: dict[str, float]):
+        from .junction_info import SprinklerInfo
+
+        return SprinklerInfo(
+            k_factor=float(metadata["k_factor"]),
+            temperature=float(metadata["temperature"]),
+        )
 
     def get_edges_info(self) -> list[EdgeInfo]:
         edge_id_elevation_map = self.get_edges_id_elevation_map()
