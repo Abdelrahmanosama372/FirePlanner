@@ -16,7 +16,7 @@ from fireplanner.firecomponent import (
     SteelSchedule,
     SteelSpecs,
 )
-from fireplanner.geometry.primitives import Block, Line, Point
+from fireplanner.geometry.primitives import Block, Line, Point, PrimitiveStyle
 from fireplanner.geometry.unit_converter import GeometryUnitConverter
 from fireplanner.networks import (
     CoreNetworkConfig,
@@ -90,6 +90,9 @@ class Reader:
         short_transition_edges_data = self._mapping(
             processing_data.get("short_transition_edges")
         )
+        layer_name_to_pipe_diameter_data = self._mapping(
+            processing_data.get("layer_name_to_pipe_diameter")
+        )
 
         config = ModelNetworkConfig.from_dict(
             {
@@ -97,6 +100,10 @@ class Reader:
                     "compute_pipe_dimensions",
                     True,
                 ),
+                "layer_name_to_pipe_diameter": {
+                    str(layer_name): float(pipe_diameter)
+                    for layer_name, pipe_diameter in layer_name_to_pipe_diameter_data.items()
+                },
                 "hazard": self._parse_hazard(
                     firefighting_data.get("hazard_level", FireHazard.LIGHT)
                 ).value,
@@ -470,6 +477,7 @@ class Reader:
                 end=self._point_from_entity_value(
                     self._get_entity_attr(entity, "EndPoint")
                 ),
+                style=PrimitiveStyle(layer=entity_layer or None),
             )
             line_records.append(
                 _LineRecord(

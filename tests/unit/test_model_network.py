@@ -1,7 +1,7 @@
 import pytest
 
 from fireplanner.firecomponent import Elbow, Reducer, SteelDims, Tee
-from fireplanner.geometry.primitives import Line, Point
+from fireplanner.geometry.primitives import Line, Point, PrimitiveStyle
 from fireplanner.networks import CoreNetwork, ModelNetwork, ModelNetworkConfig
 from fireplanner.networks.junction_info import (
     EdgeInfo,
@@ -228,3 +228,29 @@ def test_short_transition_edge_collapses_on_three_way_run_chain_not_branch():
     assert diameters[2] == SteelDims.DIM_1_5_INCHES
     assert diameters[3] == SteelDims.DIM_1_5_INCHES
     assert diameters[4] == SteelDims.DIM_1_INCHES
+
+
+def test_layer_name_to_pipe_diameter_overrides_sprinkler_based_sizing():
+    edges_info = [
+        EdgeInfo(
+            edge_id=1,
+            line=Line(
+                start=Point(x=0, y=0),
+                end=Point(x=1000, y=0),
+                id=1,
+                style=PrimitiveStyle(layer="fire-cabinet"),
+            ),
+            length=1000.0,
+            sprinkler_count=0,
+        )
+    ]
+
+    network = ModelNetwork(
+        _FakeCoreNetwork(edges_info, []),
+        config=ModelNetworkConfig(
+            layer_name_to_pipe_diameter={"fire-cabinet": 1.0},
+        ),
+    )
+
+    diameters = network.get_edge_id_to_pipe_diameter_map()
+    assert diameters[1] == SteelDims.DIM_1_INCHES

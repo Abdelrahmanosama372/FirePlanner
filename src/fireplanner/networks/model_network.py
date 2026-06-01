@@ -298,6 +298,17 @@ class ModelNetwork:
         ) < current_value < max(first_value, second_value)
 
     def _create_pipe_for_edge_id(self, edge_info: EdgeInfo) -> Pipe:
+        line_layer = (
+            edge_info.line.style.layer if edge_info.line.style is not None else None
+        )
+        if (
+            line_layer is not None
+            and line_layer in self.config.layer_name_to_pipe_diameter
+        ):
+            return self._create_pipe_for_diameter(
+                SteelDims(self.config.layer_name_to_pipe_diameter[line_layer])
+            )
+
         pipe_dimension = find_min_steel_dim_for_sprinklers(
             self.config.hazard,
             edge_info.sprinkler_count,

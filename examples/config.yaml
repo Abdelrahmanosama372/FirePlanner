@@ -19,6 +19,8 @@ preproessing:
 
 processing:
   compute_pipe_dimensions: true
+  layer_name_to_pipe_diameter:
+    fire_cabints: "4"
   hangers:
     multiplier: 1.0
   short_transition_edges:

@@ -23,6 +23,8 @@ firefighting:
 
 processing:
   compute_pipe_dimensions: true
+  layer_name_to_pipe_diameter:
+    fire-cabinet: "1"
   hangers:
     multiplier: 1.5
   short_transition_edges:
@@ -160,6 +162,7 @@ def test_reader_builds_model_network_config_from_yaml_string():
     assert config.get_connection_type_for_diameter(SteelDims.DIM_1_5_INCHES) == (
         SteelConnection.Grooved
     )
+    assert config.layer_name_to_pipe_diameter == {"fire-cabinet": 1.0}
     assert config.hanger_multiplier == 1.5
     assert config.short_transition_edges_enabled is True
     assert config.short_transition_edges_max_length_mm == 400.0
@@ -294,6 +297,10 @@ def test_reader_builds_core_network_config_from_autocad_entities():
     ] == [
         (0.0, 0.0, 10000.0, 0.0),
         (10000.0, 0.0, 15000.0, 5000.0),
+    ]
+    assert [line.style.layer for line in config.lines] == [
+        "line-network",
+        "line-network",
     ]
     assert config.root_line is not None
     assert (
