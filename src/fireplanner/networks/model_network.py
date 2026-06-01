@@ -44,7 +44,7 @@ from fireplanner.standards.hazard import (
 @dataclass
 class ModelNetworkConfig:
     compute_pipe_dimensions: bool = True
-    layer_name_to_pipe_dimension: dict[str, float] = field(default_factory=dict)
+    layer_name_to_pipe_diameter: dict[str, float] = field(default_factory=dict)
     hazard: FireHazard = FireHazard.LIGHT
     material: SteelMaterial = SteelMaterial.ERW
     schedule: SteelSchedule = SteelSchedule.SCD40
@@ -61,10 +61,10 @@ class ModelNetworkConfig:
     def from_dict(cls, data: dict[str, Any]) -> ModelNetworkConfig:
         return cls(
             compute_pipe_dimensions=bool(data.get("compute_pipe_dimensions", True)),
-            layer_name_to_pipe_dimension={
+            layer_name_to_pipe_diameter={
                 str(layer_name): float(pipe_dimension)
                 for layer_name, pipe_dimension in data.get(
-                    "layer_name_to_pipe_dimension", {}
+                    "layer_name_to_pipe_diameter", {}
                 ).items()
             },
             hazard=FireHazard(data.get("hazard", FireHazard.LIGHT)),
