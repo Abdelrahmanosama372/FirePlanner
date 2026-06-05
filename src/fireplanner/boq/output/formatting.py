@@ -47,57 +47,69 @@ def connection_sections(report: BOQReport) -> list[tuple[str, list[tuple[str, ..
         report.connections.fittings_counts.items(),
         key=lambda item: (type(item[0]).__name__, connection_sort_key(item[0])),
     )
-    sections: list[tuple[str, list[tuple[str, ...]]]] = []
+    sections_by_name: dict[str, list[tuple[str, ...]]] = {}
     for key, count in connection_items:
         if isinstance(key, TeeKey):
-            rows = [
-                (
-                    str(count),
-                    f"run={key.run_diameter.value}, branch={key.branch_diameter.value}",
-                    key.steel.material.value,
-                    key.steel.schedule.value,
-                    key.steel.specs.value,
-                    key.connection.value,
-                )
-            ]
+            section_name = "Tees"
+            row = (
+                str(count),
+                f"run={key.run_diameter.value}, branch={key.branch_diameter.value}",
+                key.steel.material.value,
+                key.steel.schedule.value,
+                key.steel.specs.value,
+                key.connection.value,
+            )
         elif isinstance(key, ElbowKey):
-            rows = [
-                (
-                    str(count),
-                    str(key.diameter.value),
-                    key.steel.material.value,
-                    key.steel.schedule.value,
-                    key.steel.specs.value,
-                    key.connection.value,
-                )
-            ]
+            section_name = "Elbows"
+            row = (
+                str(count),
+                str(key.diameter.value),
+                key.steel.material.value,
+                key.steel.schedule.value,
+                key.steel.specs.value,
+                key.connection.value,
+            )
         elif isinstance(key, ReducerKey):
-            rows = [
-                (
-                    str(count),
-                    f"{key.large_diameter.value}->{key.small_diameter.value}",
-                    key.steel.material.value,
-                    key.steel.schedule.value,
-                    key.steel.specs.value,
-                    key.connection.value,
-                )
-            ]
+            section_name = "Reducers"
+            row = (
+                str(count),
+                f"{key.large_diameter.value}->{key.small_diameter.value}",
+                key.steel.material.value,
+                key.steel.schedule.value,
+                key.steel.specs.value,
+                key.connection.value,
+            )
         elif isinstance(key, HangerKey):
-            rows = [
-                (
-                    str(count),
-                    str(key.pipe_diameter.value),
-                    key.steel.material.value,
-                    key.steel.schedule.value,
-                    key.steel.specs.value,
-                    "-",
-                )
-            ]
+            section_name = "Hangers"
+            row = (
+                str(count),
+                str(key.pipe_diameter.value),
+                key.steel.material.value,
+                key.steel.schedule.value,
+                key.steel.specs.value,
+                "-",
+            )
         else:
-            rows = [(str(count), "-", "-", "-", "-", "-")]
+            section_name = type(key).__name__
+            row = (str(count), "-", "-", "-", "-", "-")
 
-        sections.append((type(key).__name__, rows))
-    return sections
+        sections_by_name.setdefault(section_name, []).append(row)
+
+    ordered_section_names = [
+        "Tees",
+        "Elbows",
+        "Reducers",
+        "Hangers",
+    ]
+    ordered_sections = [
+        (section_name, sections_by_name[section_name])
+        for section_name in ordered_section_names
+        if section_name in sections_by_name
+    ]
+    for section_name, rows in sections_by_name.items():
+        if section_name not in ordered_section_names:
+            ordered_sections.append((section_name, rows))
+    return ordered_sections
 
 
 def paint_headers() -> tuple[str, ...]:
