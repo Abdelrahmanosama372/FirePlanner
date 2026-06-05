@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from math import cos, sin
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from fireplanner.boq.calculators.akmon_calculator import AkmonCalculator
@@ -262,9 +263,14 @@ class Pipeline:
             return
 
         logger.info("BOQ pipeline started.")
-        for result in results:
+        for index, result in enumerate(results, start=1):
             report = self._build_boq_report(result, boq_config)
-            self._emit_boq_report(report, boq_config)
+            self._emit_boq_report(
+                report=report,
+                config=boq_config,
+                network_index=index,
+                networks_count=len(results),
+            )
         logger.info("BOQ pipeline completed for %d network(s).", len(results))
 
     def _build_boq_report(
@@ -320,7 +326,13 @@ class Pipeline:
             paint=paint_boq,
         )
 
-    def _emit_boq_report(self, report: BOQReport, config: BOQConfig) -> None:
+    def _emit_boq_report(
+        self,
+        report: BOQReport,
+        config: BOQConfig,
+        network_index: int = 1,
+        networks_count: int = 1,
+    ) -> None:
         if config.console.enabled:
             BOQConsolePrinter.print_report(report)
         if config.excel.enabled:
@@ -331,4 +343,23 @@ class Pipeline:
                     "Excel BOQ export skipped because required dependency is missing."
                 )
                 return
-            BOQExcelExporter.export(report=report, output_path=config.excel.path)
+            BOQExcelExporter.export(
+                report=report,
+                output_path=self._resolve_boq_output_path(
+                    config.excel.path,
+                    network_index=network_index,
+                    networks_count=networks_count,
+                ),
+            )
+
+    def _resolve_boq_output_path(
+        self,
+        output_path: str,
+        network_index: int,
+        networks_count: int,
+    ) -> str:
+        if networks_count <= 1:
+            return output_path
+
+        path = Path(output_path)
+        return str(path.with_name(f"{path.stem}{network_index}{path.suffix}"))

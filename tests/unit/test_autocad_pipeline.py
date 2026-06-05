@@ -1,4 +1,5 @@
 from math import isclose
+from types import SimpleNamespace
 
 from fireplanner.adaptors.autocad.pipeline import Pipeline
 from fireplanner.adaptors.autocad.writer import (
@@ -166,6 +167,71 @@ boq:
     results = Pipeline(yaml_with_boq, acad).build()
     assert len(results) == 1
     assert calls["console"] == 1
+
+
+def test_pipeline_suffixes_boq_excel_paths_for_multiple_networks(monkeypatch):
+    yaml_with_boq = (
+        CONFIG_YAML
+        + """
+boq:
+  output:
+    excel:
+      enabled: true
+      path: "boq_test.xlsx"
+    console:
+      enabled: false
+"""
+    )
+
+    acad = FakeAcad(
+        lines=[
+            FakeLineEntity(
+                start=(0.0, 0.0, 0.0),
+                end=(10.0, 0.0, 0.0),
+                layer="line-network",
+                color=1,
+                handle="A",
+            ),
+            FakeLineEntity(
+                start=(20.0, 0.0, 0.0),
+                end=(30.0, 0.0, 0.0),
+                layer="line-network",
+                color=1,
+                handle="B",
+            ),
+        ],
+        blocks=[
+            FakeBlockEntity(
+                name="SPR",
+                insertion_point=(10.0, 0.0, 0.0),
+                handle="10",
+            ),
+            FakeBlockEntity(
+                name="SPR",
+                insertion_point=(30.0, 0.0, 0.0),
+                handle="11",
+            ),
+        ],
+    )
+
+    exported_paths: list[str] = []
+
+    def _fake_export(*, report, output_path):
+        exported_paths.append(output_path)
+        return output_path
+
+    monkeypatch.setitem(
+        __import__("sys").modules,
+        "fireplanner.boq.output.excel",
+        SimpleNamespace(
+            BOQExcelExporter=SimpleNamespace(export=_fake_export),
+        ),
+    )
+
+    results = Pipeline(yaml_with_boq, acad).build()
+
+    assert len(results) == 2
+    assert exported_paths == ["boq_test1.xlsx", "boq_test2.xlsx"]
 
 
 def test_pipeline_applies_hanger_multiplier_from_config():
