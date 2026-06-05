@@ -12,6 +12,7 @@ from fireplanner.geometry.primitives import Line
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.junction_info import JunctionInfo, ThreeWayJunctionInfo
 from fireplanner.networks.placement.assembly import PlacementAssembly
+from fireplanner.networks.placement.constants import ANGLE_TOLERANCE_RAD
 from fireplanner.networks.placement.context import PlacementContext
 from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy.base import PlacementStrategy
@@ -67,12 +68,24 @@ class SingleTeePlacementStrategy(PlacementStrategy):
         main_dir = edge_id_line_map[main_edge_ids[0]].direction()
 
         if (
-            isclose((main_dir + radians(90)), branch_dir, rel_tol=1e-3)
-            or isclose(wrap_to_pi(main_dir + radians(90)), branch_dir, rel_tol=1e-3)
-            or isclose((-main_dir - radians(90)), branch_dir, rel_tol=1e-3)
+            isclose((main_dir + radians(90)), branch_dir, abs_tol=ANGLE_TOLERANCE_RAD)
+            or isclose(
+                wrap_to_pi(main_dir + radians(90)),
+                branch_dir,
+                abs_tol=ANGLE_TOLERANCE_RAD,
+            )
+            or isclose(
+                (-main_dir - radians(90)),
+                branch_dir,
+                abs_tol=ANGLE_TOLERANCE_RAD,
+            )
         ):
             rotation = main_dir
-        elif isclose(wrap_to_pi(main_dir + radians(270)), branch_dir, rel_tol=1e-3):
+        elif isclose(
+            wrap_to_pi(main_dir + radians(270)),
+            branch_dir,
+            abs_tol=ANGLE_TOLERANCE_RAD,
+        ):
             rotation = wrap_to_pi(main_dir + pi)
         else:
             raise ValueError(

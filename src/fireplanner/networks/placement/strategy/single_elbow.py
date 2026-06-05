@@ -6,6 +6,7 @@ from math import isclose, radians
 from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
 from fireplanner.networks.placement.assembly import PlacementAssembly
+from fireplanner.networks.placement.constants import ANGLE_TOLERANCE_RAD
 from fireplanner.networks.placement.context import PlacementContext
 from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy.base import PlacementStrategy
@@ -35,13 +36,17 @@ class SingleElbowPlacementStrategy(PlacementStrategy):
         pipe1_dir = pipe1_line.direction()
         pipe2_dir = pipe2_line.direction()
         if (
-            isclose((pipe1_dir + radians(90)), pipe2_dir, rel_tol=1e-3)
+            isclose((pipe1_dir + radians(90)), pipe2_dir, abs_tol=ANGLE_TOLERANCE_RAD)
             or isclose(
                 wrap_to_pi(pipe1_dir + radians(90)),
                 pipe2_dir,
-                rel_tol=1e-3,
+                abs_tol=ANGLE_TOLERANCE_RAD,
             )
-            or isclose((-pipe1_dir - radians(90)), pipe2_dir, rel_tol=1e-3)
+            or isclose(
+                (-pipe1_dir - radians(90)),
+                pipe2_dir,
+                abs_tol=ANGLE_TOLERANCE_RAD,
+            )
         ):
             rotation = pipe2_dir + radians(180)
             transform.angle = rotation
