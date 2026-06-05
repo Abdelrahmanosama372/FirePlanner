@@ -12,6 +12,12 @@ from .junction_info import (
     ThreeWayJunctionInfo,
     TwoWayJunctionInfo,
 )
-from .model_network import ModelEdge, ModelNetwork, ModelNetworkConfig, ModelNode
+from .model_network import (
+    InvalidSprinklerCountError,
+    ModelEdge,
+    ModelNetwork,
+    ModelNetworkConfig,
+    ModelNode,
+)
 from .placement_resolver import PlacementResolver
 from .topology_interpreter import TopologyInterpreter

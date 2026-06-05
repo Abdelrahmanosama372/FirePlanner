@@ -166,7 +166,7 @@ class Writer:
                 APoint(primitive.start.to_list3d()),
                 APoint(primitive.end.to_list3d()),
             )
-            self._apply_layer(entity, primitive)
+            self._apply_style(entity, primitive)
             return [entity]
 
         if isinstance(primitive, Circle):
@@ -179,7 +179,7 @@ class Writer:
                 APoint(primitive.center.to_list3d()),
                 primitive.radius,
             )
-            self._apply_layer(entity, primitive)
+            self._apply_style(entity, primitive)
             return [entity]
 
         if isinstance(primitive, Arc):
@@ -203,7 +203,7 @@ class Writer:
                 start_angle,
                 end_angle,
             )
-            self._apply_layer(entity, primitive)
+            self._apply_style(entity, primitive)
             return [entity]
 
         if isinstance(primitive, Rectangle):
@@ -218,23 +218,32 @@ class Writer:
                     APoint(rect_line.start.to_list3d()),
                     APoint(rect_line.end.to_list3d()),
                 )
-                self._apply_layer(entity, rect_line)
+                self._apply_style(entity, rect_line)
                 entities.append(entity)
             return entities
 
         return []
 
-    def _apply_layer(self, entity: Any, primitive: object) -> None:
+    def _apply_style(self, entity: Any, primitive: object) -> None:
         primitive_style = getattr(primitive, "style", None)
+        color = primitive_style.color if primitive_style is not None else None
+        self._apply_layer(entity, primitive, primitive_style)
+        color = color or self._default_color_for_primitive(primitive)
+
+        if color:
+            self._apply_color(entity, color)
+
+    def _apply_layer(
+        self,
+        entity: Any,
+        primitive: object,
+        primitive_style: Any,
+    ) -> None:
         if primitive_style is not None and primitive_style.layer:
             self._set_attr(entity, "Layer", primitive_style.layer)
             return
 
-        is_centerline = isinstance(
-            primitive, (Line, Arc, Circle)
-        ) and self._is_auxiliary_line_type(primitive.line_type)
-
-        if is_centerline:
+        if self._is_centerline_primitive(primitive):
             if self._layer_config.centerline_layer_name:
                 self._set_attr(
                     entity, "Layer", self._layer_config.centerline_layer_name
@@ -243,6 +252,16 @@ class Writer:
 
         if self._layer_config.line_layer_name:
             self._set_attr(entity, "Layer", self._layer_config.line_layer_name)
+
+    def _default_color_for_primitive(self, primitive: object) -> str | None:
+        if self._is_centerline_primitive(primitive):
+            return self._layer_config.centerline_color
+        return self._layer_config.line_color
+
+    def _is_centerline_primitive(self, primitive: object) -> bool:
+        return isinstance(primitive, (Line, Arc, Circle)) and self._is_auxiliary_line_type(
+            primitive.line_type
+        )
 
     def _is_auxiliary_line_type(self, line_type: LineType) -> bool:
         return line_type in {LineType.CenterLine, LineType.Hidden}

@@ -122,6 +122,20 @@ class ModelEdge:
     pipe: Pipe
 
 
+class InvalidSprinklerCountError(ValueError):
+    def __init__(self, edge_info: EdgeInfo) -> None:
+        self.edge_info = edge_info
+        line = edge_info.line
+        super().__init__(
+            "Edge "
+            f"{edge_info.edge_id} has invalid sprinkler_count="
+            f"{edge_info.sprinkler_count}. "
+            "sprinklers_count must be a positive integer. "
+            f"Line start=({line.start.x:g}, {line.start.y:g}, {line.start.z:g}), "
+            f"end=({line.end.x:g}, {line.end.y:g}, {line.end.z:g})."
+        )
+
+
 class ModelNetwork:
     def __init__(
         self,
@@ -315,6 +329,9 @@ class ModelNetwork:
             return self._create_pipe_for_diameter(
                 SteelDims(self.config.layer_name_to_pipe_diameter[line_layer])
             )
+
+        if edge_info.sprinkler_count <= 0:
+            raise InvalidSprinklerCountError(edge_info)
 
         pipe_dimension = find_min_steel_dim_for_sprinklers(
             self.config.hazard,

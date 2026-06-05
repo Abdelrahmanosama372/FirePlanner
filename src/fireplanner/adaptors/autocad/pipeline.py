@@ -16,12 +16,13 @@ from fireplanner.boq.calculators.stud_calculator import StudCalculator
 from fireplanner.boq.calculators.washer_calculator import WasherCalculator
 from fireplanner.boq.models import BOQReport, HangerFittingBOQ
 from fireplanner.boq.output.console import BOQConsolePrinter
-from fireplanner.geometry.primitives import Point, PrimitiveStyle
+from fireplanner.geometry.primitives import Line, Point, PrimitiveStyle
 from fireplanner.networks import (
     CoreNetwork,
     CoreNetworkConfig,
     GeometryNetwork,
     GeometryNetworkConfig,
+    InvalidSprinklerCountError,
     ModelNetwork,
     ModelNetworkConfig,
     PlacementResolver,
@@ -113,7 +114,13 @@ class Pipeline:
         written_entities_per_network: list[list[Any]] = []
         drafting_occlusion_resolver = DraftingOcclusionResolver()
         pipe_primitive_occlusion_resolver = PipePrimitiveOcclusionResolver()
-        for result in self.build():
+        try:
+            results = self.build()
+        except InvalidSprinklerCountError as exc:
+            self._write_invalid_sprinkler_count_edge(writer, exc)
+            raise
+
+        for result in results:
             fire_connections_scene = drafting_occlusion_resolver.resolve(
                 result.geometry_network.get_resolved_fire_connections_assemblies()
             )
@@ -164,6 +171,35 @@ class Pipeline:
             len(written_entities_per_network),
         )
         return written_entities_per_network
+
+    def _write_invalid_sprinkler_count_edge(
+        self,
+        writer: Writer,
+        exc: InvalidSprinklerCountError,
+    ) -> None:
+        line = exc.edge_info.line
+        diagnostic_line = Line(
+            start=line.start,
+            end=line.end,
+            line_type=line.line_type,
+            id=line.id,
+            style=PrimitiveStyle(
+                layer=line.style.layer if line.style is not None else None,
+                color="cyan",
+                category=line.style.category if line.style is not None else None,
+            ),
+        )
+        writer.write_drafting_scene(
+            DraftingScene(
+                drawables=[
+                    DrawablePrimitive(primitives=[diagnostic_line]),
+                ]
+            )
+        )
+        logger.error(
+            "Drew invalid sprinkler-count edge %s in cyan before raising.",
+            exc.edge_info.edge_id,
+        )
 
     def _write_output_annotations_and_dimensions(
         self,
