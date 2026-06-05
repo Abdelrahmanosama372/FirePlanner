@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from math import pi
+from copy import deepcopy
 
 from fireplanner.geometry.components.base import ViewType
 from fireplanner.geometry.primitives.transform import Transform2D
@@ -30,7 +31,11 @@ class TeeElbowPlacementStrategy(PlacementStrategy):
         tee_transform = Transform2D(origin=junction_origin, rotation=run_dirction)
         tee_view = ViewType.PLAN
 
-        branch_dirction = placement_assembly.branch_pipe.edge_info.line.direction()
+        branch_line = deepcopy(placement_assembly.branch_pipe.edge_info.line)
+        if branch_line.start != junction_origin:
+            branch_line.swap_end_points()
+
+        branch_dirction = branch_line.direction()
         elbow_transform = Transform2D(
             origin=junction_origin, rotation=branch_dirction - pi / 2
         )
