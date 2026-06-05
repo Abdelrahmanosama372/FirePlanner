@@ -1,6 +1,6 @@
 import pytest
 
-from fireplanner.geometry.primitives import Line
+from fireplanner.geometry.primitives import Block, Line, Point
 from fireplanner.networks.core_network import CoreNetwork, CoreNetworkConfig, FlowRoute
 from fireplanner.networks.junction import JunctionType
 from tests.unit.core_network import (
@@ -493,3 +493,38 @@ def test_simple_network_elevations_assignment():
         11: 2000,
         12: 2000,
     }
+
+
+def test_core_network_flattens_input_lines_and_blocks_to_zero_z():
+    lines = [
+        Line(
+            id=1,
+            start=Point(x=0.0, y=0.0, z=150.0),
+            end=Point(x=0.0, y=1000.0, z=250.0),
+        )
+    ]
+    blocks = [
+        Block(
+            id=1,
+            name="SPR",
+            center=Point(x=0.0, y=1000.0, z=500.0),
+        )
+    ]
+
+    network = CoreNetwork(
+        config=CoreNetworkConfig(
+            lines=lines,
+            sprinkler_blocks=blocks,
+            sprinkler_block_data={"SPR": {"k_factor": 5.6, "temperature": 68}},
+        )
+    )
+
+    edge_line = network.get_lines_with_edge_ids()[1]
+    sprinkler = network.sprinkles[0]
+
+    assert edge_line.start.z == 0.0
+    assert edge_line.end.z == 0.0
+    assert sprinkler.center.z == 0.0
+    assert lines[0].start.z == 150.0
+    assert lines[0].end.z == 250.0
+    assert blocks[0].center.z == 500.0

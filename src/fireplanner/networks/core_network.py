@@ -101,8 +101,12 @@ class CoreNode:
 class CoreNetwork:
     def __init__(self, config: CoreNetworkConfig | None = None):
         self._config = config or CoreNetworkConfig()
-        self._sprinkles = list(self._config.sprinkler_blocks)
-        self._lines = list(self._config.ordered_lines())
+        self._sprinkles = [
+            self._flatten_block(block) for block in self._config.sprinkler_blocks
+        ]
+        self._lines = [
+            self._flatten_line(line) for line in self._config.ordered_lines()
+        ]
         self._root: CoreNode | None = None
         self._edge_sprinkler_map: dict[int, int] = {}
         self._junctions: dict[int, Junction] = {}
@@ -119,6 +123,35 @@ class CoreNetwork:
         self._preprocessing(root_line, remaining_lines)
         self._root = self._create_network(root_line, remaining_lines)
         self.create_sprinkler_map()
+
+    @staticmethod
+    def _flatten_point(point: Point) -> Point:
+        return Point(
+            x=point.x,
+            y=point.y,
+            z=0.0,
+            id=point.id,
+            style=point.style,
+        )
+
+    @classmethod
+    def _flatten_line(cls, line: Line) -> Line:
+        return Line(
+            start=cls._flatten_point(line.start),
+            end=cls._flatten_point(line.end),
+            line_type=line.line_type,
+            id=line.id,
+            style=line.style,
+        )
+
+    @classmethod
+    def _flatten_block(cls, block: Block) -> Block:
+        return Block(
+            name=block.name,
+            center=cls._flatten_point(block.center),
+            id=block.id,
+            style=block.style,
+        )
 
     @property
     def sprinkles(self) -> list[object]:
