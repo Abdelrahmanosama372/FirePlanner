@@ -145,9 +145,10 @@ class Line(Primitive2D):
             return False
 
         dot = np.dot(AP, AB)
-        if dot < 0:
+        dot_offset = tol * np.linalg.norm(AB)
+        if dot < -dot_offset:
             return False
-        if dot > np.dot(AB, AB):
+        if dot > np.dot(AB, AB) + dot_offset:
             return False
 
         return True
