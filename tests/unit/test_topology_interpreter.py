@@ -66,3 +66,30 @@ def test_topology_interpreter_builds_sprinkler_junction_info():
     assert first_sprinkler_info.sprinkler_info is not None
     assert first_sprinkler_info.sprinkler_info.k_factor == 5.6
     assert first_sprinkler_info.sprinkler_info.temperature == 68
+
+
+def test_topology_interpreter_reads_metadata_for_multiple_sprinkler_block_names():
+    network = CoreNetwork(
+        config=CoreNetworkConfig(
+            sprinkler_block_data={
+                "SPR56": {"k_factor": 5.6, "temperature": 68},
+                "SPR8": {"k_factor": 8, "temperature": 74},
+            },
+            sprinkler_blocks=[
+                Block(name="SPR56", center=Point(x=5, y=0)),
+                Block(name="SPR8", center=Point(x=15, y=0)),
+            ],
+            lines=[
+                Line(start=Point(x=0, y=0), end=Point(x=20, y=0), id=1),
+            ],
+        )
+    )
+
+    junction_infos = network.get_junctions_info()
+    sprinkler_infos = [
+        info for info in junction_infos if isinstance(info, SprinklerJunctionInfo)
+    ]
+
+    assert len(sprinkler_infos) == 2
+    assert [info.sprinkler_info.k_factor for info in sprinkler_infos] == [5.6, 8.0]
+    assert [info.sprinkler_info.temperature for info in sprinkler_infos] == [68.0, 74.0]

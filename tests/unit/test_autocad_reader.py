@@ -325,6 +325,62 @@ def test_reader_builds_core_network_config_from_autocad_entities():
     assert reader.read_core_network_config(acad).root_line == config.root_line
 
 
+def test_reader_builds_core_network_config_with_multiple_sprinkler_block_names():
+    yaml_with_multiple_sprinklers = CONFIG_YAML.replace(
+        "    sprinkler_blocks:\n      SPR:\n        temperature: 68\n        k_factor: 5.6\n",
+        "    sprinkler_blocks:\n"
+        "      SPR56:\n"
+        "        temperature: 68\n"
+        "        k_factor: 5.6\n"
+        "      SPR8:\n"
+        "        temperature: 74\n"
+        "        k_factor: 8\n",
+    )
+    reader = Reader(yaml_with_multiple_sprinklers)
+    acad = FakeAcad(
+        lines=[
+            FakeLineEntity(
+                start=(0.0, 0.0, 0.0),
+                end=(10.0, 0.0, 0.0),
+                layer="line-network",
+                color=1,
+                handle="A",
+            ),
+        ],
+        blocks=[
+            FakeBlockEntity(
+                name="SPR56",
+                insertion_point=(2.0, 0.0, 0.0),
+                handle="10",
+            ),
+            FakeBlockEntity(
+                name="SPR8",
+                insertion_point=(8.0, 0.0, 0.0),
+                handle="11",
+            ),
+            FakeBlockEntity(
+                name="IGNORE",
+                insertion_point=(5.0, 0.0, 0.0),
+                handle="12",
+            ),
+        ],
+    )
+
+    config = reader.read_core_network_config(acad)
+
+    assert config.sprinkler_block_data == {
+        "SPR56": {"temperature": 68, "k_factor": 5.6},
+        "SPR8": {"temperature": 74, "k_factor": 8},
+    }
+    assert [
+        (block.name, block.center.x, block.center.y)
+        for block in config.sprinkler_blocks
+    ] == [
+        ("SPR56", 2000.0, 0.0),
+        ("SPR8", 8000.0, 0.0),
+    ]
+
+
 def test_reader_builds_multiple_core_network_configs_when_multiple_roots_match():
     reader = Reader(CONFIG_YAML)
     acad = FakeAcad(
