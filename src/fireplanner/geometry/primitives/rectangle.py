@@ -72,7 +72,7 @@ class Rectangle(Primitive2D):
     def edges(self) -> list[Line]:
         points = [self.point1, self.point2, self.point3, self.point4]
         return [
-            Line(start=start, end=end, line_type=self.line_type)
+            Line(start=start, end=end, line_type=self.line_type, style=self.style)
             for start, end in zip(points, points[1:] + points[:1])
         ]
 
