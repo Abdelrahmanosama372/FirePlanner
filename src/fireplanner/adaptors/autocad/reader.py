@@ -607,10 +607,15 @@ class Reader:
                     block, from_unit=drawing_unit, to_unit=LengthUnit.MILLIMETER
                 )
             )
-        logger.info(
-            "Collected %d sprinkler block reference(s) and normalized to mm.",
-            len(blocks),
-        )
+        if blocks:
+            logger.info(
+                "Collected %d sprinkler block reference(s) and normalized to mm.",
+                len(blocks),
+            )
+        else:
+            logger.warning(
+                "Collected 0 sprinkler block references."
+            )
         return blocks
 
     def _parse_length_unit(self, value: Any) -> LengthUnit:
