@@ -234,6 +234,33 @@ boq:
     assert exported_paths == ["boq_test1.xlsx", "boq_test2.xlsx"]
 
 
+def test_pipeline_cleans_configured_output_layers_once_before_draw(monkeypatch):
+    yaml_with_clear = CONFIG_YAML.replace(
+        "  output:\n",
+        "  output:\n"
+        "    clear:\n"
+        "      enabled: true\n"
+        "      include:\n"
+        "        - ff-sprinklers\n"
+        "        - ff-hangers\n",
+        1,
+    )
+    acad = FakeAcad(lines=[], blocks=[])
+    pipeline = Pipeline(yaml_with_clear, acad)
+    cleaned_layers: list[list[str]] = []
+
+    monkeypatch.setattr(Pipeline, "build", lambda self: [])
+    monkeypatch.setattr(
+        "fireplanner.adaptors.autocad.pipeline.Writer.clean_layers",
+        lambda self, layer_names: cleaned_layers.append(layer_names),
+    )
+
+    result = pipeline.draw()
+
+    assert result == []
+    assert cleaned_layers == [["ff-sprinklers", "ff-hangers"]]
+
+
 def test_pipeline_applies_hanger_multiplier_from_config():
     yaml_with_multiplier = CONFIG_YAML.replace("multiplier: 1.5", "multiplier: 2.0")
     acad = FakeAcad(

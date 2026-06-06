@@ -35,6 +35,7 @@ from .writer import (
     DimensionStyleConfig,
     LayerConfig,
     OutputAnnotationConfig,
+    OutputClearConfig,
     PipeDimensionLabelConfig,
     PipeLabelsConfig,
 )
@@ -379,6 +380,19 @@ class Reader:
             ),
         )
         return config
+
+    def read_output_clear_config(self) -> OutputClearConfig:
+        output_data = self._mapping(
+            self._mapping(self._mapping(self._raw_data.get("autocad")).get("output"))
+        )
+        clear_data = self._mapping(output_data.get("clear"))
+        include = clear_data.get("include", [])
+        if not isinstance(include, list):
+            include = []
+        return OutputClearConfig(
+            enabled=bool(clear_data.get("enabled", False)),
+            include=[str(layer_name) for layer_name in include if str(layer_name)],
+        )
 
     def _load_yaml_string(self, yaml_string: str) -> dict[str, Any]:
         data = yaml.safe_load(yaml_string) or {}

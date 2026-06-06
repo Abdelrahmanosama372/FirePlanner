@@ -246,6 +246,25 @@ def test_reader_builds_output_annotation_config_from_yaml_string():
     assert config.annotations.pipe_labels.pipe_dimension.enabled is True
 
 
+def test_reader_builds_output_clear_config_from_yaml_string():
+    clear_yaml = CONFIG_YAML.replace(
+        "  output:\n",
+        "  output:\n"
+        "    clear:\n"
+        "      enabled: true\n"
+        "      include:\n"
+        "        - ff-sprinklers\n"
+        "        - ff-hangers\n",
+        1,
+    )
+    reader = Reader(clear_yaml)
+
+    config = reader.read_output_clear_config()
+
+    assert config.enabled is True
+    assert config.include == ["ff-sprinklers", "ff-hangers"]
+
+
 def test_reader_builds_core_network_config_from_autocad_entities():
     reader = Reader(CONFIG_YAML)
     acad = FakeAcad(

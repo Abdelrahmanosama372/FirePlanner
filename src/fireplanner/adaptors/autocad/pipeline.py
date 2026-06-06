@@ -106,6 +106,7 @@ class Pipeline:
         logger.info("Pipeline draw started.")
         layer_config = self._reader.read_output_layer_config()
         output_annotation_config = self._reader.read_output_annotation_config()
+        output_clear_config = self._reader.read_output_clear_config()
         writer = Writer(
             acad=self._acad,
             layer_config=layer_config,
@@ -119,6 +120,9 @@ class Pipeline:
         except InvalidSprinklerCountError as exc:
             self._write_invalid_sprinkler_count_edge(writer, exc)
             raise
+
+        if output_clear_config.enabled:
+            writer.clean_layers(output_clear_config.include or [])
 
         for result in results:
             fire_connections_scene = drafting_occlusion_resolver.resolve(

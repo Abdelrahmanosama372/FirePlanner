@@ -83,6 +83,12 @@ class OutputAnnotationConfig:
     annotations: AnnotationsConfig = AnnotationsConfig()
 
 
+@dataclass(frozen=True)
+class OutputClearConfig:
+    enabled: bool = False
+    include: list[str] | None = None
+
+
 class Writer:
     def __init__(
         self, acad: Any, layer_config: LayerConfig, drawing_unit: LengthUnit
@@ -95,6 +101,25 @@ class Writer:
             self._layer_config.line_layer_name,
             self._layer_config.centerline_layer_name,
             self._drawing_unit.value,
+        )
+
+    def clean_layers(self, layer_names: list[str]) -> None:
+        unique_layers = {layer_name for layer_name in layer_names if layer_name}
+        if not unique_layers:
+            return
+
+        deleted_count = 0
+        for entity in self._iter_model_entities():
+            if self._get_attr(entity, "Layer", "") not in unique_layers:
+                continue
+            delete = self._get_attr(entity, "Delete", None)
+            if callable(delete):
+                delete()
+                deleted_count += 1
+
+        logger.info(
+            "Deleted %d entity(ies) from configured output layers.",
+            deleted_count,
         )
 
     def write_geometry_network(self, geometry_network: GeometryNetwork) -> list[Any]:
@@ -259,9 +284,9 @@ class Writer:
         return self._layer_config.line_color
 
     def _is_centerline_primitive(self, primitive: object) -> bool:
-        return isinstance(primitive, (Line, Arc, Circle)) and self._is_auxiliary_line_type(
-            primitive.line_type
-        )
+        return isinstance(
+            primitive, (Line, Arc, Circle)
+        ) and self._is_auxiliary_line_type(primitive.line_type)
 
     def _is_auxiliary_line_type(self, line_type: LineType) -> bool:
         return line_type in {LineType.CenterLine, LineType.Hidden}
@@ -280,6 +305,34 @@ class Writer:
             if hasattr(obj, candidate):
                 setattr(obj, candidate, value)
                 return
+
+    def _get_attr(self, obj: Any, attr_name: str, default: Any = None) -> Any:
+        for candidate in {
+            attr_name,
+            attr_name.lower(),
+            attr_name.upper(),
+            attr_name[:1].upper() + attr_name[1:],
+        }:
+            if hasattr(obj, candidate):
+                return getattr(obj, candidate)
+        return default
+
+    def _iter_model_entities(self) -> list[Any]:
+        model = getattr(self._acad, "model", None)
+        if model is None:
+            return []
+
+        try:
+            return list(model)
+        except TypeError:
+            count = self._get_attr(model, "Count", 0)
+            item = self._get_attr(model, "Item", None)
+            if not callable(item):
+                return []
+            try:
+                return [item(index) for index in range(int(count))]
+            except Exception:
+                return []
 
     def ensure_dimension_style_exists(self, style_name: str) -> None:
         doc = getattr(self._acad, "doc", None)

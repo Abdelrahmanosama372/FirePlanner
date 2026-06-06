@@ -51,6 +51,14 @@ autocad:
         temperature: 68
         k_factor: 5.6 
   output:
+    clear:
+      enabled: true
+      include:
+        - "ff-sprinklers"
+        - "ff-sprinklers-thin"
+        - "ff-hangers"
+        - "ff-annotations"
+        - "ff-dimensions"
     network:
       layers:
         line:
