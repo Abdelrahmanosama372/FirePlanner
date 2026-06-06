@@ -344,6 +344,52 @@ def test_reader_builds_core_network_config_from_autocad_entities():
     assert reader.read_core_network_config(acad).root_line == config.root_line
 
 
+def test_reader_includes_layer_name_to_pipe_diameter_lines_in_core_network_input():
+    reader = Reader(CONFIG_YAML)
+    acad = FakeAcad(
+        lines=[
+            FakeLineEntity(
+                start=(0.0, 0.0, 0.0),
+                end=(10.0, 0.0, 0.0),
+                layer="line-network",
+                color=1,
+                handle="A",
+            ),
+            FakeLineEntity(
+                start=(10.0, 0.0, 0.0),
+                end=(20.0, 0.0, 0.0),
+                layer="fire-cabinet",
+                color=3,
+                handle="B",
+            ),
+            FakeLineEntity(
+                start=(0.0, 5.0, 0.0),
+                end=(10.0, 5.0, 0.0),
+                layer="other-layer",
+                color=1,
+                handle="C",
+            ),
+        ],
+        blocks=[
+            FakeBlockEntity(
+                name="SPR",
+                insertion_point=(20.0, 0.0, 0.0),
+                handle="10",
+            ),
+        ],
+    )
+
+    config = reader.read_core_network_config(acad)
+
+    assert [
+        (line.start.x, line.start.y, line.end.x, line.end.y, line.style.layer)
+        for line in config.lines
+    ] == [
+        (0.0, 0.0, 10000.0, 0.0, "line-network"),
+        (10000.0, 0.0, 20000.0, 0.0, "fire-cabinet"),
+    ]
+
+
 def test_reader_builds_core_network_config_with_multiple_sprinkler_block_names():
     yaml_with_multiple_sprinklers = CONFIG_YAML.replace(
         "    sprinkler_blocks:\n      SPR:\n        temperature: 68\n        k_factor: 5.6\n",

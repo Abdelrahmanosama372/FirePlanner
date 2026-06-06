@@ -174,6 +174,10 @@ class Reader:
         input_data = self._mapping(
             self._mapping(self._raw_data.get("autocad")).get("input")
         )
+        processing_data = self._mapping(self._raw_data.get("processing"))
+        layer_name_to_pipe_diameter_data = self._mapping(
+            processing_data.get("layer_name_to_pipe_diameter")
+        )
         drawing_unit = self.read_drawing_length_unit()
         line_network_data = self._mapping(input_data.get("line_network_layer"))
         sprinkler_block_data = self._mapping(input_data.get("sprinkler_blocks"))
@@ -181,9 +185,21 @@ class Reader:
         xdata_config = self._read_xdata_config(input_data)
         logger.info("Reading AutoCAD entities to build core network configs.")
 
+        included_line_layers = {
+            layer_name
+            for layer_name in [
+                str(line_network_data.get("name", "")).strip(),
+                *[
+                    str(layer_name).strip()
+                    for layer_name in layer_name_to_pipe_diameter_data
+                ],
+            ]
+            if layer_name
+        }
+
         line_records, line_elevations = self._read_line_records_with_xdata(
             acad=acad,
-            layer_name=str(line_network_data.get("name", "")),
+            layer_names=included_line_layers,
             drawing_unit=drawing_unit,
             xdata_config=xdata_config,
         )
@@ -460,7 +476,7 @@ class Reader:
     def _read_line_records_with_xdata(
         self,
         acad: Autocad | Any,
-        layer_name: str,
+        layer_names: set[str],
         drawing_unit: LengthUnit,
         xdata_config: dict[str, Any] | None,
     ) -> tuple[list[_LineRecord], dict[int, float]]:
@@ -469,7 +485,7 @@ class Reader:
 
         for index, entity in enumerate(self._iter_objects(acad, "AcDbLine"), start=1):
             entity_layer = str(self._get_entity_attr(entity, "Layer", "")).strip()
-            if layer_name and entity_layer != layer_name:
+            if layer_names and entity_layer not in layer_names:
                 continue
 
             # Assign sequential ID to each line
@@ -503,9 +519,9 @@ class Reader:
             )
 
         logger.info(
-            "Collected %d line entity record(s) from layer '%s' and normalized to mm.",
+            "Collected %d line entity record(s) from layer(s) %s and normalized to mm.",
             len(line_records),
-            layer_name,
+            sorted(layer_names),
         )
         if line_elevations:
             logger.info(
