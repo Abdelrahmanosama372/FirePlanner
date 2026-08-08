@@ -1,4 +1,4 @@
-from math import isclose
+from math import isclose, pi
 from types import SimpleNamespace
 
 from fireplanner.adaptors.autocad.pipeline import Pipeline
@@ -76,6 +76,18 @@ def test_pipeline_formats_nominal_pipe_diameters_for_annotations():
 
 def test_pipeline_formats_unknown_pipe_diameter_with_legacy_conversion():
     assert Pipeline._display_diameter_mm(5.0) == 125.0
+
+
+def test_pipeline_flips_left_facing_annotation_rotation_to_readable_range():
+    assert isclose(Pipeline._readable_text_rotation(3 * pi / 4), -pi / 4)
+    assert isclose(Pipeline._readable_text_rotation(-3 * pi / 4), pi / 4)
+    assert isclose(Pipeline._readable_text_rotation(pi), 0.0)
+    assert isclose(Pipeline._readable_text_rotation(-pi), 0.0)
+
+
+def test_pipeline_keeps_vertical_annotation_rotation_at_boundary():
+    assert isclose(Pipeline._readable_text_rotation(pi / 2), pi / 2)
+    assert isclose(Pipeline._readable_text_rotation(-pi / 2), -pi / 2)
 
 
 def test_pipeline_builds_multiple_results_when_multiple_roots_exist():

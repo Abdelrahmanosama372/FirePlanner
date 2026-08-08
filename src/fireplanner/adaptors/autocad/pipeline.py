@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from math import cos, sin
+from math import cos, pi, sin
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -235,6 +235,7 @@ class Pipeline:
             if pipe is None:
                 continue
             direction = line.direction()
+            text_rotation = self._readable_text_rotation(direction)
             nx, ny = self._downward_normal(direction)
 
             mid_x = (line.start.x + line.end.x) / 2.0
@@ -251,7 +252,7 @@ class Pipeline:
                     writer.write_text_annotation(
                         text=dia_text,
                         position_mm=dia_pos,
-                        rotation_rad=direction,
+                        rotation_rad=text_rotation,
                         layer_name=config.annotations.layer.name,
                         text_height_mm=config.annotations.text_height,
                         centered=True,
@@ -273,7 +274,7 @@ class Pipeline:
                     writer.write_text_annotation(
                         text=cop_text,
                         position_mm=cop_pos,
-                        rotation_rad=direction,
+                        rotation_rad=text_rotation,
                         layer_name=config.annotations.layer.name,
                         text_height_mm=config.annotations.text_height,
                         centered=True,
@@ -312,6 +313,14 @@ class Pipeline:
     @staticmethod
     def _display_diameter_mm(diameter_inch: float) -> float:
         return NOMINAL_DIAMETER_MM_BY_INCH.get(diameter_inch, diameter_inch * 25.0)
+
+    @staticmethod
+    def _readable_text_rotation(rotation_rad: float) -> float:
+        if rotation_rad > pi / 2:
+            return rotation_rad - pi
+        if rotation_rad < -pi / 2:
+            return rotation_rad + pi
+        return rotation_rad
 
     def _run_boq_pipeline(self, results: list[NetworkPipelineResult]) -> None:
         boq_config = self._reader.read_boq_config()
