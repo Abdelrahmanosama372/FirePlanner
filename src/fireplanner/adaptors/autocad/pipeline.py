@@ -243,6 +243,7 @@ class Pipeline:
                         rotation_rad=direction,
                         layer_name=config.annotations.layer.name,
                         text_height_mm=config.annotations.text_height,
+                        centered=True,
                     )
                 )
 
@@ -252,7 +253,7 @@ class Pipeline:
                     from_unit=LengthUnit.MILLIMETER,
                     to_unit=config.annotations.pipe_labels.cop.unit,
                 )
-                cop_text = f"COP {elevation_val:g} {config.annotations.pipe_labels.cop.unit.value}"
+                cop_text = f"COP {elevation_val:g}"
                 cop_pos = Point(
                     x=mid_x - nx * config.annotations.pipe_labels.cop_offset_mm,
                     y=mid_y - ny * config.annotations.pipe_labels.cop_offset_mm,
@@ -264,6 +265,7 @@ class Pipeline:
                         rotation_rad=direction,
                         layer_name=config.annotations.layer.name,
                         text_height_mm=config.annotations.text_height,
+                        centered=True,
                     )
                 )
 

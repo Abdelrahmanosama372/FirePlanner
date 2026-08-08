@@ -353,6 +353,7 @@ class Writer:
         rotation_rad: float,
         layer_name: str,
         text_height_mm: float,
+        centered: bool = False,
     ) -> Any:
         try:
             from pyautocad import APoint
@@ -374,6 +375,9 @@ class Writer:
         entity = self._acad.model.AddText(
             text, APoint(position.to_list3d()), text_height
         )
+        if centered:
+            self._set_attr(entity, "Alignment", 10)
+            self._set_attr(entity, "TextAlignmentPoint", APoint(position.to_list3d()))
         self._set_attr(entity, "Rotation", rotation_rad)
         if layer_name:
             self._set_attr(entity, "Layer", layer_name)

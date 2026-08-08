@@ -303,6 +303,7 @@ class _CaptureWriter:
         rotation_rad: float,
         layer_name: str,
         text_height_mm: float,
+        centered: bool = False,
     ):
         self.text_calls.append(
             {
@@ -311,6 +312,7 @@ class _CaptureWriter:
                 "rotation": rotation_rad,
                 "layer": layer_name,
                 "height": text_height_mm,
+                "centered": centered,
             }
         )
         return object()
@@ -394,8 +396,10 @@ def test_pipeline_output_annotations_follow_edge_center_and_direction():
 
     dia = writer.text_calls[0]
     cop = writer.text_calls[1]
-    expected_cop = f"COP {result.model_network.get_pipes_assembly()[0].edge_info.elevation / 1000:g} m"
+    expected_cop = f"COP {result.model_network.get_pipes_assembly()[0].edge_info.elevation / 1000:g}"
     assert cop["text"] == expected_cop
+    assert dia["centered"] is True
+    assert cop["centered"] is True
     assert isclose(dia["rotation"], direction, rel_tol=1e-9)
     assert isclose(cop["rotation"], direction, rel_tol=1e-9)
     assert isclose(dia["position"].x, mid_x - nx * 200.0, rel_tol=1e-9)
