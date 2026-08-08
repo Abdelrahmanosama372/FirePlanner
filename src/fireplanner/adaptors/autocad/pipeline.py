@@ -41,6 +41,17 @@ from .writer import OutputAnnotationConfig, Writer
 if TYPE_CHECKING:
     from pyautocad import Autocad
 
+NOMINAL_DIAMETER_MM_BY_INCH = {
+    1.0: 25.0,
+    1.25: 32.0,
+    1.5: 40.0,
+    2.0: 50.0,
+    2.5: 65.0,
+    3.0: 80.0,
+    4.0: 100.0,
+    6.0: 150.0,
+}
+
 logger = logging.getLogger(__name__)
 
 
@@ -230,7 +241,7 @@ class Pipeline:
             mid_y = (line.start.y + line.end.y) / 2.0
 
             if config.annotations.pipe_labels.pipe_dimension.enabled:
-                dia_mm = float(pipe.diameter.value) * 25.0
+                dia_mm = self._display_diameter_mm(float(pipe.diameter.value))
                 dia_text = f"%%c{dia_mm:g}"
                 dia_pos = Point(
                     x=mid_x - nx * config.annotations.pipe_labels.diameter_offset_mm,
@@ -297,6 +308,10 @@ class Pipeline:
             nx = -nx
             ny = -ny
         return nx, ny
+
+    @staticmethod
+    def _display_diameter_mm(diameter_inch: float) -> float:
+        return NOMINAL_DIAMETER_MM_BY_INCH.get(diameter_inch, diameter_inch * 25.0)
 
     def _run_boq_pipeline(self, results: list[NetworkPipelineResult]) -> None:
         boq_config = self._reader.read_boq_config()

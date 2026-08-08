@@ -63,6 +63,21 @@ def test_pipeline_builds_single_network_result():
     assert geometric_pipe.end == Point(x=10000.0, y=0.0)
 
 
+def test_pipeline_formats_nominal_pipe_diameters_for_annotations():
+    assert Pipeline._display_diameter_mm(1.0) == 25.0
+    assert Pipeline._display_diameter_mm(1.25) == 32.0
+    assert Pipeline._display_diameter_mm(1.5) == 40.0
+    assert Pipeline._display_diameter_mm(2.0) == 50.0
+    assert Pipeline._display_diameter_mm(2.5) == 65.0
+    assert Pipeline._display_diameter_mm(3.0) == 80.0
+    assert Pipeline._display_diameter_mm(4.0) == 100.0
+    assert Pipeline._display_diameter_mm(6.0) == 150.0
+
+
+def test_pipeline_formats_unknown_pipe_diameter_with_legacy_conversion():
+    assert Pipeline._display_diameter_mm(5.0) == 125.0
+
+
 def test_pipeline_builds_multiple_results_when_multiple_roots_exist():
     acad = FakeAcad(
         lines=[
