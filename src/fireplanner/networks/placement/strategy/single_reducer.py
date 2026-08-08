@@ -23,18 +23,14 @@ class SingleReducerPlacementStrategy(PlacementStrategy):
             pipe.edge_info.edge_id: pipe.edge_info.line
             for pipe in placement_assembly.run_pipes
         }
-        if placement_assembly.branch_pipe is not None:
-            edge_id_line_map[placement_assembly.branch_pipe.edge_info.edge_id] = (
-                placement_assembly.branch_pipe.edge_info.line
-            )
+        for branch_pipe in placement_assembly.branch_pipes:
+            edge_id_line_map[branch_pipe.edge_info.edge_id] = branch_pipe.edge_info.line
         edge_pipe_dim_map: dict[int, SteelDims] = {
             pipe.edge_info.edge_id: pipe.diameter
             for pipe in placement_assembly.run_pipes
         }
-        if placement_assembly.branch_pipe is not None:
-            edge_pipe_dim_map[placement_assembly.branch_pipe.edge_info.edge_id] = (
-                placement_assembly.branch_pipe.diameter
-            )
+        for branch_pipe in placement_assembly.branch_pipes:
+            edge_pipe_dim_map[branch_pipe.edge_info.edge_id] = branch_pipe.diameter
 
         reducers = placement_assembly.components.reducers()
         if len(reducers) != 1:

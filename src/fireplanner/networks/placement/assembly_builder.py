@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from fireplanner.geometry.components import GeometricComponent
 from fireplanner.networks.junction_assembly import HangerAssembly, JunctionAssembly
-from fireplanner.networks.junction_info import ThreeWayJunctionInfo
+from fireplanner.networks.junction_info import (
+    FourWayJunctionInfo,
+    ThreeWayJunctionInfo,
+)
 from fireplanner.networks.placement.assembly import (
     AssemblyComponents,
     PlacementAssembly,
@@ -22,7 +25,7 @@ class PlacementAssemblyBuilder:
         }
 
         run_pipes = []
-        branch_pipe = None
+        branch_pipes = []
 
         if isinstance(junction_info, ThreeWayJunctionInfo):
             run_pipes = [
@@ -34,7 +37,18 @@ class PlacementAssemblyBuilder:
                 junction_info.branch is not None
                 and junction_info.branch.edge_id in pipe_by_edge_id
             ):
-                branch_pipe = pipe_by_edge_id[junction_info.branch.edge_id]
+                branch_pipes = [pipe_by_edge_id[junction_info.branch.edge_id]]
+        elif isinstance(junction_info, FourWayJunctionInfo):
+            run_pipes = [
+                pipe_by_edge_id[edge_info.edge_id]
+                for edge_info in junction_info.lower_run
+                if edge_info.edge_id in pipe_by_edge_id
+            ]
+            branch_pipes = [
+                pipe_by_edge_id[edge_info.edge_id]
+                for edge_info in junction_info.upper_run
+                if edge_info.edge_id in pipe_by_edge_id
+            ]
         else:
             run_pipes = list(junction_assembly.pipes)
 
@@ -42,7 +56,7 @@ class PlacementAssemblyBuilder:
             junction_info=junction_info,
             origin=junction_info.origin,
             run_pipes=run_pipes,
-            branch_pipe=branch_pipe,
+            branch_pipes=branch_pipes,
             components=AssemblyComponents(items=geometric_components),
         )
 
@@ -57,6 +71,6 @@ class PlacementAssemblyBuilder:
             junction_info=None,
             origin=line.middle_point(),
             run_pipes=[pipe_assembly],
-            branch_pipe=None,
+            branch_pipes=[],
             components=AssemblyComponents(items=geometric_components),
         )

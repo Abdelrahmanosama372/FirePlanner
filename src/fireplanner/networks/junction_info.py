@@ -46,3 +46,9 @@ class TerminalSprinklerInfo:
 class ThreeWayJunctionInfo(JunctionInfo):
     run: list[EdgeInfo] = field(default_factory=list)
     branch: EdgeInfo | None = None
+
+
+@dataclass(frozen=True)
+class FourWayJunctionInfo(JunctionInfo):
+    lower_run: list[EdgeInfo] = field(default_factory=list)
+    upper_run: list[EdgeInfo] = field(default_factory=list)

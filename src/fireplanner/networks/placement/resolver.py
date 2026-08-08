@@ -12,6 +12,7 @@ from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy import (
     DoubleElbowPlacementStrategy,
+    DoubleTeePlacementStrategy,
     HangerPlacementStrategy,
     SingleElbowPlacementStrategy,
     SingleReducerPlacementStrategy,
@@ -51,6 +52,18 @@ class PlacementResolver:
             placement_assembly.components.hangers()
         ) == len(placement_assembly.components.items):
             return HangerPlacementStrategy(placement_assembly, placement_rules)
+
+        tee_like_count = sum(
+            isinstance(component, (GeometricTee, GeometricWeldedBranch))
+            for component in placement_assembly.components.items
+        )
+        if tee_like_count == 2 and tee_like_count + len(
+            placement_assembly.components.reducers()
+        ) == len(placement_assembly.components.items):
+            return DoubleTeePlacementStrategy(
+                placement_assembly,
+                placement_rules,
+            )
 
         if len(placement_assembly.components.elbows()) == 2 and len(
             placement_assembly.components.reducers()

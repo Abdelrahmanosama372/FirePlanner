@@ -40,5 +40,5 @@ class PlacementAssembly:
     junction_info: JunctionInfo | None
     origin: Point
     run_pipes: list[PipeAssembly] = field(default_factory=list)
-    branch_pipe: PipeAssembly | None = None
+    branch_pipes: list[PipeAssembly] = field(default_factory=list)
     components: AssemblyComponents = field(default_factory=AssemblyComponents)

@@ -5,6 +5,7 @@ from .junction import Junction, JunctionType
 from .junction_assembly import JunctionAssembly, PipeAssembly
 from .junction_info import (
     EdgeInfo,
+    FourWayJunctionInfo,
     JunctionInfo,
     SprinklerInfo,
     SprinklerJunctionInfo,
