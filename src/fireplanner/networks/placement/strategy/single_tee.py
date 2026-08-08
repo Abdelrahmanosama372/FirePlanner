@@ -30,10 +30,8 @@ class SingleTeePlacementStrategy(PlacementStrategy):
             pipe.edge_info.edge_id: pipe.edge_info.line
             for pipe in placement_assembly.run_pipes
         }
-        if placement_assembly.branch_pipe is not None:
-            edge_id_line_map[placement_assembly.branch_pipe.edge_info.edge_id] = (
-                placement_assembly.branch_pipe.edge_info.line
-            )
+        for branch_pipe in placement_assembly.branch_pipes:
+            edge_id_line_map[branch_pipe.edge_info.edge_id] = branch_pipe.edge_info.line
 
         tees = placement_assembly.components.tees()
         welded = placement_assembly.components.weldedbranches()

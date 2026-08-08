@@ -72,7 +72,7 @@ class TeeReducerPlacementStrategy(PlacementStrategy):
             reducer_assembly = replace(
                 placement_assembly,
                 run_pipes=[reducer_pipe],
-                branch_pipe=None,
+                branch_pipes=[],
                 components=AssemblyComponents(items=[reducer]),
             )
             contexts.update(

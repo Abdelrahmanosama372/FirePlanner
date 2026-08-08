@@ -30,6 +30,7 @@ from fireplanner.networks.junction_assembly import (
 )
 from fireplanner.networks.junction_info import (
     EdgeInfo,
+    FourWayJunctionInfo,
     JunctionInfo,
     SprinklerJunctionInfo,
     TerminalSprinklerInfo,
@@ -206,6 +207,8 @@ class ModelNetwork:
                 edge_infos = list(junction_info.run)
                 if junction_info.branch is not None:
                     edge_infos.append(junction_info.branch)
+            elif isinstance(junction_info, FourWayJunctionInfo):
+                edge_infos = [*junction_info.lower_run, *junction_info.upper_run]
             else:
                 edge_infos = []
 
@@ -381,6 +384,11 @@ class ModelNetwork:
                         )
                     )
 
+            elif isinstance(junction_info, FourWayJunctionInfo):
+                fire_connections = self._create_fire_connections_for_four_way_junction(
+                    junction_info
+                )
+
             elif isinstance(junction_info, ThreeWayJunctionInfo):
                 pipe1_dim, pipe2_dim = [
                     self._edge_id_to_pipe_dimension[edge_info.edge_id]
@@ -530,6 +538,83 @@ class ModelNetwork:
                 Reducer(
                     diameter1=pipe1_dim,
                     diameter2=pipe2_dim,
+                    material=self.config.material,
+                    schedule=self.config.schedule,
+                    specs=self.config.specs,
+                    connection_type=self.config.get_connection_type_for_diameter(
+                        largest_diameter
+                    ),
+                )
+            )
+
+        return connections
+
+    def _create_fire_connections_for_four_way_junction(
+        self,
+        junction_info: FourWayJunctionInfo,
+    ) -> list[FireConnection]:
+        lower_dimensions = [
+            self._edge_id_to_pipe_dimension[edge_info.edge_id]
+            for edge_info in junction_info.lower_run
+        ]
+        upper_dimensions = [
+            self._edge_id_to_pipe_dimension[edge_info.edge_id]
+            for edge_info in junction_info.upper_run
+        ]
+        transition_diameter = find_min_steel_dim_for_sprinklers(
+            self.config.hazard,
+            sum(edge_info.sprinkler_count for edge_info in junction_info.upper_run),
+        )
+        lower_run_diameter = max(
+            lower_dimensions,
+            key=lambda diameter: diameter.value,
+        )
+        if transition_diameter.value > lower_run_diameter.value:
+            raise ValueError(
+                f"Four-way junction {junction_info.junction_id} transition diameter "
+                "cannot exceed the lower tee run diameter."
+            )
+
+        lower_tee = Tee(
+            run_diameter=lower_run_diameter,
+            branch_diameter=transition_diameter,
+            material=self.config.material,
+            schedule=self.config.schedule,
+            specs=self.config.specs,
+            connection_type=self.config.get_connection_type_for_diameter(
+                lower_run_diameter
+            ),
+        )
+        upper_tee = Tee(
+            run_diameter=transition_diameter,
+            branch_diameter=transition_diameter,
+            material=self.config.material,
+            schedule=self.config.schedule,
+            specs=self.config.specs,
+            connection_type=self.config.get_connection_type_for_diameter(
+                transition_diameter
+            ),
+        )
+        connections: list[FireConnection] = [lower_tee, upper_tee]
+
+        reducer_targets = [
+            (diameter, lower_run_diameter) for diameter in lower_dimensions
+        ]
+        reducer_targets.extend(
+            (diameter, transition_diameter) for diameter in upper_dimensions
+        )
+        for pipe_diameter, tee_diameter in reducer_targets:
+            if pipe_diameter == tee_diameter:
+                continue
+            largest_diameter = max(
+                pipe_diameter,
+                tee_diameter,
+                key=lambda diameter: diameter.value,
+            )
+            connections.append(
+                Reducer(
+                    diameter1=pipe_diameter,
+                    diameter2=tee_diameter,
                     material=self.config.material,
                     schedule=self.config.schedule,
                     specs=self.config.specs,

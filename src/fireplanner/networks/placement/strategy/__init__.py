@@ -1,5 +1,6 @@
 from .base import PlacementStrategy
 from .double_elbow import DoubleElbowPlacementStrategy
+from .double_tee import DoubleTeePlacementStrategy
 from .single_elbow import SingleElbowPlacementStrategy
 from .single_hanger import HangerPlacementStrategy
 from .single_reducer import SingleReducerPlacementStrategy

@@ -45,7 +45,7 @@ class TeeReducerElbowPlacementStrategy(PlacementStrategy):
         )
         contexts[id(tee)].view_type = ViewType.PLAN
 
-        branch_line = deepcopy(placement_assembly.branch_pipe.edge_info.line)
+        branch_line = deepcopy(placement_assembly.branch_pipes[0].edge_info.line)
         if branch_line.end == junction_origin:
             branch_line.swap_end_points()
         branch_dirction = branch_line.direction()
@@ -55,7 +55,7 @@ class TeeReducerElbowPlacementStrategy(PlacementStrategy):
         )
         elbow_view = ViewType.PLAN
         run_elevation = placement_assembly.run_pipes[0].edge_info.elevation
-        branch_elevation = placement_assembly.branch_pipe.edge_info.elevation
+        branch_elevation = placement_assembly.branch_pipes[0].edge_info.elevation
         tee_z_index = 1
         elbow_z_index = 1
         if run_elevation > branch_elevation:

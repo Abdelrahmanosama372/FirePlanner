@@ -5,6 +5,7 @@ from fireplanner.geometry.primitives import Line, Point, PrimitiveStyle
 from fireplanner.networks import CoreNetwork, ModelNetwork, ModelNetworkConfig
 from fireplanner.networks.junction_info import (
     EdgeInfo,
+    FourWayJunctionInfo,
     SprinklerInfo,
     SprinklerJunctionInfo,
     TerminalSprinklerInfo,
@@ -18,7 +19,10 @@ class _FakeCoreNetwork:
         self,
         edges_info: list[EdgeInfo],
         junctions_info: list[
-            TwoWayJunctionInfo | ThreeWayJunctionInfo | SprinklerJunctionInfo
+            TwoWayJunctionInfo
+            | ThreeWayJunctionInfo
+            | FourWayJunctionInfo
+            | SprinklerJunctionInfo
         ],
         terminal_sprinkler_infos: list[TerminalSprinklerInfo] | None = None,
     ) -> None:
@@ -31,7 +35,12 @@ class _FakeCoreNetwork:
 
     def get_junctions_info(
         self,
-    ) -> list[TwoWayJunctionInfo | ThreeWayJunctionInfo | SprinklerJunctionInfo]:
+    ) -> list[
+        TwoWayJunctionInfo
+        | ThreeWayJunctionInfo
+        | FourWayJunctionInfo
+        | SprinklerJunctionInfo
+    ]:
         return list(self._junctions_info)
 
     def get_terminal_sprinkler_infos(self) -> list[TerminalSprinklerInfo]:
@@ -463,3 +472,35 @@ def test_two_way_elevation_change_constructs_double_elbow():
     connections = network.get_fire_connections_with_junctions_ids()[1]
 
     assert [type(connection) for connection in connections] == [Elbow, Elbow]
+
+
+def test_four_way_junction_constructs_double_tee_and_reducers():
+    origin = Point(x=0, y=0)
+    edges_info = [
+        EdgeInfo(1, Line(Point(x=-100, y=0), origin, id=1), 100, 10, 100),
+        EdgeInfo(2, Line(origin, Point(x=100, y=0), id=2), 100, 2, 100),
+        EdgeInfo(3, Line(Point(x=0, y=-100), origin, id=3), 100, 2, 200),
+        EdgeInfo(4, Line(origin, Point(x=0, y=100), id=4), 100, 1, 200),
+    ]
+    junction_info = FourWayJunctionInfo(
+        junction_id=1,
+        origin=origin,
+        lower_run=edges_info[:2],
+        upper_run=edges_info[2:],
+    )
+
+    network = ModelNetwork(_FakeCoreNetwork(edges_info, [junction_info]))
+    connections = network.get_fire_connections_with_junctions_ids()[1]
+
+    assert [type(connection) for connection in connections] == [
+        Tee,
+        Tee,
+        Reducer,
+        Reducer,
+        Reducer,
+    ]
+    lower_tee, upper_tee = connections[:2]
+    assert lower_tee.run_diameter == SteelDims.DIM_2_INCHES
+    assert lower_tee.branch_diameter == SteelDims.DIM_1_25_INCHES
+    assert upper_tee.run_diameter == SteelDims.DIM_1_25_INCHES
+    assert upper_tee.branch_diameter == SteelDims.DIM_1_25_INCHES

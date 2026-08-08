@@ -24,6 +24,7 @@ from fireplanner.networks.junction import Junction, JunctionType
 from fireplanner.networks.junction_assembly import JunctionAssembly, PipeAssembly
 from fireplanner.networks.junction_info import (
     EdgeInfo,
+    FourWayJunctionInfo,
     ThreeWayJunctionInfo,
     TwoWayJunctionInfo,
 )
@@ -31,6 +32,7 @@ from fireplanner.networks.placement import PlacementContext, PlacementResolver
 from fireplanner.networks.placement.assembly_builder import PlacementAssemblyBuilder
 from fireplanner.networks.placement.strategy import (
     DoubleElbowPlacementStrategy,
+    DoubleTeePlacementStrategy,
     SingleElbowPlacementStrategy,
     SingleReducerPlacementStrategy,
     SingleTeePlacementStrategy,
@@ -846,4 +848,70 @@ def test_double_elbow_placement_supports_reducer():
 
     assert isinstance(strategy, DoubleElbowPlacementStrategy)
     for component in components:
+        assert strategy.get_placement_context(component) is not None
+
+
+def test_double_tee_placement_uses_perpendicular_plan_views():
+    origin = Point(x=0, y=0)
+    edge_infos = [
+        EdgeInfo(1, Line(Point(x=-100, y=0), origin, id=1), 100, 10, 100),
+        EdgeInfo(2, Line(origin, Point(x=100, y=0), id=2), 100, 2, 100),
+        EdgeInfo(3, Line(Point(x=0, y=-100), origin, id=3), 100, 2, 200),
+        EdgeInfo(4, Line(origin, Point(x=0, y=100), id=4), 100, 1, 200),
+    ]
+    junction_info = FourWayJunctionInfo(
+        junction_id=1,
+        origin=origin,
+        lower_run=edge_infos[:2],
+        upper_run=edge_infos[2:],
+    )
+    junction_assembly = JunctionAssembly(
+        junction_info=junction_info,
+        pipes=[
+            PipeAssembly(edge_infos[0], SteelDims.DIM_2_INCHES),
+            PipeAssembly(edge_infos[1], SteelDims.DIM_1_INCHES),
+            PipeAssembly(edge_infos[2], SteelDims.DIM_1_INCHES),
+            PipeAssembly(edge_infos[3], SteelDims.DIM_1_INCHES),
+        ],
+    )
+    components = [
+        geometric_tee_builder(
+            run_diameter=SteelDims.DIM_2_INCHES,
+            branch_diameter=SteelDims.DIM_1_25_INCHES,
+        ),
+        geometric_tee_builder(run_diameter=SteelDims.DIM_1_25_INCHES),
+        geometric_reducer_builder(
+            diameter1=SteelDims.DIM_1_INCHES,
+            diameter2=SteelDims.DIM_2_INCHES,
+        ),
+        geometric_reducer_builder(
+            diameter1=SteelDims.DIM_1_INCHES,
+            diameter2=SteelDims.DIM_1_25_INCHES,
+        ),
+        geometric_reducer_builder(
+            diameter1=SteelDims.DIM_1_INCHES,
+            diameter2=SteelDims.DIM_1_25_INCHES,
+        ),
+    ]
+
+    placement_assembly = _build_placement_assembly(junction_assembly, components)
+    strategy = PlacementResolver().resolve(placement_assembly)
+
+    assert isinstance(strategy, DoubleTeePlacementStrategy)
+    lower_context = strategy.get_placement_context(components[0])
+    upper_context = strategy.get_placement_context(components[1])
+    assert lower_context.transform.origin == origin
+    assert upper_context.transform.origin == origin
+    assert lower_context.view_type == ViewType.PLAN
+    assert upper_context.view_type == ViewType.PLAN
+    assert lower_context.z_index == 1
+    assert upper_context.z_index == 2
+    assert (
+        abs(
+            abs(lower_context.transform.angle - upper_context.transform.angle)
+            - radians(90)
+        )
+        < 1e-9
+    )
+    for component in components[2:]:
         assert strategy.get_placement_context(component) is not None

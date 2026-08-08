@@ -3,10 +3,13 @@ from fireplanner.networks import (
     CoreNetwork,
     CoreNetworkConfig,
     EdgeInfo,
+    FourWayJunctionInfo,
     SprinklerJunctionInfo,
     ThreeWayJunctionInfo,
+    TopologyInterpreter,
     TwoWayJunctionInfo,
 )
+from fireplanner.networks.junction import Junction, JunctionType
 from tests.unit.test_core_network import build_simple_network_core_network
 
 
@@ -93,3 +96,33 @@ def test_topology_interpreter_reads_metadata_for_multiple_sprinkler_block_names(
     assert len(sprinkler_infos) == 2
     assert [info.sprinkler_info.k_factor for info in sprinkler_infos] == [5.6, 8.0]
     assert [info.sprinkler_info.temperature for info in sprinkler_infos] == [68.0, 74.0]
+
+
+def test_topology_interpreter_builds_four_way_runs_ordered_by_cop():
+    origin = Point(x=0, y=0)
+    lines = {
+        1: Line(start=Point(x=-100, y=0), end=origin, id=1),
+        2: Line(start=origin, end=Point(x=100, y=0), id=2),
+        3: Line(start=Point(x=0, y=-100), end=origin, id=3),
+        4: Line(start=origin, end=Point(x=0, y=100), id=4),
+    }
+    interpreter = TopologyInterpreter(
+        edge_id_line_map=lines,
+        edge_id_elevation_map={1: 100, 2: 100, 3: 200, 4: 200},
+        edge_id_sprinkler_map={1: 8, 2: 2, 3: 2, 4: 1},
+    )
+
+    info = interpreter.interpret_junction(
+        Junction(
+            id=1,
+            origin=origin,
+            junction_type=JunctionType.FOUR_WAY,
+            connected_edges_ids=[1, 3, 2, 4],
+        )
+    )
+
+    assert isinstance(info, FourWayJunctionInfo)
+    assert {edge.edge_id for edge in info.lower_run} == {1, 2}
+    assert {edge.edge_id for edge in info.upper_run} == {3, 4}
+    assert {edge.elevation for edge in info.lower_run} == {100}
+    assert {edge.elevation for edge in info.upper_run} == {200}

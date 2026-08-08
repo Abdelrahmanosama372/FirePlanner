@@ -528,3 +528,24 @@ def test_core_network_flattens_input_lines_and_blocks_to_zero_z():
     assert lines[0].start.z == 150.0
     assert lines[0].end.z == 250.0
     assert blocks[0].center.z == 500.0
+
+
+def test_core_network_classifies_four_way_junction():
+    origin = Point(x=0, y=0)
+    network = CoreNetwork(
+        config=CoreNetworkConfig(
+            lines=[
+                Line(start=Point(x=-100, y=0), end=origin, id=1),
+                Line(start=origin, end=Point(x=100, y=0), id=2),
+                Line(start=Point(x=0, y=-100), end=origin, id=3),
+                Line(start=origin, end=Point(x=0, y=100), id=4),
+            ]
+        )
+    )
+
+    junctions = network.get_junctions()
+
+    assert len(junctions) == 1
+    junction = next(iter(junctions.values()))
+    assert junction.junction_type == JunctionType.FOUR_WAY
+    assert set(junction.connected_edges_ids) == {1, 2, 3, 4}

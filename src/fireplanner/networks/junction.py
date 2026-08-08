@@ -7,6 +7,7 @@ from fireplanner.geometry.primitives import Point
 class JunctionType(StrEnum):
     TWO_WAY = "two_way"
     THREE_WAY = "three_way"
+    FOUR_WAY = "four_way"
 
 
 @dataclass

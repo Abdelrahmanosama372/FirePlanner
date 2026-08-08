@@ -388,6 +388,8 @@ class CoreNetwork:
                 junction_type: JunctionType | None = JunctionType.TWO_WAY
             elif len(connected_edges_ids) == 3:
                 junction_type = JunctionType.THREE_WAY
+            elif len(connected_edges_ids) == 4:
+                junction_type = JunctionType.FOUR_WAY
             else:
                 junction_type = None
 
