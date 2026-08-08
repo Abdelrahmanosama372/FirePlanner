@@ -394,3 +394,72 @@ def test_inline_sprinkler_branch_connection_uses_run_connection_type():
     assert welded_branch.run_diameter == SteelDims.DIM_2_5_INCHES
     assert welded_branch.branch_diameter == SteelDims.DIM_1_INCHES
     assert welded_branch.connection_type == SteelConnection.Welded
+
+
+@pytest.mark.parametrize(
+    "pipe1, pipe2, expected_types",
+    [
+        (
+            SteelDims.DIM_2_INCHES,
+            SteelDims.DIM_2_INCHES,
+            [Elbow, Elbow],
+        ),
+        (
+            SteelDims.DIM_2_INCHES,
+            SteelDims.DIM_1_INCHES,
+            [Elbow, Elbow, Reducer],
+        ),
+    ],
+)
+def test_create_fire_connections_for_two_way_elevation_change(
+    defaultModelNetwork,
+    pipe1,
+    pipe2,
+    expected_types,
+):
+    connections = (
+        defaultModelNetwork._create_fire_connections_for_two_way_elevation_change(
+            pipe1,
+            pipe2,
+        )
+    )
+
+    assert [type(connection) for connection in connections] == expected_types
+    assert [connection.diameter for connection in connections[:2]] == [pipe1, pipe2]
+    assert all(connection.angle == 90 for connection in connections[:2])
+
+
+def test_two_way_elevation_change_constructs_double_elbow():
+    edges_info = [
+        EdgeInfo(
+            edge_id=1,
+            line=Line(start=Point(x=-100, y=0), end=Point(x=0, y=0), id=1),
+            length=100,
+            sprinkler_count=1,
+            elevation=10,
+        ),
+        EdgeInfo(
+            edge_id=2,
+            line=Line(start=Point(x=0, y=0), end=Point(x=100, y=0), id=2),
+            length=100,
+            sprinkler_count=1,
+            elevation=0,
+        ),
+    ]
+    network = ModelNetwork(
+        _FakeCoreNetwork(
+            edges_info,
+            [
+                TwoWayJunctionInfo(
+                    junction_id=1,
+                    origin=Point(x=0, y=0),
+                    edges=edges_info,
+                    angle=0,
+                )
+            ],
+        )
+    )
+
+    connections = network.get_fire_connections_with_junctions_ids()[1]
+
+    assert [type(connection) for connection in connections] == [Elbow, Elbow]

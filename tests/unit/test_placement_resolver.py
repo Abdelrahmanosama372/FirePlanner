@@ -30,6 +30,7 @@ from fireplanner.networks.junction_info import (
 from fireplanner.networks.placement import PlacementContext, PlacementResolver
 from fireplanner.networks.placement.assembly_builder import PlacementAssemblyBuilder
 from fireplanner.networks.placement.strategy import (
+    DoubleElbowPlacementStrategy,
     SingleElbowPlacementStrategy,
     SingleReducerPlacementStrategy,
     SingleTeePlacementStrategy,
@@ -752,3 +753,97 @@ def test_tee_reducer_elbow_placement_z_index_orders_by_elevation():
 
     assert tee_context.z_index == 2
     assert elbow_context.z_index == 1
+
+
+def test_double_elbow_placement_uses_plan_views_and_pipe_directions():
+    origin = Point(x=0, y=0)
+    edge_infos = [
+        EdgeInfo(
+            edge_id=1,
+            line=Line(start=Point(x=100, y=0), end=origin, id=1),
+            length=100,
+            sprinkler_count=0,
+            elevation=10,
+        ),
+        EdgeInfo(
+            edge_id=2,
+            line=Line(start=origin, end=Point(x=0, y=100), id=2),
+            length=100,
+            sprinkler_count=0,
+            elevation=0,
+        ),
+    ]
+    junction_assembly = JunctionAssembly(
+        junction_info=TwoWayJunctionInfo(
+            junction_id=1,
+            origin=origin,
+            edges=edge_infos,
+            angle=90,
+        ),
+        pipes=[
+            PipeAssembly(edge_info=edge_infos[0], diameter=SteelDims.DIM_1_INCHES),
+            PipeAssembly(edge_info=edge_infos[1], diameter=SteelDims.DIM_1_INCHES),
+        ],
+    )
+    elbows = [geometric_elbow_builder(), geometric_elbow_builder()]
+
+    strategy = PlacementResolver().resolve(
+        _build_placement_assembly(junction_assembly, elbows)
+    )
+
+    assert isinstance(strategy, DoubleElbowPlacementStrategy)
+    first_context = strategy.get_placement_context(elbows[0])
+    second_context = strategy.get_placement_context(elbows[1])
+    assert first_context.transform.origin == origin
+    assert second_context.transform.origin == origin
+    assert first_context.transform.angle == radians(-90)
+    assert second_context.transform.angle == radians(0)
+    assert first_context.view_type == ViewType.PLAN
+    assert second_context.view_type == ViewType.PLAN
+    assert first_context.z_index == 2
+    assert second_context.z_index == 1
+
+
+def test_double_elbow_placement_supports_reducer():
+    origin = Point(x=0, y=0)
+    edge_infos = [
+        EdgeInfo(
+            edge_id=1,
+            line=Line(start=origin, end=Point(x=100, y=0), id=1),
+            length=100,
+            sprinkler_count=0,
+            elevation=10,
+        ),
+        EdgeInfo(
+            edge_id=2,
+            line=Line(start=origin, end=Point(x=-100, y=0), id=2),
+            length=100,
+            sprinkler_count=0,
+            elevation=0,
+        ),
+    ]
+    junction_assembly = JunctionAssembly(
+        junction_info=TwoWayJunctionInfo(
+            junction_id=1,
+            origin=origin,
+            edges=edge_infos,
+            angle=0,
+        ),
+        pipes=[
+            PipeAssembly(edge_info=edge_infos[0], diameter=SteelDims.DIM_1_INCHES),
+            PipeAssembly(edge_info=edge_infos[1], diameter=SteelDims.DIM_0_75_INCHES),
+        ],
+    )
+    components = [
+        geometric_elbow_builder(),
+        geometric_elbow_builder(diameter=SteelDims.DIM_0_75_INCHES),
+        geometric_reducer_builder(),
+    ]
+
+    strategy = PlacementResolver().resolve(
+        _build_placement_assembly(junction_assembly, components)
+    )
+
+    assert isinstance(strategy, DoubleElbowPlacementStrategy)
+    for component in components:
+        assert strategy.get_placement_context(component) is not None

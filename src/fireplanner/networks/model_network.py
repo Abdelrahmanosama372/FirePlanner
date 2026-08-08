@@ -365,11 +365,21 @@ class ModelNetwork:
                     for edge_info in junction_info.edges
                 ]
 
-                fire_connections = self._create_fire_connection_for_two_way_junction(
-                    pipe1_dim=pipe1_dim,
-                    pipe2_dim=pipe2_dim,
-                    angle=junction_info.angle,
-                )
+                if junction_info.edges[0].elevation != junction_info.edges[1].elevation:
+                    fire_connections = (
+                        self._create_fire_connections_for_two_way_elevation_change(
+                            pipe1_dim=pipe1_dim,
+                            pipe2_dim=pipe2_dim,
+                        )
+                    )
+                else:
+                    fire_connections = (
+                        self._create_fire_connection_for_two_way_junction(
+                            pipe1_dim=pipe1_dim,
+                            pipe2_dim=pipe2_dim,
+                            angle=junction_info.angle,
+                        )
+                    )
 
             elif isinstance(junction_info, ThreeWayJunctionInfo):
                 pipe1_dim, pipe2_dim = [
@@ -488,6 +498,48 @@ class ModelNetwork:
                 connection_type=connection_type,
             )
         ]
+
+    def _create_fire_connections_for_two_way_elevation_change(
+        self,
+        pipe1_dim: SteelDims,
+        pipe2_dim: SteelDims,
+    ) -> list[FireConnection]:
+        connections: list[FireConnection] = []
+
+        for diameter in (pipe1_dim, pipe2_dim):
+            connections.append(
+                Elbow(
+                    diameter=diameter,
+                    angle=90,
+                    material=self.config.material,
+                    schedule=self.config.schedule,
+                    specs=self.config.specs,
+                    connection_type=self.config.get_connection_type_for_diameter(
+                        diameter
+                    ),
+                )
+            )
+
+        if pipe1_dim != pipe2_dim:
+            largest_diameter = max(
+                pipe1_dim,
+                pipe2_dim,
+                key=lambda diameter: diameter.value,
+            )
+            connections.append(
+                Reducer(
+                    diameter1=pipe1_dim,
+                    diameter2=pipe2_dim,
+                    material=self.config.material,
+                    schedule=self.config.schedule,
+                    specs=self.config.specs,
+                    connection_type=self.config.get_connection_type_for_diameter(
+                        largest_diameter
+                    ),
+                )
+            )
+
+        return connections
 
     def _create_fire_connection_for_three_way_junction(
         self,

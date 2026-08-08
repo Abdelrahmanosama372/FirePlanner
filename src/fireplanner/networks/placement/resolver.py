@@ -11,6 +11,7 @@ from fireplanner.geometry.components import (
 from fireplanner.networks.placement.assembly import PlacementAssembly
 from fireplanner.networks.placement.rules import PlacementRules
 from fireplanner.networks.placement.strategy import (
+    DoubleElbowPlacementStrategy,
     HangerPlacementStrategy,
     SingleElbowPlacementStrategy,
     SingleReducerPlacementStrategy,
@@ -50,6 +51,14 @@ class PlacementResolver:
             placement_assembly.components.hangers()
         ) == len(placement_assembly.components.items):
             return HangerPlacementStrategy(placement_assembly, placement_rules)
+
+        if len(placement_assembly.components.elbows()) == 2 and len(
+            placement_assembly.components.reducers()
+        ) in (0, 1):
+            return DoubleElbowPlacementStrategy(
+                placement_assembly,
+                placement_rules,
+            )
 
         if len(placement_assembly.components.reducers()) >= 1 and any(
             isinstance(component, (GeometricTee, GeometricWeldedBranch))
